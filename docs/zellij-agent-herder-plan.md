@@ -14,9 +14,10 @@
 - Single skill directory: `~/code/mk-skills/skills/zellij-agent-herder/`. This is a real git repo (`origin` = `github.com/anateus/mk-skills`); commit each task. Reference implementations to copy shape from: `~/.agents/skills/herdr/`, `~/.agents/skills/herdr-peer-agents/`, and the hunk-autodiff plugin at `~/.config/herdr/plugins/github/hunk.autodiff-0ea0904f4623/autodiff.py`.
 - Distribution via the vercel-labs `skills` CLI: installable with `npx skills add anateus/mk-skills`. `SKILL.md` needs `name` + `description` frontmatter. Installs land in a dir we do not control (`~/.claude/skills/<name>/` global, `./.claude/skills/<name>/` project) — so **no SKILL.md, reference, or script may hardcode a `~/.agents/...` or `~/code/mk-skills/...` runtime path**. SKILL.md refers to `scripts/<file>` / `references/<file>` relative to the skill's base directory (the harness prints "Base directory for this skill: …" on load); scripts locate siblings via their own `$0`.
 - Pane addressing is always `(session, pane_id)`; `pane_id` = `terminal_N` / `plugin_N` / bare int, monotonic per session, never reused within a session's life, never stable across restarts. `--name` sets the pane **title only** — NOT addressable; resolve name→id via `list-panes -j`.
+- **CONFIRMED (Task 0, zellij 0.45.0):** `list-panes -j` is a **flat list** `[{...}]` (each pane carries its own `tab_id`/`tab_position`), NOT dict-keyed-by-tab. Pane `id` is a **bare int** (e.g. `1`); `is_plugin` is a separate bool. Exit fields are `exited` (bool) + `exit_status` (int|null); exited panes also show `is_held:true`. `ZELLIJ_PANE_ID` inside a pane is the **bare int** matching `id`. The `_zj_panes` normalizer (int→`terminal_N`) and dual dict/list handling already absorb this; `-p terminal_N` is accepted for a bare-int id. `hunk session get --repo <live>` exits **0**; nonexistent repo exits **1** (`--json` is NOT honored on the failure path — plain-text error to stderr).
 - Every read/write action passes `-p <pane_id>` explicitly. Bare `dump-screen` (no `-p`) follows focus and returns **empty on headless/background sessions**. `dump-screen` on a nonexistent/closed id returns **exit 0 + empty** (silent) — verify the pane exists first.
 - Default `dump-screen` is **viewport-only**; use `--full` for text that may have scrolled off. Use **plain** output (never `-a/--ansi`) for grep.
-- Non-focus-stealing spawn is `zellij action new-pane --near-current-pane` (the `--no-focus` equivalent). Plain `new-pane`, top-level `zellij run`, and `new-tab`/`go-to-tab*`/`focus-*`/`move-focus` steal an attached client's focus/view — avoid when a human may be watching.
+- **Spawning is adaptive via `zj_spawn` (CONFIRMED Task 0).** Relative/directional placement (`--near-current-pane`, `-d/--direction`) **SILENTLY NO-OPS in a headless/no-client session** — `new-pane` exits 0 and prints a `terminal_N` status string, but **no pane is created** (it needs a connected client for current-pane-relative layout). Every test runs headless (`attach -b`), so tests and any code that must run under test spawn through `zj_spawn`: when a client is attached it uses `--near-current-pane` (places beside the current pane, does **not** steal focus — the production path); when headless it drops `-d`/`--near-current-pane` and uses plain `new-pane` (zellij picks the biggest free space — works headless). Client detection: `list-clients | tail -n +2 | grep -c .` (0 == headless; `list-clients` has no `-j`). Never parse `new-pane`'s printed `terminal_N` as authoritative (it prints even on the no-op); recover the real id from `list-panes -j`. Plain `new-pane`/`zellij run`/`new-tab`/`focus-*`/`move-focus` steal an attached client's focus/view when used directly — go through `zj_spawn`.
 - Enter is `zellij action write -p <id> 13`. Codex composers may need it twice.
 - Portability: never `date +%s%3N` (fails on macOS/BSD). Use bash `$SECONDS`.
 - Hooks: `hook_event_name` fields are **PascalCase**; PostToolUse matcher for edits is `"Edit|Write|MultiEdit|NotebookEdit"` (exact match, `|`-separated); `UserPromptSubmit`/`Stop`/`Notification` ignore the matcher. Hooks **inherit the parent env** (so `ZELLIJ_PANE_ID`/`ZELLIJ_SESSION_NAME` are available). A subagent invocation has an `agent_id` field — skip it (mirror herdr). `tool_input.file_path` is an **absolute** path. PostToolUse cannot block; exit 0 + no stdout = silent side-effect; register the hunk hook with `"async": true` so it never stalls a turn.
@@ -51,7 +52,7 @@ Single skill, vercel-labs flat layout:
 ```
 
 Responsibilities:
-- `zj.sh` — single source of truth for zellij I/O: `_zj`, `_zj_panes`, `zj_resolve_id`, `zj_pane_exists`, `zj_wait_output`, `zj_wait_exit`, `zj_wait_status`. Sourced by SKILL.md usage, `zellij-peer.sh`, and (indirectly) the docs. One copy — the single-skill merge removes the two-skill vendoring problem.
+- `zj.sh` — single source of truth for zellij I/O: `_zj`, `_zj_panes`, `zj_resolve_id`, `zj_pane_exists`, `zj_client_count`, `zj_spawn`, `zj_wait_output`, `zj_wait_exit`, `zj_wait_status`. Sourced by SKILL.md usage, `zellij-peer.sh`, and (indirectly) the docs. One copy — the single-skill merge removes the two-skill vendoring problem. (Standalone hook scripts can't source it — see the adaptive-spawn note; the hunk hook inlines its own client check.)
 - `zellij-peer.sh` — peer-agent lifecycle only; sources `zj.sh` from its own dir.
 - `zellij-agent-status.sh` — status→title hook (UserPromptSubmit/Stop/Notification).
 - `hunk-autodiff.sh` — PostToolUse hook replicating the `hunk.autodiff` herdr plugin for zellij + Claude Code.
@@ -120,7 +121,7 @@ Run: `zellij kill-session zah-probe 2>/dev/null || true`
 - Create: `~/code/mk-skills/skills/zellij-agent-herder/scripts/zj.sh`
 - Test: `/tmp/zah/test_zj.sh`
 
-**Interfaces:** Produces `_zj`, `_zj_panes`, `zj_resolve_id`, `zj_pane_exists`, and the `ZJ_SESSION` convention (defaults to `$ZELLIJ_SESSION_NAME`).
+**Interfaces:** Produces `_zj`, `_zj_panes`, `zj_resolve_id`, `zj_pane_exists`, `zj_client_count`, `zj_spawn`, and the `ZJ_SESSION` convention (defaults to `$ZELLIJ_SESSION_NAME`).
 
 - [ ] **Step 1: Write the failing test**
 
@@ -132,8 +133,8 @@ source ~/code/mk-skills/skills/zellij-agent-herder/scripts/zj.sh
 export ZJ_SESSION=zjtest
 zellij kill-session zjtest 2>/dev/null || true
 zellij attach -b zjtest
-_zj new-pane --near-current-pane -n alpha -- bash -c 'sleep 300'
-_zj new-pane --near-current-pane -n beta  -- bash -c 'sleep 300'
+zj_spawn -n alpha -- bash -c 'sleep 300'
+zj_spawn -n beta  -- bash -c 'sleep 300'
 id=$(zj_resolve_id alpha); echo "resolved alpha -> $id"
 [[ "$id" == terminal_* ]] || { echo "FAIL: id not terminal_*"; exit 1; }
 zj_pane_exists "$id" || { echo "FAIL: pane_exists false for real id"; exit 1; }
@@ -203,6 +204,30 @@ for line in sys.stdin:
 sys.exit(1)
 ' "$1"
 }
+
+# zj_client_count -> number of attached clients on the target session (0 == headless).
+# `list-clients` has no -j; row 1 is a header, each further non-empty row is a client.
+zj_client_count() { _zj list-clients 2>/dev/null | tail -n +2 | grep -c . ; }
+
+# zj_spawn [new-pane args...] -> spawn a pane; echoes new-pane's status line (terminal_N).
+# Attached: place near the current pane (does NOT steal focus) — the production path.
+# Headless (tests/background): relative/directional placement silently no-ops with no
+#   client, so strip -d/--direction/--near-current-pane and let zellij pick free space.
+zj_spawn() {
+  if [ "$(zj_client_count)" -gt 0 ]; then
+    _zj new-pane --near-current-pane "$@"
+  else
+    local argv=("$@") a=() i=0
+    while [ "$i" -lt "${#argv[@]}" ]; do
+      case "${argv[$i]}" in
+        -d|--direction)      i=$((i+2)); continue ;;
+        --near-current-pane) i=$((i+1)); continue ;;
+      esac
+      a+=("${argv[$i]}"); i=$((i+1))
+    done
+    _zj new-pane "${a[@]}"
+  fi
+}
 ```
 
 - [ ] **Step 4: Run it — verify it passes** — Expected: `resolved alpha -> terminal_N`, `OK: nonexistent rejected`, `ALL OK`.
@@ -228,11 +253,11 @@ set -euo pipefail
 source ~/code/mk-skills/skills/zellij-agent-herder/scripts/zj.sh
 export ZJ_SESSION=zjwait
 zellij kill-session zjwait 2>/dev/null || true; zellij attach -b zjwait
-_zj new-pane --near-current-pane -n w -- bash -c 'sleep 3; echo FRESH_MARKER; sleep 300'
+zj_spawn -n w -- bash -c 'sleep 3; echo FRESH_MARKER; sleep 300'
 id=$(zj_resolve_id w)
 zj_wait_output "$id" "FRESH_MARKER" 15 && echo "OK matched" || { echo FAIL match; exit 1; }
 zj_wait_output "$id" "NEVER_XYZ" 3 && { echo FAIL falsematch; exit 1; } || echo "OK timeout"
-_zj new-pane --near-current-pane -n e -- bash -c 'sleep 2; exit 5'
+zj_spawn -n e -- bash -c 'sleep 2; exit 5'
 eid=$(zj_resolve_id e); st=$(zj_wait_exit "$eid" 15) && echo "OK exit=$st" || { echo FAIL exit; exit 1; }
 [ "$st" = 5 ] || { echo "FAIL status $st"; exit 1; }
 echo "ALL OK"; zellij kill-session zjwait 2>/dev/null || true
@@ -302,7 +327,7 @@ git -C ~/code/mk-skills commit -m "feat(zah): add zj_wait_output and zj_wait_exi
 set -euo pipefail
 HOOK=~/code/mk-skills/skills/zellij-agent-herder/scripts/zellij-agent-status.sh
 zellij kill-session zjhook 2>/dev/null || true; zellij attach -b zjhook
-zellij --session zjhook action new-pane --near-current-pane -n reviewer -- bash -c 'sleep 300'
+zellij --session zjhook action new-pane -n reviewer -- bash -c 'sleep 300'   # plain: headless has no client, so no -d/--near-current-pane
 PID=$(zellij --session zjhook action list-panes -j | python3 -c 'import sys,json;d=json.load(sys.stdin);ps=[p for v in (d.values() if isinstance(d,dict) else [d]) for p in (v if isinstance(v,list) else [v])];print([p for p in ps if str(p.get("title","")).startswith("reviewer")][0]["id"])')
 run(){ echo "$1" | env ZELLIJ_PANE_ID="$PID" ZELLIJ_SESSION_NAME=zjhook bash "$HOOK"; }
 run '{"hook_event_name":"UserPromptSubmit","session_id":"s1"}'
@@ -409,7 +434,7 @@ HOOK=~/code/mk-skills/skills/zellij-agent-herder/scripts/hunk-autodiff.sh
 d=/tmp/zah/hrepo; rm -rf "$d"; mkdir -p "$d"; git -C "$d" init -q
 echo a > "$d/f"; git -C "$d" add -A; git -C "$d" commit -qm init; echo change >> "$d/f"
 zellij kill-session zjhunk 2>/dev/null || true; zellij attach -b zjhunk
-zellij --session zjhunk action new-pane --near-current-pane -n agent -- bash -c 'sleep 300'
+zellij --session zjhunk action new-pane -n agent -- bash -c 'sleep 300'   # plain: headless has no client
 PID=$(zellij --session zjhunk action list-panes -j | python3 -c 'import sys,json;d=json.load(sys.stdin);ps=[p for v in (d.values() if isinstance(d,dict) else [d]) for p in (v if isinstance(v,list) else [v])];print([p for p in ps if str(p.get("title","")).startswith("agent")][0]["id"])')
 rm -rf ~/.cache/zellij-agent-herder
 fire(){ printf '%s' "$1" | env ZELLIJ_PANE_ID="$PID" ZELLIJ_SESSION_NAME=zjhunk bash "$HOOK"; }
@@ -424,8 +449,10 @@ n2=$(zellij --session zjhunk action list-panes -j | grep -o 'hunk:hrepo' | wc -l
 d2=/tmp/zah/clean; rm -rf "$d2"; mkdir -p "$d2"; git -C "$d2" init -q; echo x>"$d2/g"; git -C "$d2" add -A; git -C "$d2" commit -qm init
 fire '{"hook_event_name":"PostToolUse","tool_name":"Write","prompt_id":"p2","cwd":"'"$d2"'","tool_input":{"file_path":"'"$d2"'/g"}}'; sleep 1
 zellij --session zjhunk action list-panes -j | grep -o 'hunk:clean' && { echo "FAIL: opened for clean repo"; exit 1; } || echo "OK: clean repo skipped"
-# subagent -> no pane
-fire '{"hook_event_name":"PostToolUse","tool_name":"Write","prompt_id":"p3","agent_id":"sub","cwd":"'"$d"'","tool_input":{"file_path":"'"$d"'/f"}}'; sleep 1
+# subagent -> no pane (use a fresh repo+prompt_id so only the agent_id guard can gate it)
+d3=/tmp/zah/subrepo; rm -rf "$d3"; mkdir -p "$d3"; git -C "$d3" init -q; echo a>"$d3/f"; git -C "$d3" add -A; git -C "$d3" commit -qm init; echo b>>"$d3/f"
+fire '{"hook_event_name":"PostToolUse","tool_name":"Write","prompt_id":"p3","agent_id":"sub","cwd":"'"$d3"'","tool_input":{"file_path":"'"$d3"'/f"}}'; sleep 1
+zellij --session zjhunk action list-panes -j | grep -o 'hunk:subrepo' && { echo "FAIL: opened for subagent"; exit 1; } || echo "OK: subagent skipped"
 echo "ALL OK"; zellij kill-session zjhunk 2>/dev/null || true
 ```
 
@@ -483,8 +510,18 @@ sess = os.environ.get("ZELLIJ_SESSION_NAME")
 base = ["zellij"] + (["--session", sess] if sess else []) + ["action"]
 cmd = ["hunk","diff","--watch"] if hb else ["bunx","hunkdiff","diff","--watch"]
 name = "hunk:" + os.path.basename(root)
+# Adaptive placement (mirrors zj_spawn; the hook is standalone and can't source zj.sh):
+# relative/directional spawn silently no-ops with no connected client (headless/tests),
+# so only pass --near-current-pane -d right when a client is attached.
+def client_count():
+    try:
+        out = subprocess.run(base + ["list-clients"], capture_output=True, text=True, timeout=2).stdout
+        return sum(1 for ln in out.splitlines()[1:] if ln.strip())
+    except Exception:
+        return 0
+place = ["--near-current-pane", "-d", "right"] if client_count() > 0 else []
 try:
-    subprocess.run(base + ["new-pane","--near-current-pane","-d","right","--cwd",root,"-n",name,"--"] + cmd,
+    subprocess.run(base + ["new-pane"] + place + ["--cwd",root,"-n",name,"--"] + cmd,
                    stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=5)
 except Exception: pass
 PY
@@ -623,8 +660,8 @@ case "$cmd" in
     name="${1:-}"; shift || usage; cwd=""; dir="right"
     while [ $# -gt 0 ]; do case "$1" in
       --cwd) cwd="$2"; shift 2;; --direction) dir="$2"; shift 2;; --) shift; break;; *) break;; esac; done
-    args=(new-pane --near-current-pane -d "$dir" -n "$name"); [ -n "$cwd" ] && args+=(--cwd "$cwd")
-    args+=(-- "$@"); _zj "${args[@]}" ;;
+    args=(-d "$dir" -n "$name"); [ -n "$cwd" ] && args+=(--cwd "$cwd")
+    args+=(-- "$@"); zj_spawn "${args[@]}" ;;   # adaptive: near-current when attached, plain when headless
   ask)
     name="${1:-}"; prompt="${2:-}"; [ -n "$name" ] && [ -n "$prompt" ] || usage
     id="$(zj_resolve_id "$name")"; _zj write-chars -p "$id" "$prompt"; _zj write -p "$id" 13
@@ -697,7 +734,7 @@ Body sections (lean; push detail to references):
 1. **Guard.** Check `$ZELLIJ` is set; if not, say you are not inside zellij and stop.
 2. **Concepts (brief).** sessions→tabs→panes; addressing = `(session, pane_id)`; `--name` is title-only (resolve via `zj_resolve_id`); session via `--session`/`$ZELLIJ_SESSION_NAME`. Non-focus-stealing spawn = `new-pane --near-current-pane`.
 3. **Helpers.** `source "<skill-base-dir>/scripts/zj.sh"` → `_zj`, `zj_resolve_id`, `zj_pane_exists`, `zj_wait_output`, `zj_wait_exit`, `zj_wait_status`. One-line note: all paths are relative to this skill's base directory; never hardcode an install path.
-4. **Core quick reference** (table, ~10 rows): list panes; read `dump-screen -p <id> [--full]`; spawn `new-pane --near-current-pane -d right --cwd DIR -- CMD`; send `write-chars -p <id>` + Enter `write -p <id> 13`; close `close-pane -p <id>`; tabs `go-to-tab-name`; wait output/exit/status via `zj_*`; native one-shot wait `zellij run --block-until-exit-success -- CMD`.
+4. **Core quick reference** (table, ~10 rows): list panes; read `dump-screen -p <id> [--full]`; spawn via `zj_spawn -d right --cwd DIR -n NAME -- CMD` (adaptive: near-current when attached, plain when headless — never call `new-pane --near-current-pane`/`-d` directly, it no-ops with no client); send `write-chars -p <id>` + Enter `write -p <id> 13`; close `close-pane -p <id>`; tabs `go-to-tab-name`; wait output/exit/status via `zj_*`; native one-shot wait `zellij run --block-until-exit-success -- CMD`.
 5. **Peer agents.** One sentence + `**REQUIRED SUB-SKILL / see** references/peer-agents.md` and the `scripts/zellij-peer.sh` one-liner.
 6. **Hooks (status + hunk).** Two sentences: run `install-hooks.sh` once to get pane-title status and the auto `hunk diff --watch` pane on first change; see `references/hooks.md`. Cross-reference the `hunk-review` skill for driving a live session.
 7. **Pointers.** `references/command-reference.md` (full mapping), `references/pitfalls.md` (sharp edges).
