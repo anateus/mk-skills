@@ -148,3 +148,11 @@ for line in sys.stdin:
     sleep "$interval_s"
   done
 }
+
+# Invocation dispatcher: when this file is EXECUTED (not sourced) with args, run the
+# named helper — so non-POSIX shells (fish) that can't `source` it can still call a
+# helper: `bash <dir>/zj.sh zj_spawn -n worker -- bash`. When sourced (the agent path,
+# bash/zsh), BASH_SOURCE != $0 (bash) or $# is 0 (zsh source), so this never fires.
+if [ "${BASH_SOURCE:-$0}" = "$0" ] && [ "$#" -gt 0 ]; then
+  "$@"
+fi

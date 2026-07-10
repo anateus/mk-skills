@@ -427,6 +427,16 @@ for line in sys.stdin:
 }
 ```
 
+**Also append the invocation dispatcher at the very END of `zj.sh`** (last helper, so it stays last). It lets non-POSIX shells (fish — the user's default) call a helper without sourcing: `bash <dir>/scripts/zj.sh zj_spawn -n worker -- bash`. When sourced (the agent path under bash/zsh) it never fires (`BASH_SOURCE != $0` in bash; `$#`==0 on a zsh `source`):
+```bash
+# Invocation dispatcher: when EXECUTED (not sourced) with args, run the named helper —
+# so fish/other non-POSIX shells that can't `source` this can still call one:
+#   bash <dir>/zj.sh zj_spawn -n worker -- bash
+if [ "${BASH_SOURCE:-$0}" = "$0" ] && [ "$#" -gt 0 ]; then
+  "$@"
+fi
+```
+
 - [ ] **Step 5: Run — verify pass** — `ALL OK` (working, idle, subagent no-op).
 
 - [ ] **Step 6: Commit**
