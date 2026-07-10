@@ -784,11 +784,11 @@ git -C ~/code/mk-skills commit -m "docs(zah): reference docs (peer-agents, comma
 ```yaml
 ---
 name: zellij-agent-herder
-description: "Use when running inside zellij (the ZELLIJ env var is set) and you need to control panes/tabs/sessions, spawn or coordinate peer coding agents, wait on their output or status, or watch changes in a live diff. Not for use outside zellij."
+description: "Use when running inside zellij (the ZELLIJ env var is present — zellij sets it to a client index, so ANY value including \"0\" means inside; it's presence, not truthiness) and you need to control panes/tabs/sessions, spawn or coordinate peer coding agents, wait on their output or status, or watch changes in a live diff. Not for use outside zellij."
 ---
 ```
 Body sections (lean; push detail to references):
-1. **Guard.** Check `$ZELLIJ` is set; if not, say you are not inside zellij and stop.
+1. **Guard.** Check `$ZELLIJ` is **set** (to any value); if unset, say you are not inside zellij and stop. Note `ZELLIJ` is a client index — `0` for the primary client — so `0` means inside, not "off"; check presence, never truthiness.
 2. **Concepts (brief).** sessions→tabs→panes; addressing = `(session, pane_id)`; `--name` is title-only (resolve via `zj_resolve_id`); session via `--session`/`$ZELLIJ_SESSION_NAME`. Non-focus-stealing spawn = `new-pane --near-current-pane`.
 3. **Helpers.** `source "<skill-base-dir>/scripts/zj.sh"` → `_zj`, `zj_resolve_id`, `zj_pane_exists`, `zj_wait_output`, `zj_wait_exit`, `zj_wait_status`. One-line note: all paths are relative to this skill's base directory; never hardcode an install path.
 4. **Core quick reference** (table, ~10 rows): list panes; read `dump-screen -p <id> [--full]`; spawn via `zj_spawn -d right --cwd DIR -n NAME -- CMD` (adaptive: near-current when attached, plain when headless — never call `new-pane --near-current-pane`/`-d` directly, it no-ops with no client); send `write-chars -p <id>` + Enter `write -p <id> 13`; close `close-pane -p <id>`; tabs `go-to-tab-name`; wait output/exit/status via `zj_*`; native one-shot wait `zellij run --block-until-exit-success -- CMD`.

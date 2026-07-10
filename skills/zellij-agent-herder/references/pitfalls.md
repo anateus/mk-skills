@@ -40,6 +40,10 @@ Sharp edges of driving zellij headlessly, and how each surfaces.
 
 Walk the skip conditions: is `<cwd>` inside a **git repo**? Is the tree **dirty**? Is a **live hunk session already open** for the repo (`hunk session get --repo <root>` exits 0 — including a stray watcher that outlived its pane)? Did the **per-turn dedup marker** already fire (`~/.cache/zellij-agent-herder/turn-*`)? Is `hunk` on PATH? Any one of these is a deliberate no-op.
 
+## Triggering / the `ZELLIJ` env var
+
+- **`ZELLIJ=0` means inside zellij, not "off".** zellij sets `ZELLIJ` to a **client index** (`0` for the primary/only client; higher values for additional clients attached to the same session). The skill keys on the var being **set to any value** — presence, not truthiness. Any integer (including `0`) means you're inside. Only a genuinely **unset** `ZELLIJ` means "not in zellij." Never write `if [ "$ZELLIJ" = 1 ]` or otherwise treat `0` as false.
+
 ## Portability
 
 - **Never `date +%s%3N`** (no millisecond `%N` on macOS/BSD). All timing uses bash `$SECONDS`.

@@ -1,6 +1,6 @@
 ---
 name: zellij-agent-herder
-description: "Use when running inside zellij (the ZELLIJ env var is set) and you need to control panes/tabs/sessions, spawn or coordinate peer coding agents, wait on their output or status, or watch changes in a live diff. Not for use outside zellij. Requires zellij >= 0.44."
+description: "Use when running inside zellij (the ZELLIJ env var is present — zellij sets it to a client index, so ANY value including \"0\" means inside; it's presence, not truthiness) and you need to control panes/tabs/sessions, spawn or coordinate peer coding agents, wait on their output or status, or watch changes in a live diff. Not for use outside zellij. Requires zellij >= 0.44."
 ---
 
 # zellij-agent-herder
@@ -9,7 +9,7 @@ Control zellij panes/sessions and drive peer coding agents from inside a zellij 
 
 ## Guard
 
-If `$ZELLIJ` is unset you are **not inside zellij** — say so and stop; nothing here applies.
+If `$ZELLIJ` is **unset** you are **not inside zellij** — say so and stop; nothing here applies. If it is **set to any value, proceed** — zellij sets `ZELLIJ` to a client index (`0` for the primary/only client, higher for additional simultaneous clients), so `0` means *inside*, not "off". Check presence, never truthiness.
 
 ## Concepts
 
