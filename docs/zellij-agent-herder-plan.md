@@ -257,6 +257,11 @@ zj_spawn -n w -- bash -c 'sleep 3; echo FRESH_MARKER; sleep 300'
 id=$(zj_resolve_id w)
 zj_wait_output "$id" "FRESH_MARKER" 15 && echo "OK matched" || { echo FAIL match; exit 1; }
 zj_wait_output "$id" "NEVER_XYZ" 3 && { echo FAIL falsematch; exit 1; } || echo "OK timeout"
+# --regex without an explicit interval must engage regex mode (regresses the positional-parse bug):
+# "FRESH_[A-Z]+" matches FRESH_MARKER only as a regex; literal grep -F would false-timeout here.
+zj_wait_output "$id" "FRESH_[A-Z]+" 10 --regex && echo "OK regex" || { echo FAIL regex; exit 1; }
+# pane-missing must return 3:
+rc=0; zj_wait_output terminal_9999 "x" 2 || rc=$?; [ "$rc" -eq 3 ] && echo "OK missing=3" || { echo "FAIL missing=$rc"; exit 1; }
 zj_spawn -n e -- bash -c 'sleep 2; exit 5'
 eid=$(zj_resolve_id e); st=$(zj_wait_exit "$eid" 15) && echo "OK exit=$st" || { echo FAIL exit; exit 1; }
 [ "$st" = 5 ] || { echo "FAIL status $st"; exit 1; }
@@ -269,8 +274,18 @@ echo "ALL OK"; zellij kill-session zjwait 2>/dev/null || true
 ```bash
 # zj_wait_output <pane_id> <match> <timeout_s> [interval_s] [--regex]
 # Polls dump-screen --full (plain) + grep. 0 match / 1 timeout / 3 pane missing.
+# [interval_s] and [--regex] are each independently optional and may appear in
+# any order after <timeout_s>; --regex selects grep -E (else grep -F literal).
 zj_wait_output() {
-  local pane_id="$1" match="$2" timeout_s="$3" interval_s="${4:-0.5}" mode="${5:-}"
+  local pane_id="$1" match="$2" timeout_s="$3"; shift 3
+  local interval_s="0.5" mode=""
+  while [ $# -gt 0 ]; do
+    case "$1" in
+      --regex) mode="--regex" ;;
+      *)       interval_s="$1" ;;
+    esac
+    shift
+  done
   zj_pane_exists "$pane_id" || { echo "zj_wait_output: pane $pane_id not found" >&2; return 3; }
   local start=$SECONDS dump; dump="$(mktemp "${TMPDIR:-/tmp}/zj.XXXXXX")"; trap 'rm -f "$dump"' RETURN
   while :; do
