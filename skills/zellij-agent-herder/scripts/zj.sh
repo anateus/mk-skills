@@ -23,7 +23,7 @@ elif isinstance(data, list): panes = data
 for p in panes:
     if not isinstance(p, dict): continue
     pid = p.get("id")
-    if isinstance(pid, int): p["id"] = "terminal_%d" % pid
+    if isinstance(pid, int): p["id"] = ("plugin_%d" if p.get("is_plugin") else "terminal_%d") % pid
     print(json.dumps(p))
 '
 }
@@ -66,13 +66,16 @@ zj_spawn() {
   if [ "$(zj_client_count)" -gt 0 ]; then
     _zj new-pane --near-current-pane "$@"
   else
-    local argv=("$@") a=() i=0
-    while [ "$i" -lt "${#argv[@]}" ]; do
-      case "${argv[$i]}" in
-        -d|--direction)      i=$((i+2)); continue ;;
-        --near-current-pane) i=$((i+1)); continue ;;
+    # Portable arg-strip (bash AND zsh — SKILL.md tells users to `source` this, and
+    # macOS defaults to zsh whose arrays are 1-indexed). Iterate positional params via
+    # shift; no indexed-array access. Drop -d/--direction (+value) and --near-current-pane.
+    local a=()
+    while [ "$#" -gt 0 ]; do
+      case "$1" in
+        -d|--direction)      shift; if [ "$#" -gt 0 ]; then shift; fi ;;
+        --near-current-pane) shift ;;
+        *)                   a+=("$1"); shift ;;
       esac
-      a+=("${argv[$i]}"); i=$((i+1))
     done
     _zj new-pane "${a[@]}"
   fi

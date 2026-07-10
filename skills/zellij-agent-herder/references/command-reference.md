@@ -6,7 +6,8 @@ Verified against **zellij 0.45.0**. Source `scripts/zj.sh` first; every helper b
 
 - A pane is addressed by the tuple **`(session, pane_id)`**. There is no herdr-style global stable id.
 - `pane_id` is per-session, monotonic, never reused within a session's life, **never stable across restarts** (a new session starts fresh at `terminal_0`/`plugin_0`).
-- `list-panes -j` reports `id` as a **bare int**; `zj.sh` normalizes it to `terminal_<n>` everywhere. `-p terminal_<n>` and `-p <n>` are both accepted by zellij.
+- `list-panes -j` reports `id` as a **bare int**; `zj.sh` normalizes it to `terminal_<n>` (or `plugin_<n>` for plugin panes — zellij keeps separate id counters per type, so `is_plugin` disambiguates a `terminal_2` from a `plugin_2`) everywhere. `-p terminal_<n>` and `-p <n>` are both accepted by zellij.
+- `zj.sh` is sourced into your shell (SKILL.md), so it is written to work under **both bash and zsh** (macOS defaults to zsh) — no bash-only array indexing.
 - Session targeting is the **global** flag before the subcommand: `zellij --session <name> action <cmd>`, or the `ZELLIJ_SESSION_NAME` env var. `action` has no independent `--session` flag. `zj.sh` uses `ZJ_SESSION` (defaults to `$ZELLIJ_SESSION_NAME`).
 - `--name`/`-n` sets the pane **title only** — it is NOT addressable. Resolve name→id via `zj_resolve_id` (matches the full title or the base before `" · "`).
 
@@ -15,7 +16,7 @@ Verified against **zellij 0.45.0**. Source `scripts/zj.sh` first; every helper b
 | Helper | Signature → result |
 |---|---|
 | `_zj` | `_zj <action> [args...]` — run a `zellij action` against `$ZJ_SESSION`. |
-| `_zj_panes` | emits each pane object from `list-panes -j` as one JSON line, `id` normalized to `terminal_<n>` (handles both flat-list and dict-by-tab shapes). |
+| `_zj_panes` | emits each pane object from `list-panes -j` as one JSON line, `id` normalized to `terminal_<n>`/`plugin_<n>` per `is_plugin` (handles both flat-list and dict-by-tab shapes). |
 | `zj_resolve_id` | `<name>` → prints `terminal_<n>` (exit 1 not found, 2 ambiguous). |
 | `zj_pane_exists` | `<pane_id>` → exit 0 if present, else 1. |
 | `zj_client_count` | → number of attached clients (0 == headless). |
