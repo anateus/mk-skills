@@ -80,8 +80,18 @@ zj_spawn() {
 
 # zj_wait_output <pane_id> <match> <timeout_s> [interval_s] [--regex]
 # Polls dump-screen --full (plain) + grep. 0 match / 1 timeout / 3 pane missing.
+# [interval_s] and [--regex] are each independently optional and may appear in
+# any order after <timeout_s>; --regex selects grep -E (else grep -F literal).
 zj_wait_output() {
-  local pane_id="$1" match="$2" timeout_s="$3" interval_s="${4:-0.5}" mode="${5:-}"
+  local pane_id="$1" match="$2" timeout_s="$3"; shift 3
+  local interval_s="0.5" mode=""
+  while [ $# -gt 0 ]; do
+    case "$1" in
+      --regex) mode="--regex" ;;
+      *)       interval_s="$1" ;;
+    esac
+    shift
+  done
   zj_pane_exists "$pane_id" || { echo "zj_wait_output: pane $pane_id not found" >&2; return 3; }
   local start=$SECONDS dump; dump="$(mktemp "${TMPDIR:-/tmp}/zj.XXXXXX")"; trap 'rm -f "$dump"' RETURN
   while :; do
