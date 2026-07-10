@@ -28,7 +28,7 @@ Start at the lowest level that fits. Higher levels cost more tokens and more coo
 
 ### One-shot review
 ```
-id=$(zellij-peer.sh start reviewer --cwd "$PWD" -- claude)
+zellij-peer.sh start reviewer --cwd "$PWD" -- claude   # prints the pane id; later calls resolve by name
 zellij-peer.sh ask reviewer "Review the diff in this repo for correctness bugs. Do NOT edit files. When done, print DONE and stop."
 zellij-peer.sh wait reviewer --status idle --timeout 600
 zellij-peer.sh read reviewer

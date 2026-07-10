@@ -432,7 +432,13 @@ for line in sys.stdin:
 # Invocation dispatcher: when EXECUTED (not sourced) with args, run the named helper —
 # so fish/other non-POSIX shells that can't `source` this can still call one:
 #   bash <dir>/zj.sh zj_spawn -n worker -- bash
-if [ "${BASH_SOURCE:-$0}" = "$0" ] && [ "$#" -gt 0 ]; then
+# Must NEVER fire when sourced; detect per shell (a zsh source can carry preset $#).
+if [ -n "${ZSH_VERSION:-}" ]; then
+  case "${ZSH_EVAL_CONTEXT:-}" in
+    *:file) : ;;                 # sourced — never dispatch
+    *) [ "$#" -gt 0 ] && "$@" ;; # executed as a zsh script
+  esac
+elif [ "${BASH_SOURCE:-$0}" = "$0" ] && [ "$#" -gt 0 ]; then
   "$@"
 fi
 ```

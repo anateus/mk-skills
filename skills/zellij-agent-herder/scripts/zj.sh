@@ -151,8 +151,15 @@ for line in sys.stdin:
 
 # Invocation dispatcher: when this file is EXECUTED (not sourced) with args, run the
 # named helper — so non-POSIX shells (fish) that can't `source` it can still call a
-# helper: `bash <dir>/zj.sh zj_spawn -n worker -- bash`. When sourced (the agent path,
-# bash/zsh), BASH_SOURCE != $0 (bash) or $# is 0 (zsh source), so this never fires.
-if [ "${BASH_SOURCE:-$0}" = "$0" ] && [ "$#" -gt 0 ]; then
-  "$@"
+# helper: `bash <dir>/zj.sh zj_spawn -n worker -- bash`. Must NEVER fire when sourced
+# (the agent path, bash/zsh) — detect sourced-vs-executed robustly per shell, since a
+# zsh `source` can carry preset positional params ($# > 0 is not a safe sourced signal).
+if [ -n "${ZSH_VERSION:-}" ]; then
+  # zsh: ZSH_EVAL_CONTEXT ends in ':file' when sourced (exec is 'toplevel'/'cmdarg').
+  case "${ZSH_EVAL_CONTEXT:-}" in
+    *:file) : ;;                          # sourced — never dispatch
+    *) [ "$#" -gt 0 ] && "$@" ;;          # executed as a zsh script
+  esac
+elif [ "${BASH_SOURCE:-$0}" = "$0" ] && [ "$#" -gt 0 ]; then
+  "$@"                                    # bash: BASH_SOURCE==$0 only when executed
 fi
