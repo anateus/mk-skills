@@ -77,3 +77,37 @@ zj_spawn() {
     _zj new-pane "${a[@]}"
   fi
 }
+
+# zj_wait_output <pane_id> <match> <timeout_s> [interval_s] [--regex]
+# Polls dump-screen --full (plain) + grep. 0 match / 1 timeout / 3 pane missing.
+zj_wait_output() {
+  local pane_id="$1" match="$2" timeout_s="$3" interval_s="${4:-0.5}" mode="${5:-}"
+  zj_pane_exists "$pane_id" || { echo "zj_wait_output: pane $pane_id not found" >&2; return 3; }
+  local start=$SECONDS dump; dump="$(mktemp "${TMPDIR:-/tmp}/zj.XXXXXX")"; trap 'rm -f "$dump"' RETURN
+  while :; do
+    _zj dump-screen -p "$pane_id" --full --path "$dump" >/dev/null 2>&1 || true
+    if [ "$mode" = "--regex" ]; then grep -qE -- "$match" "$dump" 2>/dev/null && return 0
+    else grep -qF -- "$match" "$dump" 2>/dev/null && return 0; fi
+    (( SECONDS - start >= timeout_s )) && return 1
+    sleep "$interval_s"
+  done
+}
+
+# zj_wait_exit <pane_id> <timeout_s> [interval_s] -> prints exit_status. 0 exited / 1 timeout / 3 missing.
+zj_wait_exit() {
+  local pane_id="$1" timeout_s="$2" interval_s="${3:-0.5}"
+  zj_pane_exists "$pane_id" || { echo "zj_wait_exit: pane $pane_id not found" >&2; return 3; }
+  local start=$SECONDS st
+  while :; do
+    st="$(_zj_panes | python3 -c '
+import sys, json
+pid = sys.argv[1]
+for line in sys.stdin:
+    p = json.loads(line)
+    if p.get("id") == pid and p.get("exited"): print(p.get("exit_status","")); sys.exit(0)
+sys.exit(1)
+' "$pane_id")" && { echo "$st"; return 0; }
+    (( SECONDS - start >= timeout_s )) && return 1
+    sleep "$interval_s"
+  done
+}
