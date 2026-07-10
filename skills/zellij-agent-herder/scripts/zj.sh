@@ -121,3 +121,23 @@ sys.exit(1)
     sleep "$interval_s"
   done
 }
+
+# zj_wait_status <pane_id> <status> <timeout_s> [interval_s]  (status: working|idle|blocked)
+zj_wait_status() {
+  local pane_id="$1" want="$2" timeout_s="$3" interval_s="${4:-0.5}"
+  zj_pane_exists "$pane_id" || { echo "zj_wait_status: pane $pane_id not found" >&2; return 3; }
+  local start=$SECONDS cur
+  while :; do
+    cur="$(_zj_panes | python3 -c '
+import sys, json
+pid = sys.argv[1]
+for line in sys.stdin:
+    p = json.loads(line)
+    if p.get("id") == pid:
+        t = str(p.get("title","")); print(t.split(" · ",1)[1] if " · " in t else ""); break
+' "$pane_id")"
+    [ "$cur" = "$want" ] && return 0
+    (( SECONDS - start >= timeout_s )) && return 1
+    sleep "$interval_s"
+  done
+}
