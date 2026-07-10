@@ -290,14 +290,18 @@ zj_wait_output() {
     shift
   done
   zj_pane_exists "$pane_id" || { echo "zj_wait_output: pane $pane_id not found" >&2; return 3; }
-  local start=$SECONDS dump; dump="$(mktemp "${TMPDIR:-/tmp}/zj.XXXXXX")"; trap 'rm -f "$dump"' RETURN
+  # No `trap ... RETURN` — that pseudo-signal is bash-only and errors under zsh (this file
+  # is sourced, macOS defaults to zsh). Single cleanup point after the loop instead.
+  local start=$SECONDS dump rc=1; dump="$(mktemp "${TMPDIR:-/tmp}/zj.XXXXXX")"
   while :; do
     _zj dump-screen -p "$pane_id" --full --path "$dump" >/dev/null 2>&1 || true
-    if [ "$mode" = "--regex" ]; then grep -qE -- "$match" "$dump" 2>/dev/null && return 0
-    else grep -qF -- "$match" "$dump" 2>/dev/null && return 0; fi
-    (( SECONDS - start >= timeout_s )) && return 1
+    if [ "$mode" = "--regex" ]; then grep -qE -- "$match" "$dump" 2>/dev/null && { rc=0; break; }
+    else grep -qF -- "$match" "$dump" 2>/dev/null && { rc=0; break; }; fi
+    (( SECONDS - start >= timeout_s )) && { rc=1; break; }
     sleep "$interval_s"
   done
+  rm -f "$dump"
+  return "$rc"
 }
 
 # zj_wait_exit <pane_id> <timeout_s> [interval_s] -> prints exit_status. 0 exited / 1 timeout / 3 missing.
