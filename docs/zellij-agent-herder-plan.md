@@ -580,11 +580,12 @@ git -C ~/code/mk-skills commit -m "feat(zah): hunk-autodiff PostToolUse hook (li
 ```bash
 #!/usr/bin/env bash
 set -euo pipefail
+INSTALLER="$HOME/code/mk-skills/skills/zellij-agent-herder/scripts/install-hooks.sh"  # resolve under REAL home BEFORE sandboxing HOME
 export HOME=/tmp/zah/fakehome; rm -rf "$HOME"; mkdir -p "$HOME/.claude/hooks"
 cat > "$HOME/.claude/settings.json" <<'JSON'
 {"hooks":{"SessionStart":[{"matcher":"*","hooks":[{"type":"command","command":"echo herdr","timeout":10}]}]}}
 JSON
-bash ~/code/mk-skills/skills/zellij-agent-herder/scripts/install-hooks.sh
+bash "$INSTALLER"
 test -x "$HOME/.claude/hooks/zellij-agent-status.sh" || { echo FAIL status hook; exit 1; }
 test -x "$HOME/.claude/hooks/hunk-autodiff.sh" || { echo FAIL hunk hook; exit 1; }
 python3 - <<'PY'
@@ -598,7 +599,7 @@ assert any("hunk-autodiff.sh" in x["command"] and x.get("async") is True for e i
 assert any(e.get("matcher")=="Edit|Write|MultiEdit|NotebookEdit" for e in pt), "matcher"
 print("hooks OK")
 PY
-bash ~/code/mk-skills/skills/zellij-agent-herder/scripts/install-hooks.sh   # idempotency
+bash "$INSTALLER"   # idempotency
 python3 - <<'PY'
 import json, os
 d = json.load(open(os.path.join(os.environ["HOME"], ".claude/settings.json")))
