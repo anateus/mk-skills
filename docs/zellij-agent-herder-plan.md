@@ -445,8 +445,26 @@ Replicates the `hunk.autodiff` herdr plugin (`~/.config/herdr/plugins/github/hun
 #!/usr/bin/env bash
 set -euo pipefail
 HOOK=~/code/mk-skills/skills/zellij-agent-herder/scripts/hunk-autodiff.sh
+# HERMETIC: `hunk diff --watch` runs under a local daemon and its session OUTLIVES the
+# zellij pane (killing the session does NOT reap the watcher). So (1) use a unique per-run
+# scratch root — the hook's idempotency probe is keyed on the absolute repo path, and a
+# stale live session at a fixed path would make it correctly skip and break a re-run; and
+# (2) reap this run's watchers in an EXIT trap via lsof cwd-match. Basenames stay
+# hrepo/clean/subrepo so the pane-title greps (`hunk:<basename>`) are unchanged.
+RUNTAG="hunkrun$$"; R="/tmp/zah/$RUNTAG"
+cleanup() {
+  if command -v lsof >/dev/null 2>&1; then
+    lsof -a -c hunk -d cwd -Fpn 2>/dev/null \
+      | awk '/^p/{p=substr($0,2)} /^n/{if (index($0,"'"$RUNTAG"'")>0) print p}' \
+      | sort -u | while read -r pid; do kill "$pid" 2>/dev/null || true; done
+  fi
+  zellij kill-session zjhunk 2>/dev/null || true
+  rm -rf "$R"
+}
+trap cleanup EXIT
+mkdir -p "$R"
 # scratch dirty repo
-d=/tmp/zah/hrepo; rm -rf "$d"; mkdir -p "$d"; git -C "$d" init -q
+d="$R/hrepo"; mkdir -p "$d"; git -C "$d" init -q
 echo a > "$d/f"; git -C "$d" add -A; git -C "$d" commit -qm init; echo change >> "$d/f"
 zellij kill-session zjhunk 2>/dev/null || true; zellij attach -b zjhunk
 zellij --session zjhunk action new-pane -n agent -- bash -c 'sleep 300'   # plain: headless has no client
@@ -461,14 +479,14 @@ fire "$J"; sleep 1   # same prompt_id -> no second pane
 n2=$(zellij --session zjhunk action list-panes -j | grep -o 'hunk:hrepo' | wc -l | tr -d ' ')
 [ "$n2" = "1" ] || { echo "FAIL: reopened within same turn, got $n2"; exit 1; }
 # clean repo (no changes) -> no pane
-d2=/tmp/zah/clean; rm -rf "$d2"; mkdir -p "$d2"; git -C "$d2" init -q; echo x>"$d2/g"; git -C "$d2" add -A; git -C "$d2" commit -qm init
+d2="$R/clean"; mkdir -p "$d2"; git -C "$d2" init -q; echo x>"$d2/g"; git -C "$d2" add -A; git -C "$d2" commit -qm init
 fire '{"hook_event_name":"PostToolUse","tool_name":"Write","prompt_id":"p2","cwd":"'"$d2"'","tool_input":{"file_path":"'"$d2"'/g"}}'; sleep 1
 zellij --session zjhunk action list-panes -j | grep -o 'hunk:clean' && { echo "FAIL: opened for clean repo"; exit 1; } || echo "OK: clean repo skipped"
-# subagent -> no pane (use a fresh repo+prompt_id so only the agent_id guard can gate it)
-d3=/tmp/zah/subrepo; rm -rf "$d3"; mkdir -p "$d3"; git -C "$d3" init -q; echo a>"$d3/f"; git -C "$d3" add -A; git -C "$d3" commit -qm init; echo b>>"$d3/f"
+# subagent -> no pane (fresh repo+prompt_id so only the agent_id guard can gate it)
+d3="$R/subrepo"; mkdir -p "$d3"; git -C "$d3" init -q; echo a>"$d3/f"; git -C "$d3" add -A; git -C "$d3" commit -qm init; echo b>>"$d3/f"
 fire '{"hook_event_name":"PostToolUse","tool_name":"Write","prompt_id":"p3","agent_id":"sub","cwd":"'"$d3"'","tool_input":{"file_path":"'"$d3"'/f"}}'; sleep 1
 zellij --session zjhunk action list-panes -j | grep -o 'hunk:subrepo' && { echo "FAIL: opened for subagent"; exit 1; } || echo "OK: subagent skipped"
-echo "ALL OK"; zellij kill-session zjhunk 2>/dev/null || true
+echo "ALL OK"   # cleanup runs in the EXIT trap (reaps watchers + kills session + rm scratch)
 ```
 
 - [ ] **Step 2: Run — verify fail** (hook file missing).
