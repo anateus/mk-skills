@@ -58,6 +58,7 @@ zj_watch_session <parent_repo_root> $BASE session <id>...   # teardown: swap N p
 
 - **During fan-out**, open one `zj_watch_worktree` pane per worktree.
 - **At teardown**, once the worktrees are merged and removed, call `zj_watch_session` once with the pane ids the watchers returned: it closes them (their dirs are gone, so their restart loops would otherwise spin) and opens **one aggregate pane** over the parent tree showing the **whole session's work** — parent tree vs the *same* `$BASE`, spanning every merged commit plus anything uncommitted.
+- **Leave review notes as work lands.** Each `--watch` pane is a live hunk session, so whenever a significant chunk of work completes (a worktree finishes, or the aggregate lands), use the **`/hunk-review`** skill to walk the hunks and drop inline comments on that diff — drive it through `hunk session *`, never a hand-run `hunk diff`. The notes stay attached to the live session for a reviewer or the human to read.
 - **Plain tiled pane, always** — never `--near-current-pane`/`-d`: relative placement no-ops headless *and* misbehaves when the issuing pane isn't the client's focused pane, and a passive watcher has no focus to steal. Both helpers handle this (do **not** route them through `zj_spawn`).
 - **Diff base = the fixed SHA the worktrees branched from**, not `main` (advances when you merge a sibling → phantom "removed" lines) and not `HEAD` (empties on commit — the aggregate pane in particular goes blank the moment merges land).
 
