@@ -1,4 +1,28 @@
-# Hook regime — status + hunk-autodiff
+# Hooks
+
+Two independent hook regimes, installed by separate scripts — install either, both, or neither:
+
+- **Activation hook** (`references/hooks/install-hook.sh`) — a *discovery* aid: a `SessionStart` hook that tells Claude it's inside zellij so this skill triggers reliably. See "Activation hook" below.
+- **Status + hunk-autodiff hooks** (`scripts/install-hooks.sh`) — *operational* aids: live pane-title status and an auto diff pane on file changes. See "Status + hunk-autodiff" below.
+
+---
+
+## Activation hook (`references/hooks/install-hook.sh`)
+
+A `SessionStart` hook (`zellij-activation.sh`) that, when a session starts **inside** zellij, prints the session/pane into Claude's context (for `SessionStart`, plain stdout is added as context — no jq/python needed). That makes the `zellij-agent-herder` skill's trigger match reliably instead of depending on Claude happening to check `$ZELLIJ`.
+
+```
+bash "<skill-base-dir>/references/hooks/install-hook.sh"     # install (idempotent)
+bash "<skill-base-dir>/references/hooks/uninstall-hook.sh"   # remove
+```
+
+Install: copies `zellij-activation.sh` into `~/.claude/hooks/`, backs up `~/.claude/settings.json`, and **appends** a `SessionStart` entry without clobbering existing ones (e.g. herdr's). Re-running is a no-op. Take effect on the **next** session.
+
+The hook no-ops silently outside zellij (`$ZELLIJ` unset) — presence, not truthiness, so `0` still counts as inside. Uninstall removes only this hook's entry and file; other `SessionStart` hooks are left intact.
+
+---
+
+## Status + hunk-autodiff (`scripts/install-hooks.sh`)
 
 Two Claude Code lifecycle hooks, both installed by one script. They give an agent running in a zellij pane a live status in its pane title and an automatic diff pane when it starts changing files.
 

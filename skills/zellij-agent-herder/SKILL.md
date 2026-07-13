@@ -11,6 +11,8 @@ Control zellij panes/sessions and drive peer coding agents from inside a zellij 
 
 If `$ZELLIJ` is **unset** you are **not inside zellij** — say so and stop; nothing here applies. If it is **set to any value, proceed** — zellij sets `ZELLIJ` to a client index (`0` for the primary/only client, higher for additional simultaneous clients), so `0` means *inside*, not "off". Check presence, never truthiness.
 
+**Reliable activation (optional).** This skill fires only when Claude notices it's inside zellij. If that gets missed at session start, offer to install a lightweight `SessionStart` hook that surfaces the zellij session into context every session: `bash "<skill-base-dir>/references/hooks/install-hook.sh"` (undo with `uninstall-hook.sh` in the same dir). It's a discovery aid, separate from the operational status/hunk hooks below — see `references/hooks.md`.
+
 ## Concepts
 
 - Hierarchy: **session → tabs → panes**. A pane is addressed by `(session, pane_id)`; there are no stable global ids.
