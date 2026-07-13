@@ -81,6 +81,30 @@ zj_spawn() {
   fi
 }
 
+# zj_watch_worktree <worktree_abs_path> <base_sha> [label] -> spawns a passive,
+# human-facing `hunk diff <base_sha> --watch` pane over a worktree; echoes its terminal_N.
+# For watching HEADLESS worktree subagents (Agent tool, isolation:"worktree") live: the
+# agents run headless with structured returns; this pane is only for the human to watch.
+# ALWAYS a plain tiled new-pane (never -d/--near-current-pane): relative placement no-ops
+# headless AND misbehaves when the issuing pane isn't the client's focused pane, and a
+# passive watcher has no focus to steal — so zj_spawn's attached-path is wrong here.
+# Diff base MUST be the fixed SHA the worktrees branched from: `main` advances when you
+# merge a sibling -> phantom "removed" lines in the others; `HEAD` empties on commit.
+# Restart loop keeps the pane alive while the worktree is still clean (hunk exits on an
+# empty diff); the next iteration picks up the agent's first write. Close with
+# `_zj close-pane -p <id>` at worktree teardown, else hunk errors once the dir vanishes.
+zj_watch_worktree() {
+  local wt="$1" base="$2"
+  local label="${3:-$(basename "$wt")}"
+  command -v hunk >/dev/null 2>&1 || { echo "zj_watch_worktree: hunk not on PATH" >&2; return 2; }
+  _zj new-pane --name "diff:$label" --cwd "$wt" \
+    -- bash -lc "while true; do hunk diff $base --watch; sleep 2; done" >/dev/null 2>&1
+  local id
+  id="$(zj_resolve_id "diff:$label")" \
+    || { echo "zj_watch_worktree: pane 'diff:$label' did not appear (spawn no-op?)" >&2; return 1; }
+  echo "$id"
+}
+
 # zj_wait_output <pane_id> <match> <timeout_s> [interval_s] [--regex]
 # Polls dump-screen --full (plain) + grep. 0 match / 1 timeout / 3 pane missing.
 # [interval_s] and [--regex] are each independently optional and may appear in
