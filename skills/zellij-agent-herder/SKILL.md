@@ -22,7 +22,7 @@ If `$ZELLIJ` is **unset** you are **not inside zellij** — say so and stop; not
 
 ## Helpers
 
-`source "<skill-base-dir>/scripts/zj.sh"` (bash/zsh) — gives `_zj`, `_zj_panes`, `zj_resolve_id`, `zj_pane_exists`, `zj_client_count`, `zj_spawn`, `zj_watch_worktree`, `zj_wait_output`, `zj_wait_exit`, `zj_wait_status`. All paths are relative to this skill's base directory (printed on load); never hardcode an install path.
+`source "<skill-base-dir>/scripts/zj.sh"` (bash/zsh) — gives `_zj`, `_zj_panes`, `zj_resolve_id`, `zj_pane_exists`, `zj_client_count`, `zj_spawn`, `zj_watch_worktree`, `zj_watch_session`, `zj_wait_output`, `zj_wait_exit`, `zj_wait_status`. All paths are relative to this skill's base directory (printed on load); never hardcode an install path.
 
 **From fish or another non-POSIX shell** (can't source a bash lib): invoke a helper instead — `bash "<skill-base-dir>/scripts/zj.sh" zj_spawn -n worker -- bash`, `bash "<skill-base-dir>/scripts/zj.sh" zj_wait_output <id> <match> 10`. The peer wrapper and installer are already invocation-based, so they work from any shell.
 
@@ -50,12 +50,16 @@ To spawn/drive peer coding agents, use `scripts/zellij-peer.sh {start\|ask\|wait
 Herding isn't only for interactive peer panes. When a controller dispatches **headless** worktree subagents (the `Agent` tool with `isolation: "worktree"`), this skill still applies — to open **one passive, human-facing `hunk diff --watch` pane per worktree** so you can watch each agent's changeset live. The agents stay headless with structured returns; the panes are just for the human. Don't conclude "not a herder task" because the agents aren't interactive — the watching is the herder part.
 
 ```
-zj_watch_worktree <worktree_abs_path> <base_sha> [label]   # echoes the pane id
+BASE=$(git rev-parse HEAD)                                 # fixed branch point, capture once
+zj_watch_worktree <worktree_abs_path> $BASE [label]        # one per worktree; echoes the pane id
+# ... fan-out runs; controller merges each worktree into the parent tree in order ...
+zj_watch_session <parent_repo_root> $BASE session <id>...   # teardown: swap N panes for 1 aggregate
 ```
 
-- **Plain tiled pane, always** — never `--near-current-pane`/`-d`: relative placement no-ops headless *and* misbehaves when the issuing pane isn't the client's focused pane, and a passive watcher has no focus to steal. `zj_watch_worktree` handles this (do **not** route it through `zj_spawn`).
-- **Diff base = the fixed SHA the worktrees branched from**, not `main` (advances when you merge a sibling → phantom "removed" lines) and not `HEAD` (empties on commit).
-- **Close each pane at teardown** (`_zj close-pane -p <id>`) when its worktree is merged/removed, or `hunk` errors once the dir vanishes and the restart loop spins.
+- **During fan-out**, open one `zj_watch_worktree` pane per worktree.
+- **At teardown**, once the worktrees are merged and removed, call `zj_watch_session` once with the pane ids the watchers returned: it closes them (their dirs are gone, so their restart loops would otherwise spin) and opens **one aggregate pane** over the parent tree showing the **whole session's work** — parent tree vs the *same* `$BASE`, spanning every merged commit plus anything uncommitted.
+- **Plain tiled pane, always** — never `--near-current-pane`/`-d`: relative placement no-ops headless *and* misbehaves when the issuing pane isn't the client's focused pane, and a passive watcher has no focus to steal. Both helpers handle this (do **not** route them through `zj_spawn`).
+- **Diff base = the fixed SHA the worktrees branched from**, not `main` (advances when you merge a sibling → phantom "removed" lines) and not `HEAD` (empties on commit — the aggregate pane in particular goes blank the moment merges land).
 
 This is the controller-driven fan-out counterpart to the hunk hook below, which only follows the *current* agent's own edits (subagents are intentionally no-pane).
 

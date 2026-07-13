@@ -105,6 +105,22 @@ zj_watch_worktree() {
   echo "$id"
 }
 
+# zj_watch_session <parent_repo_root> <base_sha> <label> [worktree_pane_id...]
+# Teardown counterpart to zj_watch_worktree. After the fan-out is merged into the parent
+# tree and the worktrees are removed, call this once: it closes each per-worktree diff pane
+# you list (their dirs are gone, so their restart loops would otherwise spin on the error)
+# and opens ONE aggregate pane over the parent tree showing the whole session's work —
+# parent working tree vs the SAME fixed <base_sha> the fan-out branched from, so it spans
+# every merged commit plus anything still uncommitted. Same fixed-base rule as
+# zj_watch_worktree: NOT HEAD, which is empty once the merges are committed. Echoes the
+# aggregate pane's terminal_N.
+zj_watch_session() {
+  local root="$1" base="$2" label="$3"; shift 3
+  local id
+  for id in "$@"; do _zj close-pane -p "$id" >/dev/null 2>&1 || true; done
+  zj_watch_worktree "$root" "$base" "$label"
+}
+
 # zj_wait_output <pane_id> <match> <timeout_s> [interval_s] [--regex]
 # Polls dump-screen --full (plain) + grep. 0 match / 1 timeout / 3 pane missing.
 # [interval_s] and [--regex] are each independently optional and may appear in
