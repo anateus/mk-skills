@@ -18,9 +18,12 @@ if evt == "Notification":
     # agent_completed, ...); only a real permission prompt means "blocked".
     if str(h.get("notification_type") or "") != "permission_prompt": sys.exit(0)
     status = "blocked"
+elif evt == "SessionEnd":
+    status = None                                  # clear the suffix, don't stamp one
+elif evt not in ("UserPromptSubmit", "Stop"):
+    sys.exit(0)
 else:
-    status = {"UserPromptSubmit":"working","Stop":"idle"}.get(evt)
-if not status: sys.exit(0)
+    status = {"UserPromptSubmit":"working","Stop":"idle"}[evt]
 pane = os.environ.get("ZELLIJ_PANE_ID"); sess = os.environ.get("ZELLIJ_SESSION_NAME")
 if not pane: sys.exit(0)
 pane_arg = pane if pane.startswith(("terminal_","plugin_")) else "terminal_%s" % pane
@@ -37,6 +40,7 @@ try:
         if pid == pane_arg: title = str(p.get("title","")); break
 except Exception: title = ""
 base = title.split(" · ")[0] if title else "agent"
-try: subprocess.run(base_cmd+["rename-pane","-p",pane_arg,"%s · %s" % (base, status)], timeout=2)
+new_title = base if status is None else "%s · %s" % (base, status)
+try: subprocess.run(base_cmd+["rename-pane","-p",pane_arg,new_title], timeout=2)
 except Exception: pass
 PY

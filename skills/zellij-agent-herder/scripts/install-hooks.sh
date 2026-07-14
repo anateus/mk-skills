@@ -23,7 +23,7 @@ def ensure(event, cmd, matcher=None, extra=None):
     g = {"hooks":[entry]}
     if matcher is not None: g["matcher"] = matcher
     groups.append(g)
-for ev in ("UserPromptSubmit","Stop","Notification"): ensure(ev, status_cmd)
+for ev in ("UserPromptSubmit","Stop","Notification","SessionEnd"): ensure(ev, status_cmd)
 ensure("PostToolUse", hunk_cmd, matcher="Edit|Write|MultiEdit|NotebookEdit", extra={"async": True})
 json.dump(cfg, open(path,"w"), indent=2); open(path,"a").write("\n")
 print("installed zellij-agent-herder hooks into", path)

@@ -36,7 +36,7 @@ Idempotent and safe to re-run. It:
 1. Copies `zellij-agent-status.sh` and `hunk-autodiff.sh` into `~/.claude/hooks/` (chmod +x).
 2. Backs up `~/.claude/settings.json` (`.bak.<timestamp>`).
 3. Registers, without clobbering existing hooks (e.g. herdr's `SessionStart`):
-   - `UserPromptSubmit`, `Stop`, `Notification` → `zellij-agent-status.sh`
+   - `UserPromptSubmit`, `Stop`, `Notification`, `SessionEnd` → `zellij-agent-status.sh`
    - `PostToolUse` (matcher `Edit|Write|MultiEdit|NotebookEdit`, `"async": true`) → `hunk-autodiff.sh`
 
 ## Status hook (`zellij-agent-status.sh`)
@@ -48,8 +48,11 @@ Stamps `"<base> · <status>"` into the current pane's title:
 | `UserPromptSubmit` | `working` |
 | `Notification` (`notification_type: permission_prompt` only) | `blocked` |
 | `Stop` | `idle` |
+| `SessionEnd` | *(cleared — title reverts to just `<base>`, no suffix)* |
 
 `Notification` fires for several distinct subtypes — `permission_prompt`, `idle_prompt` (a "you've been idle" nudge, not actually blocked), `agent_completed`, etc. Only `permission_prompt` maps to `blocked`; other `Notification` subtypes are ignored so an agent that's simply idle doesn't get mislabeled as blocked.
+
+`SessionEnd` fires whenever the Claude Code process actually exits (`/exit`, Ctrl+D, `/clear`, logout, etc.) — without it, the last stamped status (e.g. `blocked`) stays stuck in the pane title forever after the agent is gone, since none of the other three events fire on exit. The hook strips the `" · <status>"` suffix back to the bare base title rather than stamping a new status.
 
 No-ops when: run outside zellij (`ZELLIJ_PANE_ID` unset), `zellij`/`python3` absent, the hook JSON carries an `agent_id` (a **subagent** — never stamp its parent's pane), the event is `SubagentStop` (never revive idle), or a `Notification` whose `notification_type` isn't `permission_prompt`. The separator is `" · "` (space, U+00B7, space), byte-identical to what `zj_resolve_id`/`zj_wait_status` split on. `zj_wait_status` reads it back.
 
