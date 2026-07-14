@@ -46,10 +46,12 @@ Stamps `"<base> · <status>"` into the current pane's title:
 | Event | Status |
 |---|---|
 | `UserPromptSubmit` | `working` |
-| `Notification` | `blocked` |
+| `Notification` (`notification_type: permission_prompt` only) | `blocked` |
 | `Stop` | `idle` |
 
-No-ops when: run outside zellij (`ZELLIJ_PANE_ID` unset), `zellij`/`python3` absent, the hook JSON carries an `agent_id` (a **subagent** — never stamp its parent's pane), or the event is `SubagentStop` (never revive idle). The separator is `" · "` (space, U+00B7, space), byte-identical to what `zj_resolve_id`/`zj_wait_status` split on. `zj_wait_status` reads it back.
+`Notification` fires for several distinct subtypes — `permission_prompt`, `idle_prompt` (a "you've been idle" nudge, not actually blocked), `agent_completed`, etc. Only `permission_prompt` maps to `blocked`; other `Notification` subtypes are ignored so an agent that's simply idle doesn't get mislabeled as blocked.
+
+No-ops when: run outside zellij (`ZELLIJ_PANE_ID` unset), `zellij`/`python3` absent, the hook JSON carries an `agent_id` (a **subagent** — never stamp its parent's pane), the event is `SubagentStop` (never revive idle), or a `Notification` whose `notification_type` isn't `permission_prompt`. The separator is `" · "` (space, U+00B7, space), byte-identical to what `zj_resolve_id`/`zj_wait_status` split on. `zj_wait_status` reads it back.
 
 ## hunk-autodiff hook (`hunk-autodiff.sh`)
 

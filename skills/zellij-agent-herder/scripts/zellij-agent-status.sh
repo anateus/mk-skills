@@ -13,7 +13,13 @@ except Exception: h = {}
 if h.get("agent_id"): sys.exit(0)                 # subagent — ignore
 evt = str(h.get("hook_event_name") or "")
 if evt == "SubagentStop": sys.exit(0)             # never revive idle
-status = {"UserPromptSubmit":"working","Notification":"blocked","Stop":"idle"}.get(evt)
+if evt == "Notification":
+    # Notification fires for several subtypes (permission_prompt, idle_prompt,
+    # agent_completed, ...); only a real permission prompt means "blocked".
+    if str(h.get("notification_type") or "") != "permission_prompt": sys.exit(0)
+    status = "blocked"
+else:
+    status = {"UserPromptSubmit":"working","Stop":"idle"}.get(evt)
 if not status: sys.exit(0)
 pane = os.environ.get("ZELLIJ_PANE_ID"); sess = os.environ.get("ZELLIJ_SESSION_NAME")
 if not pane: sys.exit(0)
