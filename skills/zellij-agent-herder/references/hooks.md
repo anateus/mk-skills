@@ -58,7 +58,7 @@ No-ops when: run outside zellij (`ZELLIJ_PANE_ID` unset), `zellij`/`python3` abs
 
 ## hunk-autodiff hook (`hunk-autodiff.sh`)
 
-On the agent's **first file change in a worktree this turn**, opens `hunk diff --watch` beside the agent pane (adaptive spawn — beside when attached, plain when headless).
+On the agent's **first file change in a worktree this turn**, opens `hunk diff --watch` in a plain tiled pane (never `--near-current-pane`/`-d` — see `references/pitfalls.md` on why that misplaces/hides the pane when a background agent, not the human, issues the spawn).
 
 Skips when: outside zellij; subagent (`agent_id`); not a git repo; clean tree; a live hunk session already tracks the repo (`hunk session get --repo <root>` exits 0); or a per-`(root, prompt_id)` dedup marker under `~/.cache/zellij-agent-herder/` already fired this turn (written **before** opening, so a retry within the turn won't double-open).
 

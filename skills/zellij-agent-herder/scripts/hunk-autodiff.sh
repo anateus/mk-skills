@@ -1,6 +1,6 @@
 #!/bin/sh
 # PostToolUse hook: on the agent's first file change in a worktree this turn,
-# open `hunk diff --watch` beside the agent pane (no focus steal). Idempotent.
+# open `hunk diff --watch` in a plain tiled pane. Idempotent.
 # Skips: outside zellij, subagents, non-git / clean trees, a live hunk session
 # already open for the repo, or a pane already opened this turn for this root.
 set -eu
@@ -48,18 +48,16 @@ sess = os.environ.get("ZELLIJ_SESSION_NAME")
 base = ["zellij"] + (["--session", sess] if sess else []) + ["action"]
 cmd = ["hunk","diff","--watch"] if hb else ["bunx","hunkdiff","diff","--watch"]
 name = "hunk:" + os.path.basename(root)
-# Adaptive placement (mirrors zj_spawn; the hook is standalone and can't source zj.sh):
-# relative/directional spawn silently no-ops with no connected client (headless/tests),
-# so only pass --near-current-pane -d right when a client is attached.
-def client_count():
-    try:
-        out = subprocess.run(base + ["list-clients"], capture_output=True, text=True, timeout=2).stdout
-        return sum(1 for ln in out.splitlines()[1:] if ln.strip())
-    except Exception:
-        return 0
-place = ["--near-current-pane", "-d", "right"] if client_count() > 0 else []
+# Always a plain tiled new-pane — never --near-current-pane/-d. That flag silently
+# no-ops with no connected client (headless), AND misbehaves even when a client IS
+# attached if the issuing pane (this agent's) isn't the client's *focused* pane: it
+# prints a terminal_N but the pane never actually appears (see pitfalls.md). Since
+# this hook fires from a background agent the human likely isn't looking at, that
+# mismatch is the common case, not the edge case — so it's never safe here. A
+# passive watcher pane has no focus to steal, so plain placement costs nothing
+# (zj_watch_worktree in zj.sh applies the same rule for the same reason).
 try:
-    subprocess.run(base + ["new-pane"] + place + ["--cwd",root,"-n",name,"--"] + cmd,
+    subprocess.run(base + ["new-pane","--cwd",root,"-n",name,"--"] + cmd,
                    stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=5)
 except Exception: pass
 PY
