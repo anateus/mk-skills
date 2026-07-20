@@ -23,17 +23,17 @@ test ! -e "$ORPHAN_CLAUDE/hooks/zellij-agent-status.sh"
 test -e "$ORPHAN_CLAUDE/hooks/unrelated.sh"
 test ! -e "$ORPHAN_CLAUDE/settings.json"
 
-printf ' { "hooks" : { "Stop" : [ { "hooks" : [ { "command" : "unrelated-only" } ] } ] } } \n' > "$CLAUDE/settings.json"
+printf ' { "hooks" : { "Stop" : [ { "hooks" : [ { "command" : "unrelated-only" } ] } ], "EmptyEvent" : [ ], "EmptyGroup" : [ { "hooks" : [ ] } ] } } \n' > "$CLAUDE/settings.json"
 cp "$CLAUDE/settings.json" "$TMP/unrelated-before.json"
 CLAUDE_CONFIG_DIR="$CLAUDE" CODEX_CONFIG_DIR="$CODEX" bash "$INSTALLER" --uninstall --claude
 cmp "$TMP/unrelated-before.json" "$CLAUDE/settings.json"
 test -z "$(find "$CLAUDE" -maxdepth 1 -name 'settings.json.bak.*' -print)"
 
 cat > "$CLAUDE/settings.json" <<'JSON'
-{"theme":"dark","hooks":{"Stop":[{"hooks":[{"type":"command","command":"unrelated-claude"}]}]}}
+{"theme":"dark","hooks":{"Stop":[{"hooks":[{"type":"command","command":"unrelated-claude"}]}],"EmptyEvent":[],"EmptyGroup":[{"matcher":"keep-claude","hooks":[]}]}}
 JSON
 cat > "$CODEX/hooks.json" <<'JSON'
-{"version":1,"hooks":{"Stop":[{"hooks":[{"type":"command","command":"unrelated-codex"}]}]}}
+{"version":1,"hooks":{"Stop":[{"hooks":[{"type":"command","command":"unrelated-codex"}]}],"EmptyEvent":[],"EmptyGroup":[{"matcher":"keep-codex","hooks":[]}]}}
 JSON
 
 run_installer() {
@@ -56,6 +56,10 @@ import json, sys
 c, x = map(lambda p: json.load(open(p)), sys.argv[1:])
 assert c["theme"] == "dark"
 assert x["version"] == 1
+assert c["hooks"]["EmptyEvent"] == []
+assert c["hooks"]["EmptyGroup"] == [{"matcher": "keep-claude", "hooks": []}]
+assert x["hooks"]["EmptyEvent"] == []
+assert x["hooks"]["EmptyGroup"] == [{"matcher": "keep-codex", "hooks": []}]
 assert sum("zellij-origin.sh" in h.get("command", "") for g in c["hooks"]["SessionStart"] for h in g["hooks"]) == 1
 assert sum("hunk-autodiff.sh" in h.get("command", "") for g in x["hooks"]["PostToolUse"] for h in g["hooks"]) == 1
 assert all(h.get("async") is True for g in c["hooks"]["PostToolUse"] for h in g["hooks"] if "hunk-autodiff.sh" in h.get("command", ""))
@@ -83,6 +87,9 @@ python3 - "$CLAUDE/settings.json" "$CODEX/hooks.json" <<'PY'
 import json, sys
 for path in sys.argv[1:]:
     cfg = json.load(open(path))
+    assert cfg["hooks"]["EmptyEvent"] == []
+    assert len(cfg["hooks"]["EmptyGroup"]) == 1
+    assert cfg["hooks"]["EmptyGroup"][0]["hooks"] == []
     commands = [h.get("command", "") for groups in cfg.get("hooks", {}).values() for g in groups for h in g.get("hooks", [])]
     assert any("unrelated" in command for command in commands)
     assert not any(any(name in command for name in ("zellij-agent-status.sh", "hunk-autodiff.sh", "zellij-origin.sh")) for command in commands)

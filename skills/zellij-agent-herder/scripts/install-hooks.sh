@@ -102,6 +102,7 @@ def remove_owned():
         if not isinstance(groups, list):
             continue
         kept = []
+        event_removed = False
         for group in groups:
             if not isinstance(group, dict):
                 kept.append(group)
@@ -111,13 +112,17 @@ def remove_owned():
                 kept.append(group)
                 continue
             remaining = [entry for entry in entries if not owned(entry)]
-            if len(remaining) != len(entries):
+            group_removed = len(remaining) != len(entries)
+            if group_removed:
                 removed = True
-            if remaining:
+                event_removed = True
+            if not group_removed:
+                kept.append(group)
+            elif remaining:
                 updated = dict(group)
                 updated["hooks"] = remaining
                 kept.append(updated)
-        if kept:
+        if kept or not event_removed:
             hooks[event] = kept
         else:
             del hooks[event]
