@@ -140,6 +140,22 @@ The curated skills and `zellij-agent-herder` must compose without depending on o
 
 This creates a clean seam: the curated skills decide what engineering work is appropriate, while `zellij-agent-herder` can provide the execution topology when the user or environment chooses it.
 
+#### Pane identity breadcrumbs
+
+Agent panes receive a stable breadcrumb identity when `zellij-agent-herder` creates them or its lifecycle hook first observes them. Each identity contains a curated emoji, a full name, and initials. A useful native agent session name is preferred; generic labels such as `agent`, `claude`, `codex`, `yolo-claude`, `yolo-codex`, spinner-prefixed variants, and names identical to the repository or directory are rejected. When no useful native name is available, the skill generates and persists an adjective-noun fallback.
+
+Lineage metadata is stored in a cache keyed by zellij session and pane ID rather than recovered from presentation text. Child panes inherit the parent's lineage and can propagate it to grandchildren. Identities remain stable once assigned.
+
+Titles render the full leaf and abbreviated ancestors while preserving the existing byte-compatible status suffix:
+
+```text
+mk-skills (🦀 funky-crab) · working
+🦀 f-c > 🌿 glamorous-lemur · working
+🦀 f-c > 🌿 g-l > 🍜 mutinous-ocelot · working
+```
+
+The emoji allowlist uses concrete animals, plants, foods, tools, vehicles, and ordinary objects. It excludes faces, people, gestures, flags, abstract symbols, geometric shapes, and presentation-dependent sequences. Plain panes remain unaffected unless created through the peer wrapper or observed through the installed agent lifecycle hook.
+
 ## Repository Layout
 
 ```text
@@ -246,6 +262,8 @@ Use representative pressure scenarios to compare baseline, selective, and strict
 - strict mode increases sequencing adherence without inventing PR or tracker work.
 - the same plan can execute locally or through `zellij-agent-herder` without changing its engineering requirements;
 - peer-agent use adds coordination and result verification without becoming mandatory.
+- parent, child, and grandchild agent panes render stable emoji-and-name breadcrumbs while preserving status parsing;
+- generic native pane names fall back to a persisted curated identity.
 
 ### Curation tests
 
@@ -259,9 +277,10 @@ Use representative pressure scenarios to compare baseline, selective, and strict
 1. Establish the Codex plugin, policy schema, selector, and strict-mode injection.
 2. Add the curated skills and structural validation.
 3. Add behavioral tests for selective and strict profiles, including optional `zellij-agent-herder` composition.
-4. Add provenance, upstream-review tooling, and attribution.
-5. Complete the Claude Code adapter using shared policy fixtures.
-6. Update installation documentation for both supported harnesses.
+4. Add stable pane identity breadcrumbs to `zellij-agent-herder`.
+5. Add provenance, upstream-review tooling, and attribution.
+6. Complete the Claude Code adapter using shared policy fixtures.
+7. Update installation documentation for both supported harnesses.
 
 Claude compatibility is a required delivery milestone. It may follow the Codex implementation, but the initial project is not complete until both adapters pass the shared policy tests.
 

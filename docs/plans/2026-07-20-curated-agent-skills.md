@@ -361,9 +361,70 @@ Expected: tests pass; the zellij directory has no implementation changes from th
 
 ---
 
-### Task 7: Provenance and upstream conceptual-merge tooling
+### Task 7: Zellij pane identity breadcrumbs
 
-**Depends on:** Tasks 3-6
+**Depends on:** Task 6
+
+**Files:**
+
+- Create: `skills/zellij-agent-herder/scripts/pane-identity.py`
+- Modify: `skills/zellij-agent-herder/scripts/zellij-peer.sh`
+- Modify: `skills/zellij-agent-herder/scripts/zellij-agent-status.sh`
+- Modify: `skills/zellij-agent-herder/scripts/zj.sh`
+- Modify: `skills/zellij-agent-herder/SKILL.md`
+- Modify: `skills/zellij-agent-herder/references/peer-agents.md`
+- Modify: `skills/zellij-agent-herder/references/hooks.md`
+- Create: `skills/zellij-agent-herder/tests/test-pane-identity.py`
+
+**Interfaces:**
+
+- `pane-identity.py assign|render|child|remove` manages JSON metadata under `${XDG_CACHE_HOME:-$HOME/.cache}/zellij-agent-herder/panes/<session>/<pane>.json`.
+- Each identity contains `emoji`, `name`, `short`, and ordered `ancestors`.
+- Useful native names are preferred; generic agent labels, spinner prefixes, and cwd/repository names are rejected.
+- Fallback identities are stable adjective-noun names paired with emojis from a curated concrete allowlist.
+- Rendered titles retain the exact ` · working|idle|blocked` suffix consumed by existing helpers.
+
+- [ ] **Step 1: Write failing hermetic identity tests**
+
+Use temporary cache homes and fixture pane JSON. Cover useful native names, every generic-name class, deterministic persisted fallback, emoji-category exclusions, parent/child/grandchild rendering, status suffix preservation, session-scoped pane IDs, removal, and titles long enough to require ancestor initials.
+
+- [ ] **Step 2: Confirm the tests fail**
+
+Run: `python3 skills/zellij-agent-herder/tests/test-pane-identity.py -v`
+
+Expected: import/file failure because `pane-identity.py` does not exist.
+
+- [ ] **Step 3: Implement identity assignment and rendering**
+
+Use Python standard-library JSON, pathlib, hashing/randomness seeded once per persisted identity, and atomic replace. Store metadata as the source of truth; never reconstruct ancestry from the rendered title. Keep the emoji pool limited to single concrete emoji from animals, plants, foods, tools, vehicles, and ordinary objects.
+
+- [ ] **Step 4: Integrate peer spawning and lifecycle status**
+
+After `zj_spawn` resolves the real child pane ID, assign child metadata from the current parent pane and rename it to the rendered breadcrumb. The status hook initializes a parent identity on first observation, accepts useful native session-name fields when present, and renders the cached base plus existing status suffix. `SessionEnd` removes only the status suffix; close operations remove the pane cache record.
+
+- [ ] **Step 5: Update resolution and documentation**
+
+Teach helper resolution to match stable identity names and rendered bases without breaking explicit pane IDs or the existing status separator. Document breadcrumb examples, generic-name fallback, cache location, and the fact that plain panes remain unaffected.
+
+- [ ] **Step 6: Verify identity and existing zellij behavior**
+
+Run:
+
+```bash
+python3 skills/zellij-agent-herder/tests/test-pane-identity.py -v
+node --test tests/hooks/*.test.js tests/skills/*.test.js
+git diff --check
+```
+
+Expected: identity tests pass, curated-skill tests remain green, and status suffix parsing remains unchanged.
+
+**Review boundary:** Nested agent panes are visually traceable without making zellij mandatory or destabilizing pane addressing/status behavior.
+
+---
+
+### Task 8: Provenance and upstream conceptual-merge tooling
+
+**Depends on:** Tasks 3-7
 
 **Files:**
 
@@ -425,9 +486,9 @@ Expected: all tests pass and fixture manifests remain byte-for-byte unchanged af
 
 ---
 
-### Task 8: Claude adapter, unified validation, and documentation
+### Task 9: Claude adapter, unified validation, and documentation
 
-**Depends on:** Tasks 2 and 6-7
+**Depends on:** Tasks 2 and 6-8
 
 **Files:**
 
@@ -503,10 +564,10 @@ The dependency frontier is:
 
 ```text
 Task 1
-├── Task 2 ───────────────┐
-└── Task 3 → Task 4 → Task 5 → Task 6
-                                  ├── Task 7
-                                  └─────────── Task 8 (also needs Task 2 and Task 7)
+├── Task 2 ───────────────────────┐
+└── Task 3 → Task 4 → Task 5 → Task 6 → Task 7
+                                           └── Task 8
+                                                └── Task 9 (also needs Task 2)
 ```
 
 Tasks on the same frontier may run through `zellij-agent-herder` when the user chooses peer execution and file ownership is kept disjoint. A safe initial split after Task 1 is:
@@ -514,13 +575,13 @@ Tasks on the same frontier may run through `zellij-agent-herder` when the user c
 - one worker on Task 2 (`.codex-plugin/`, `hooks/`, hook tests);
 - one worker on Task 3 (`skills/clarifying-work`, `specifying-work`, `planning-work`, skill tests).
 
-Tasks 4-6 should remain sequential because they share skill contract tests and profile language. Task 7 can begin after Task 6 while a separate reviewer checks Tasks 2-6, but Task 8 integrates all prior interfaces and should run last.
+Tasks 4-7 should remain sequential because they share skill contracts or zellij title behavior. Task 8 can begin after Task 7 while a separate reviewer checks Tasks 4-7, but Task 9 integrates all prior interfaces and should run last.
 
 Regardless of topology, the primary agent inspects diffs and reruns each review boundary before accepting peer results.
 
 ## Plan Self-Review
 
-- **Spec coverage:** All curated skills, Codex hook selection, strict/selective profiles, low-effort override, Claude fast-follow, provenance review, offline use, safety boundaries, and zellij harmonization map to Tasks 1-8.
+- **Spec coverage:** All curated skills, Codex hook selection, strict/selective profiles, low-effort override, Claude fast-follow, provenance review, offline use, safety boundaries, zellij harmonization, and pane breadcrumbs map to Tasks 1-9.
 - **Scope:** PR state machines, tracker mutation, worktree policy, and automatic upstream merging remain excluded.
 - **Interface consistency:** `MK_SKILLS_MODE`, `loadPolicy`, `selectMode`, `renderContext`, `run-hook.js`, `mode-policy.json`, and the curation CLI retain the same names across tasks.
 - **Execution independence:** Every task has a dependency, exact files, focused verification, and a reviewer boundary suitable for inline or peer execution.
