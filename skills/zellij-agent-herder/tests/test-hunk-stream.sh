@@ -5,6 +5,7 @@ CTL="$ROOT_DIR/skills/zellij-agent-herder/scripts/hunk-stream.py"
 ORIGIN="$ROOT_DIR/skills/zellij-agent-herder/scripts/zellij-origin.sh"
 AUTODIFF="$ROOT_DIR/skills/zellij-agent-herder/scripts/hunk-autodiff.sh"
 STATUS="$ROOT_DIR/skills/zellij-agent-herder/scripts/zellij-agent-status.sh"
+ZJ="$ROOT_DIR/skills/zellij-agent-herder/scripts/zj.sh"
 T="$(mktemp -d)"; trap 'rm -rf "$T"' EXIT
 export HOME="$T/home" XDG_CACHE_HOME="$T/cache"; mkdir -p "$HOME"
 git -C "$T" init -q repo
@@ -89,6 +90,8 @@ else:
     raise SystemExit("unsupported fake zellij command: " + repr(args))
 PY
 chmod +x "$T/bin/zellij"
+printf '#!/usr/bin/env bash\nexit 0\n' > "$T/bin/hunk"
+chmod +x "$T/bin/hunk"
 ORIGINAL_PATH="$PATH"
 export PATH="$T/bin:$PATH"
 
@@ -149,6 +152,35 @@ import json, sys
 assert sys.argv[2] in {pane["id"] for pane in json.load(open(sys.argv[1]))}
 PY
 echo 'reconciliation/placement/rollup: PASS'
+
+# Public helpers route through the controller, retain one pane per stream, and preserve
+# explicit reopen plus roll-up teardown behavior.
+export ZJ_SESSION=helper-s ZELLIJ_PANE_ID=20
+source "$ZJ"
+helper_new_before="$(grep -c 'new-pane' "$ZELLIJ_LOG")"
+H1="$(zj_watch_worktree "$T/repo" "$BASE" helper-worktree)"
+H2="$(zj_watch_worktree "$T/repo/." "$BASE" helper-worktree)"
+[ "$H1" = "$H2" ]
+[ "$(( $(grep -c 'new-pane' "$ZELLIJ_LOG") - helper_new_before ))" = 1 ]
+
+zellij --session helper-s action close-pane -p "$H1"
+if zj_watch_worktree "$T/repo" "$BASE" helper-worktree > "$T/dismissed.out"; then
+  exit 1
+fi
+[ ! -s "$T/dismissed.out" ]
+R1="$(zj_review_stream "$T/repo" "$BASE" helper-worktree)"
+[ -n "$R1" ]
+R2="$(zj_review_stream "$T/repo/." "$BASE" helper-worktree)"
+[ "$R1" = "$R2" ]
+
+rollup_new_before="$(grep -c 'new-pane' "$ZELLIJ_LOG")"
+A1="$(zj_watch_session "$T/repo" "$BASE" helper-session "$R1" "$P6")"
+A2="$(zj_watch_session "$T/repo/." "$BASE" helper-session "$R1" "$P6")"
+[ "$A1" = "$A2" ]
+[ "$(( $(grep -c 'new-pane' "$ZELLIJ_LOG") - rollup_new_before ))" = 1 ]
+grep -q "close-pane -p $R1" "$ZELLIJ_LOG"
+grep -q "close-pane -p $P6" "$ZELLIJ_LOG"
+echo 'public helper routing/reopen/rollup: PASS'
 
 # Hook adapters retain the top-level pane even when later events run elsewhere.
 export ZELLIJ_SESSION_NAME=claude-s ZELLIJ_PANE_ID=1
