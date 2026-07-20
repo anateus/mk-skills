@@ -1,0 +1,158 @@
+{
+  "version": 1,
+  "sources": [
+    {
+      "name": "matt-pocock-skills",
+      "url": "https://github.com/mattpocock/skills",
+      "branch": "main",
+      "reviewedCommit": "9603c1cc8118d08bc1b3bf34cf714f62178dea3b",
+      "license": "MIT",
+      "mappings": [
+        {
+          "localSkill": "clarifying-work",
+          "upstreamPaths": ["skills/productivity/grilling"]
+        },
+        {
+          "localSkill": "specifying-work",
+          "upstreamPaths": ["skills/engineering/to-spec"]
+        },
+        {
+          "localSkill": "planning-work",
+          "upstreamPaths": ["skills/engineering/to-tickets", "skills/engineering/wayfinder"]
+        },
+        {
+          "localSkill": "test-driven-development",
+          "upstreamPaths": ["skills/engineering/tdd"]
+        },
+        {
+          "localSkill": "diagnosing-bugs",
+          "upstreamPaths": ["skills/engineering/diagnosing-bugs"]
+        },
+        {
+          "localSkill": "implementing-work",
+          "upstreamPaths": ["skills/engineering/implement"]
+        },
+        {
+          "localSkill": "reviewing-code",
+          "upstreamPaths": ["skills/engineering/code-review"]
+        },
+        {
+          "localSkill": "handing-off-work",
+          "upstreamPaths": ["skills/productivity/handoff"]
+        }
+      ]
+    },
+    {
+      "name": "spec-kitty",
+      "url": "https://github.com/Priivacy-ai/spec-kitty",
+      "branch": "main",
+      "reviewedCommit": "0a79355f821af9038d8b150b03c930f15970ef4c",
+      "license": "MIT",
+      "mappings": [
+        {
+          "localSkill": "specifying-work",
+          "upstreamPaths": [
+            ".kittify/overrides/missions/software-dev/actions/specify",
+            ".kittify/overrides/missions/software-dev/command-templates/specify.md",
+            ".kittify/overrides/missions/software-dev/templates/spec-template.md"
+          ]
+        },
+        {
+          "localSkill": "planning-work",
+          "upstreamPaths": [
+            ".kittify/overrides/missions/software-dev/actions/plan",
+            ".kittify/overrides/missions/software-dev/command-templates/plan.md",
+            ".kittify/overrides/missions/software-dev/command-templates/tasks.md",
+            ".kittify/overrides/missions/software-dev/templates/plan-template.md",
+            ".kittify/overrides/missions/software-dev/templates/tasks-template.md"
+          ]
+        },
+        {
+          "localSkill": "implementing-work",
+          "upstreamPaths": [
+            ".kittify/overrides/missions/software-dev/actions/implement",
+            ".kittify/overrides/missions/software-dev/command-templates/implement.md"
+          ]
+        },
+        {
+          "localSkill": "reviewing-code",
+          "upstreamPaths": [
+            ".kittify/overrides/missions/software-dev/actions/review",
+            ".kittify/overrides/missions/software-dev/command-templates/review.md"
+          ]
+        },
+        {
+          "localSkill": "verifying-work",
+          "upstreamPaths": [
+            ".kittify/overrides/missions/software-dev/command-templates/accept.md",
+            ".kittify/overrides/missions/software-dev/expected-artifacts.yaml"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "superpowers",
+      "url": "https://github.com/obra/superpowers",
+      "branch": "main",
+      "reviewedCommit": "d884ae04edebef577e82ff7c4e143debd0bbec99",
+      "license": "MIT",
+      "mappings": [
+        {
+          "localSkill": "clarifying-work",
+          "upstreamPaths": ["skills/brainstorming"]
+        },
+        {
+          "localSkill": "planning-work",
+          "upstreamPaths": ["skills/writing-plans"]
+        },
+        {
+          "localSkill": "test-driven-development",
+          "upstreamPaths": ["skills/test-driven-development"]
+        },
+        {
+          "localSkill": "diagnosing-bugs",
+          "upstreamPaths": ["skills/systematic-debugging"]
+        },
+        {
+          "localSkill": "implementing-work",
+          "upstreamPaths": ["skills/executing-plans", "skills/subagent-driven-development"]
+        },
+        {
+          "localSkill": "reviewing-code",
+          "upstreamPaths": ["skills/requesting-code-review"]
+        },
+        {
+          "localSkill": "handling-review-feedback",
+          "upstreamPaths": ["skills/receiving-code-review"]
+        },
+        {
+          "localSkill": "verifying-work",
+          "upstreamPaths": ["skills/verification-before-completion"]
+        }
+      ]
+    }
+  ],
+  "localProvenance": [
+    {
+      "name": "mk-clarify",
+      "originalPath": "/Users/mike/Library/Mobile Documents/iCloud~md~obsidian/Documents/Exocortex/Agents/skills/mk-clarify",
+      "documentedAt": "docs/designs/2026-07-20-curated-agent-skills-design.md#existing-mk-skills",
+      "localSkills": ["clarifying-work"],
+      "fetchable": false
+    },
+    {
+      "name": "mk-write-plan",
+      "originalPath": "/Users/mike/Library/Mobile Documents/iCloud~md~obsidian/Documents/Exocortex/Agents/skills/mk-write-plan",
+      "documentedAt": "docs/designs/2026-07-20-curated-agent-skills-design.md#existing-mk-skills",
+      "localSkills": ["planning-work"],
+      "fetchable": false
+    },
+    {
+      "name": "mk-pr",
+      "originalPath": "/Users/mike/Library/Mobile Documents/iCloud~md~obsidian/Documents/Exocortex/Agents/skills/mk-pr",
+      "documentedAt": "docs/designs/2026-07-20-curated-agent-skills-design.md#existing-mk-skills",
+      "localSkills": ["implementing-work"],
+      "fetchable": false
+    }
+  ]
+}
