@@ -37,7 +37,7 @@ To share host-neutral guidance and the `claude_code` Hindsight bank across Claud
 bash "<skill-base-dir>/scripts/setup-shared-agent-config.sh"
 ```
 
-This backs up changed personal configuration, keeps credentials intact, imports `~/.agents/AGENTS.md` into Claude, and symlinks Codex to the same guidance. It does not download missing Hindsight hooks during ordinary setup. See `references/hooks.md` for the explicit installation prerequisite, verification, recovery, and uninstall behavior.
+This backs up changed personal configuration, keeps credentials intact, imports `~/.agents/AGENTS.md` into Claude, and symlinks Codex to the same guidance. It does not download missing Hindsight hooks during ordinary setup. See `references/hooks.md` for installation prerequisites and verification behavior; hook uninstall applies only to the Zellij-owned entries described above.
 
 If an official Codex integration already exists in a trusted local checkout, install it without downloading:
 

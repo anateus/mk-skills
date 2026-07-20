@@ -34,8 +34,10 @@ Sharp edges of driving zellij headlessly, and how each surfaces.
 
 ## Status not updating
 
-- Confirm `install-hooks.sh` ran and the entries are in `~/.claude/settings.json`.
-- Status only updates for a **Claude-family agent** whose lifecycle fires the hooks; a plain shell pane never gets a status token.
+- Confirm `install-hooks.sh` ran for the active host. Claude Code definitions live in `~/.claude/settings.json`; Codex definitions live in `~/.codex/hooks.json`.
+- Check the host's supported status events. Claude uses `UserPromptSubmit` → `working`, permission-prompt `Notification` → `blocked`, `Stop` → `idle`, and `SessionEnd` → clear. Codex uses `SessionStart` → clear stale status, `UserPromptSubmit` → `working`, `PermissionRequest` → `blocked`, and `Stop` → `idle`.
+- For Codex, use `/hooks` in a new interactive session to trust new or changed definitions; valid `~/.codex/hooks.json` entries do not become trusted automatically.
+- Status updates only when a supported Claude Code or Codex lifecycle event fires; a plain shell pane never gets a status token.
 - Subagents are intentionally skipped (`agent_id` guard) — a subagent won't stamp its parent's pane.
 
 ## hunk pane didn't open
@@ -48,7 +50,7 @@ If state points to a pane that no longer exists but behavior does not match the 
 
 **A worktree pane disappeared after roll-up.** This is expected: `zj_watch_session` marks the supplied child streams complete, closes only their panes, and opens one aggregate stream over the parent root against the original fixed base. Do not substitute current `HEAD`, which would hide committed merges.
 
-**Codex hooks are configured but silent.** Validate `~/.codex/hooks.json`, then use `/hooks` in a new interactive Codex session to trust the definitions. Configuration installation does not grant trust automatically.
+**Codex Hunk hooks are configured but silent.** Validate `~/.codex/hooks.json`, then use `/hooks` in a new interactive Codex session to trust the definitions. Configuration installation does not grant trust automatically.
 
 ## Triggering / the `ZELLIJ` env var
 
