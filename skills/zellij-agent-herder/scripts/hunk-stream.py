@@ -494,6 +494,7 @@ def ensure_stream(
     with locked_state(cache_root(), key) as state:
         present = pane_exists(session, state.get("pane_id"))
         if present and request_matches(state, request):
+            state["signature"] = signature
             return str(state["pane_id"])
         if state.get("pane_id") and not present:
             if state.get("signature") == signature and not explicit:

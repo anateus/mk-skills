@@ -171,6 +171,16 @@ assert watcher["pane_x"] == parent["pane_x"] + parent["pane_columns"], (parent, 
 assert clients == [{"client_id": 1, "focused_pane": "terminal_9"}], clients
 PY
 
+printf 'live-change\n' >> "$T/repo/a.txt"
+S_LIVE="$(python3 "$CTL" signature --root "$T/repo" --base "$BASE")"
+P_LIVE="$(python3 "$CTL" ensure --session s --parent terminal_1 --root "$T/repo" --base "$BASE" --kind worktree --label repo)"
+[ "$P_LIVE" = "$P1" ]
+python3 - "$XDG_CACHE_HOME/zellij-agent-herder/streams/$K1.json" "$S_LIVE" <<'PY'
+import json, sys
+with open(sys.argv[1]) as source:
+    state = json.load(source)
+assert state["signature"] == sys.argv[2], state
+PY
 zellij --session s action close-pane -p "$P1"
 P3="$(python3 "$CTL" ensure --session s --parent terminal_1 --root "$T/repo" --base "$BASE" --kind worktree --label repo)"
 [ -z "$P3" ]
