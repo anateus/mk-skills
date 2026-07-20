@@ -105,6 +105,7 @@ grep -q 'Hindsight' "$CANONICAL"
 grep -q 'claude_code' "$CANONICAL"
 grep -q 'work stream' "$CANONICAL"
 grep -q 'Hunk' "$CANONICAL"
+grep -q 'hunk skill path' "$CANONICAL"
 if grep -Eqi 'Fable|Opus|lower power model|MCP tools' "$CANONICAL"; then exit 1; fi
 echo 'shared guidance: PASS'
 

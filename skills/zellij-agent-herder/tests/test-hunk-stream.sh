@@ -154,7 +154,11 @@ ORIGINAL_PATH="$PATH"
 export PATH="$T/bin:$PATH"
 export ZAH_FOCUS_GUARD_WINDOW=0
 
+mkdir -p "$XDG_CACHE_HOME/zellij-agent-herder/panes/s"
+printf '%s\n' '{"emoji":"🌿","name":"child","short":"c","ancestors":[{"emoji":"🦀","name":"root","short":"r"}],"label":"child"}' > "$XDG_CACHE_HOME/zellij-agent-herder/panes/s/terminal_1.json"
+
 P1="$(python3 "$CTL" ensure --session s --parent terminal_1 --root "$T/repo" --base "$BASE" --kind worktree --label repo)"
+zellij --session s action rename-pane -p "$P1" 'diff:legacy-title'
 P2="$(python3 "$CTL" ensure --session s --parent terminal_1 --root "$T/repo" --base "$BASE" --kind worktree --label repo)"
 [ "$P1" = "$P2" ]
 [ "$(grep -c 'new-pane' "$ZELLIJ_LOG")" = 1 ]
@@ -168,6 +172,7 @@ panes = {pane["id"]: pane for pane in json.load(open(sys.argv[1]))}
 clients = json.load(open(sys.argv[2]))
 parent, watcher = panes["terminal_1"], panes[sys.argv[3]]
 assert watcher["pane_x"] == parent["pane_x"] + parent["pane_columns"], (parent, watcher)
+assert watcher["title"] == "🦀 ▸ 🌿 ▸ 🔍", watcher
 assert clients == [{"client_id": 1, "focused_pane": "terminal_9"}], clients
 PY
 
@@ -407,7 +412,7 @@ if [ "${LIVE_ZELLIJ:-0}" = 1 ]; then
   done
   [ "$hook_done" = 1 ]
   [ "$(cat "$T/live-hook.done")" = done ]
-  watcher="$("$REAL_ZELLIJ" --session "$session" action list-panes -j | python3 -c 'import json,sys; p=next(p for p in json.load(sys.stdin) if not p.get("is_plugin") and p.get("title", "").startswith("diff:")); print("terminal_" + str(p["id"]))')"
+  watcher="$("$REAL_ZELLIJ" --session "$session" action list-panes -j | python3 -c 'import json,sys; p=next(p for p in json.load(sys.stdin) if not p.get("is_plugin") and p.get("title", "").endswith("🔍")); print("terminal_" + str(p["id"]))')"
   "$REAL_ZELLIJ" --session "$session" action list-panes -j -g -s > "$T/live-panes.json"
   "$REAL_ZELLIJ" --session "$session" action list-clients > "$T/live-clients.txt"
   python3 - "$T/live-panes.json" "$parent" "$watcher" "$old" <<'PY'

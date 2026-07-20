@@ -67,7 +67,9 @@ With exactly one attached client and a valid origin pane, the controller briefly
 
 ## Driving a live session
 
-Once a `hunk diff --watch` pane is open, an agent can inspect/annotate it via the **`hunk-review`** skill (`hunk session review --repo <root> --json`, `hunk session comment ...`).
+Once a `hunk diff --watch` pane is open, run `hunk skill path` and read the returned **`hunk-review`** skill completely before inspecting or annotating the session. This keeps the workflow aligned with the installed Hunk version; it currently uses commands such as `hunk session review --repo <root> --json` and `hunk session comment ...`.
+
+Review pane titles inherit the originating pane's emoji lineage and append `🔍`, using ` ▸ ` as the compact descent marker (for example, `🦀 ▸ 🌿 ▸ 🔍`). If the parent has no cached identity, the title is simply `🔍`.
 
 ## Uninstall
 

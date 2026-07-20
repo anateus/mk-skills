@@ -132,6 +132,22 @@ def cache_root() -> str:
     return os.environ.get("XDG_CACHE_HOME", os.path.expanduser("~/.cache"))
 
 
+def review_title(session: str, parent: str) -> str:
+    path = os.path.join(
+        cache_root(), "zellij-agent-herder", "panes", session, f"{parent}.json",
+    )
+    try:
+        with open(path, encoding="utf-8") as source:
+            identity = json.load(source)
+        lineage = [*identity["ancestors"], identity]
+        emojis = [item["emoji"] for item in lineage]
+        if not all(isinstance(emoji, str) and emoji for emoji in emojis):
+            raise ValueError("invalid pane identity emoji")
+    except (OSError, KeyError, TypeError, ValueError, json.JSONDecodeError):
+        emojis = []
+    return " ▸ ".join([*emojis, "🔍"])
+
+
 def hook_host(payload: dict[str, Any]) -> str:
     return os.environ.get("ZAH_HOST") or (
         "codex" if "model" in payload or "turn_id" in payload else "claude"
@@ -465,6 +481,7 @@ def spawn_hunk(request: dict[str, Any], title: str) -> str:
         if len(matches) != 1:
             raise RuntimeError(f"spawned pane could not be verified: {returned!r}")
         spawned = matches[0]
+    zellij(session, ["rename-pane", "-p", spawned, review_title(session, parent)])
     if old_focus is not None:
         try:
             current = pane_map(session)
@@ -495,6 +512,10 @@ def ensure_stream(
         present = pane_exists(session, state.get("pane_id"))
         if present and request_matches(state, request):
             state["signature"] = signature
+            zellij(
+                session,
+                ["rename-pane", "-p", str(state["pane_id"]), review_title(session, parent)],
+            )
             return str(state["pane_id"])
         if state.get("pane_id") and not present:
             if state.get("signature") == signature and not explicit:

@@ -104,7 +104,7 @@ Use Hindsight with the shared `claude_code` bank as the primary cross-session me
 </important>
 
 <important if="you are inside a Zellij session and have just finished a coding task with changes to review">
-Use the zellij-agent-herder work-stream-aware Hunk review flow to open or update the stream's review pane proactively. Keep review associated with the originating work stream and do not wait for the user to request it.
+Use the zellij-agent-herder work-stream-aware Hunk review flow to open or update the stream's review pane proactively. Before reviewing the live session, run `hunk skill path` and read the returned skill completely so the review follows the installed Hunk version's current guidance. Keep review associated with the originating work stream and do not wait for the user to request it.
 </important>
 EOF
 
