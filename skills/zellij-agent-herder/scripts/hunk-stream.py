@@ -12,6 +12,7 @@ import os
 import subprocess
 import sys
 import tempfile
+import time
 import uuid
 from collections.abc import Iterator
 from typing import Any
@@ -341,6 +342,11 @@ def restore_focus(session: str, wanted_id: str, limit: int = 8) -> None:
         if direction is None or attempt == limit:
             return
         zellij(session, ["move-focus", direction])
+        for _ in range(10):
+            rows = clients(session)
+            if len(rows) != 1 or rows[0][1] == wanted_id:
+                return
+            time.sleep(0.01)
 
 
 def request_matches(state: dict[str, Any], request: dict[str, Any]) -> bool:

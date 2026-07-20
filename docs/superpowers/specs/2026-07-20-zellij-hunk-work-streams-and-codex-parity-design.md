@@ -93,7 +93,8 @@ and verifies a plain tiled pane first. It then uses bounded, geometry-selected
 `move-pane -p ID DIRECTION` steps, refreshing `list-panes -j` until the watcher is
 observed immediately right of the origin. Because external `focus-pane-id` does not
 retarget the attached client in Zellij 0.45, focus restoration uses bounded directional
-`move-focus` steps and verifies `list-clients` after each one.
+`move-focus` steps and briefly polls `list-clients` after each one. The client table is
+the authoritative restoration signal because pane geometry/focus can update first.
 
 If no client is attached, the origin pane is gone, or focus cannot be resolved safely, the controller falls back to a plain tiled pane. It retains the origin identity so a later replacement can be placed correctly. With multiple attached clients, placement is best-effort and must not intentionally move every client's focus.
 
