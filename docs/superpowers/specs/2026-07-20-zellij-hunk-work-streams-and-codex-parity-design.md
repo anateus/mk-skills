@@ -88,15 +88,12 @@ This keeps automatic review useful without fighting deliberate pane closure.
 
 Zellij 0.45 can split the focused pane to the right, but `new-pane` cannot target an arbitrary parent pane ID. `--near-current-pane` is not sufficient: it can silently fail or misplace a pane when a background agent issues the action while another pane is focused.
 
-When the origin pane exists and a client is attached, the controller performs a short focus transaction:
-
-1. record the attached client's focused pane;
-2. focus the origin pane by ID;
-3. run `new-pane --direction right`;
-4. confirm the new pane exists; and
-5. restore the client's former focus.
-
-The transaction may cause a brief visual flicker. It must restore focus even when spawning or verification fails.
+When the origin pane exists and exactly one client is attached, the controller creates
+and verifies a plain tiled pane first. It then uses bounded, geometry-selected
+`move-pane -p ID DIRECTION` steps, refreshing `list-panes -j` until the watcher is
+observed immediately right of the origin. Because external `focus-pane-id` does not
+retarget the attached client in Zellij 0.45, focus restoration uses bounded directional
+`move-focus` steps and verifies `list-clients` after each one.
 
 If no client is attached, the origin pane is gone, or focus cannot be resolved safely, the controller falls back to a plain tiled pane. It retains the origin identity so a later replacement can be placed correctly. With multiple attached clients, placement is best-effort and must not intentionally move every client's focus.
 
@@ -162,7 +159,7 @@ Hermetic tests use temporary git repositories, cache/config homes, and scratch Z
 - Claude's global instruction file importing the shared guidance while retaining its host-specific overlay; and
 - Hindsight configuration using the shared `claude_code` bank without exposing credentials.
 
-Live verification in a scratch Zellij session confirms the focus transaction and actual pane geometry, since command exit status alone is not reliable evidence that a relative pane appeared.
+Live verification in a scratch Zellij session confirms the final pane geometry and restored client focus, since command exit status alone is not reliable evidence that a move occurred.
 
 ## Success Criteria
 

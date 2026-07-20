@@ -216,7 +216,7 @@ def zellij(session: str, args: list[str]) -> str:
 
 
 def panes(session: str) -> list[dict[str, Any]]:
-    value = json.loads(zellij(session, ["list-panes", "-j"]))
+    value = json.loads(zellij(session, ["list-panes", "-j", "-g", "-s"]))
     if isinstance(value, dict):
         items: list[Any] = []
         for entry in value.values():
@@ -248,6 +248,101 @@ def clients(session: str) -> list[tuple[str, str]]:
     return rows
 
 
+def pane_map(session: str) -> dict[str, dict[str, Any]]:
+    return {pane_id(item): item for item in panes(session)}
+
+
+def geometry(pane: dict[str, Any]) -> tuple[int, int, int, int] | None:
+    values = tuple(pane.get(key) for key in ("pane_x", "pane_y", "pane_columns", "pane_rows"))
+    if not all(isinstance(value, int) for value in values):
+        return None
+    x, y, width, height = values
+    return (x, y, width, height) if width > 0 and height > 0 else None
+
+
+def overlaps(start_a: int, length_a: int, start_b: int, length_b: int) -> bool:
+    return start_a < start_b + length_b and start_b < start_a + length_a
+
+
+def immediately_right(parent: dict[str, Any], watcher: dict[str, Any]) -> bool:
+    parent_rect = geometry(parent)
+    watcher_rect = geometry(watcher)
+    if parent_rect is None or watcher_rect is None:
+        return False
+    px, py, pw, ph = parent_rect
+    wx, wy, _, wh = watcher_rect
+    return wx == px + pw and overlaps(py, ph, wy, wh)
+
+
+def placement_direction(parent: dict[str, Any], watcher: dict[str, Any]) -> str | None:
+    parent_rect = geometry(parent)
+    watcher_rect = geometry(watcher)
+    if parent_rect is None or watcher_rect is None:
+        return None
+    px, py, pw, ph = parent_rect
+    wx, wy, _, wh = watcher_rect
+    if not overlaps(py, ph, wy, wh):
+        return None
+    target_x = px + pw
+    if wx > target_x:
+        return "left"
+    if wx < target_x:
+        return "right"
+    return None
+
+
+def focus_direction(current: dict[str, Any], wanted: dict[str, Any]) -> str | None:
+    current_rect = geometry(current)
+    wanted_rect = geometry(wanted)
+    if current_rect is None or wanted_rect is None:
+        return None
+    cx, cy, cw, ch = current_rect
+    wx, wy, ww, wh = wanted_rect
+    if overlaps(cy, ch, wy, wh):
+        if wx + ww <= cx:
+            return "left"
+        if cx + cw <= wx:
+            return "right"
+    if overlaps(cx, cw, wx, ww):
+        if wy + wh <= cy:
+            return "up"
+        if cy + ch <= wy:
+            return "down"
+    return None
+
+
+def place_right(session: str, parent_id: str, watcher_id: str, limit: int = 8) -> None:
+    for attempt in range(limit + 1):
+        current = pane_map(session)
+        parent = current.get(parent_id)
+        watcher = current.get(watcher_id)
+        if parent is None or watcher is None or immediately_right(parent, watcher):
+            return
+        direction = placement_direction(parent, watcher)
+        if direction is None or attempt == limit:
+            return
+        zellij(session, ["move-pane", "-p", watcher_id, direction])
+
+
+def restore_focus(session: str, wanted_id: str, limit: int = 8) -> None:
+    for attempt in range(limit + 1):
+        rows = clients(session)
+        if len(rows) != 1:
+            return
+        current_id = rows[0][1]
+        if current_id == wanted_id:
+            return
+        current = pane_map(session)
+        focused = current.get(current_id)
+        wanted = current.get(wanted_id)
+        if focused is None or wanted is None:
+            return
+        direction = focus_direction(focused, wanted)
+        if direction is None or attempt == limit:
+            return
+        zellij(session, ["move-focus", direction])
+
+
 def request_matches(state: dict[str, Any], request: dict[str, Any]) -> bool:
     fields = ("session", "parent_pane", "root", "common_dir", "base", "kind", "label")
     return all(state.get(field) == request[field] for field in fields)
@@ -257,29 +352,29 @@ def spawn_hunk(request: dict[str, Any], title: str) -> str:
     session = request["session"]
     parent = request["parent_pane"]
     rows = clients(session)
-    place_right = len(rows) == 1 and pane_exists(session, parent)
-    old_focus = rows[0][1] if place_right else None
-    args = ["new-pane"]
-    if place_right:
-        args.extend(["--direction", "right"])
-    args.extend([
+    old_focus = rows[0][1] if len(rows) == 1 else None
+    args = ["new-pane",
         "--cwd", request["root"], "--name", title, "--",
         "hunk", "diff", request["base"], "--watch",
-    ])
-    try:
-        if place_right:
-            zellij(session, ["focus-pane-id", parent])
-        output = zellij(session, args).splitlines()
-        returned = output[-1] if output else ""
-    finally:
-        if old_focus is not None:
-            zellij(session, ["focus-pane-id", old_focus])
+    ]
+    output = zellij(session, args).splitlines()
+    returned = output[-1] if output else ""
     if pane_exists(session, returned):
-        return returned
-    matches = [pane_id(item) for item in panes(session) if item.get("title") == title]
-    if len(matches) != 1:
-        raise RuntimeError(f"spawned pane could not be verified: {returned!r}")
-    return matches[0]
+        spawned = returned
+    else:
+        matches = [pane_id(item) for item in panes(session) if item.get("title") == title]
+        if len(matches) != 1:
+            raise RuntimeError(f"spawned pane could not be verified: {returned!r}")
+        spawned = matches[0]
+    if old_focus is not None:
+        try:
+            current = pane_map(session)
+            if parent in current and old_focus in current:
+                place_right(session, parent, spawned)
+                restore_focus(session, old_focus)
+        except (OSError, ValueError, subprocess.CalledProcessError):
+            pass
+    return spawned
 
 
 def ensure_stream(

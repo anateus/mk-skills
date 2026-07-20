@@ -29,7 +29,7 @@ echo 'identity/signature: PASS'
 mkdir -p "$T/bin"
 export ZELLIJ_LOG="$T/zellij.log" ZELLIJ_DATA="$T/zellij-data"
 mkdir -p "$ZELLIJ_DATA"
-printf '%s\n' '[{"id":"terminal_1","title":"parent","is_focused":false},{"id":"terminal_9","title":"old","is_focused":true}]' > "$ZELLIJ_DATA/panes.json"
+printf '%s\n' '[{"id":"terminal_1","title":"parent","is_focused":false,"pane_x":0,"pane_y":0,"pane_columns":40,"pane_rows":24},{"id":"terminal_9","title":"old","is_focused":true,"pane_x":40,"pane_y":0,"pane_columns":40,"pane_rows":24}]' > "$ZELLIJ_DATA/panes.json"
 printf '%s\n' '[{"client_id":1,"focused_pane":"terminal_9"}]' > "$ZELLIJ_DATA/clients.json"
 printf '9\n' > "$ZELLIJ_DATA/next"
 touch "$ZELLIJ_LOG"
@@ -57,14 +57,9 @@ elif command == "list-clients":
     for client in load("clients"):
         print(client["client_id"], client["focused_pane"])
 elif command == "focus-pane-id":
-    pane_id = rest[0]
-    panes = load("panes")
-    for pane in panes:
-        pane["is_focused"] = pane["id"] == pane_id
-    clients = load("clients")
-    for client in clients:
-        client["focused_pane"] = pane_id
-    save("panes", panes); save("clients", clients)
+    # Zellij 0.45 accepts this external action without changing the attached
+    # client's focus. Relative creation still follows the client-focused pane.
+    pass
 elif command == "new-pane":
     with open(os.path.join(data, "next"), "r+") as counter:
         number = int(counter.read()) + 1
@@ -72,9 +67,59 @@ elif command == "new-pane":
     title = rest[rest.index("--name") + 1]
     pane_id = "terminal_" + str(number)
     panes = load("panes")
-    panes.append({"id": pane_id, "title": title, "is_focused": False})
-    save("panes", panes)
+    clients = load("clients")
+    focused_id = clients[0]["focused_pane"] if len(clients) == 1 else None
+    focused = next((pane for pane in panes if pane["id"] == focused_id), None)
+    if focused is None:
+        pane = {"id": pane_id, "title": title, "is_focused": False,
+                "pane_x": 80, "pane_y": 0, "pane_columns": 20, "pane_rows": 24}
+    else:
+        width = max(1, focused["pane_columns"] // 2)
+        focused["pane_columns"] -= width
+        pane = {"id": pane_id, "title": title, "is_focused": True,
+                "pane_x": focused["pane_x"] + focused["pane_columns"],
+                "pane_y": focused["pane_y"], "pane_columns": width,
+                "pane_rows": focused["pane_rows"]}
+        for item in panes:
+            item["is_focused"] = False
+        clients[0]["focused_pane"] = pane_id
+    panes.append(pane)
+    save("panes", panes); save("clients", clients)
     print("terminal_999" if os.environ.get("ZELLIJ_FAKE_BAD_ID") else pane_id)
+elif command == "move-pane":
+    pane_id = rest[rest.index("-p") + 1]
+    direction = rest[-1]
+    panes = load("panes")
+    moving = next(pane for pane in panes if pane["id"] == pane_id)
+    if direction in ("left", "right"):
+        candidates = [pane for pane in panes if pane is not moving and
+                      pane["pane_y"] < moving["pane_y"] + moving["pane_rows"] and
+                      moving["pane_y"] < pane["pane_y"] + pane["pane_rows"]]
+        if direction == "left":
+            neighbor = max((pane for pane in candidates if pane["pane_x"] < moving["pane_x"]),
+                           key=lambda pane: pane["pane_x"], default=None)
+        else:
+            neighbor = min((pane for pane in candidates if pane["pane_x"] > moving["pane_x"]),
+                           key=lambda pane: pane["pane_x"], default=None)
+        if neighbor is not None:
+            moving["pane_x"], neighbor["pane_x"] = neighbor["pane_x"], moving["pane_x"]
+    save("panes", panes)
+elif command == "move-focus":
+    direction = rest[0]
+    panes = load("panes")
+    clients = load("clients")
+    current = next(pane for pane in panes if pane["id"] == clients[0]["focused_pane"])
+    if direction == "left":
+        candidate = max((pane for pane in panes if pane["pane_x"] < current["pane_x"]),
+                        key=lambda pane: pane["pane_x"], default=None)
+    else:
+        candidate = min((pane for pane in panes if pane["pane_x"] > current["pane_x"]),
+                        key=lambda pane: pane["pane_x"], default=None)
+    if candidate is not None:
+        clients[0]["focused_pane"] = candidate["id"]
+        for pane in panes:
+            pane["is_focused"] = pane is candidate
+    save("panes", panes); save("clients", clients)
 elif command == "close-pane":
     pane_id = rest[rest.index("-p") + 1]
     save("panes", [pane for pane in load("panes") if pane["id"] != pane_id])
@@ -99,9 +144,18 @@ P1="$(python3 "$CTL" ensure --session s --parent terminal_1 --root "$T/repo" --b
 P2="$(python3 "$CTL" ensure --session s --parent terminal_1 --root "$T/repo" --base "$BASE" --kind worktree --label repo)"
 [ "$P1" = "$P2" ]
 [ "$(grep -c 'new-pane' "$ZELLIJ_LOG")" = 1 ]
-grep -q 'focus-pane-id terminal_1' "$ZELLIJ_LOG"
-grep -q 'new-pane --direction right' "$ZELLIJ_LOG"
-grep -q 'focus-pane-id terminal_9' "$ZELLIJ_LOG"
+! grep -q 'focus-pane-id' "$ZELLIJ_LOG"
+grep -q 'new-pane --cwd' "$ZELLIJ_LOG"
+grep -q "move-pane -p $P1 left" "$ZELLIJ_LOG"
+grep -q 'move-focus right' "$ZELLIJ_LOG"
+python3 - "$ZELLIJ_DATA/panes.json" "$ZELLIJ_DATA/clients.json" "$P1" <<'PY'
+import json, sys
+panes = {pane["id"]: pane for pane in json.load(open(sys.argv[1]))}
+clients = json.load(open(sys.argv[2]))
+parent, watcher = panes["terminal_1"], panes[sys.argv[3]]
+assert watcher["pane_x"] == parent["pane_x"] + parent["pane_columns"], (parent, watcher)
+assert clients == [{"client_id": 1, "focused_pane": "terminal_9"}], clients
+PY
 
 zellij --session s action close-pane -p "$P1"
 P3="$(python3 "$CTL" ensure --session s --parent terminal_1 --root "$T/repo" --base "$BASE" --kind worktree --label repo)"
@@ -202,7 +256,7 @@ printf '%s\n' '{"hook_event_name":"SessionStart","session_id":"claude-session","
 before="$(grep -c 'new-pane' "$ZELLIJ_LOG")"
 printf '%s\n' '{"hook_event_name":"PostToolUse","session_id":"claude-session","cwd":"'$T'/repo","tool_name":"Edit","tool_input":{"file_path":"'$T'/repo/a.txt"}}' | bash "$AUTODIFF"
 [ "$(( $(grep -c 'new-pane' "$ZELLIJ_LOG") - before ))" = 1 ]
-grep -q 'focus-pane-id terminal_1' "$ZELLIJ_LOG"
+! tail -n "+$((before + 1))" "$ZELLIJ_LOG" | grep -q 'focus-pane-id'
 for tool in MultiEdit NotebookEdit; do
   sid="claude-$tool"
   ZAH_HOST=claude ZELLIJ_SESSION_NAME="s-$sid" ZELLIJ_PANE_ID=1 bash "$ORIGIN" <<EOF
@@ -280,23 +334,29 @@ echo 'origin/hooks/status normalization: PASS'
 
 if [ "${LIVE_ZELLIJ:-0}" = 1 ]; then
   REAL_ZELLIJ="$(PATH="$ORIGINAL_PATH"; command -v zellij)"
-  session="zhs-$PPID-$RANDOM"
+  session="zt8-$PPID-$RANDOM"
   cleanup_live() { "$REAL_ZELLIJ" delete-session --force "$session" >/dev/null 2>&1 || true; }
   trap 'cleanup_live; rm -rf "$T"' EXIT
   command -v hunk >/dev/null
   script -q /dev/null "$REAL_ZELLIJ" --session "$session" options --default-shell zsh >/dev/null 2>&1 &
   for _ in $(seq 1 50); do "$REAL_ZELLIJ" --session "$session" action list-panes -j >/dev/null 2>&1 && break; sleep 0.1; done
-  parent="$("$REAL_ZELLIJ" --session "$session" action new-pane -- sleep 60)"
-  old="$("$REAL_ZELLIJ" --session "$session" action new-pane -- sleep 60)"
+  setup="$("$REAL_ZELLIJ" --session "$session" action list-panes -j | python3 -c 'import json,sys; print(next(("plugin_" + str(p["id"]) for p in json.load(sys.stdin) if p.get("plugin_url") == "configuration"), ""))')"
+  [ -z "$setup" ] || "$REAL_ZELLIJ" --session "$session" action close-pane -p "$setup"
+  parent="$("$REAL_ZELLIJ" --session "$session" action list-panes -j | python3 -c 'import json,sys; p=next(p for p in json.load(sys.stdin) if not p.get("is_plugin")); print("terminal_" + str(p["id"]))')"
+  "$REAL_ZELLIJ" --session "$session" action rename-pane -p "$parent" agent-parent
+  old="$("$REAL_ZELLIJ" --session "$session" action new-pane --direction right --name observer -- sleep 60)"
   watcher="$(PATH="$ORIGINAL_PATH" python3 "$CTL" ensure --session "$session" --parent "$parent" --root "$T/repo" --base "$BASE" --kind worktree --label live --explicit)"
   "$REAL_ZELLIJ" --session "$session" action list-panes -j -g -s > "$T/live-panes.json"
   python3 - "$T/live-panes.json" "$parent" "$watcher" "$old" <<'PY'
 import json, sys
 panes = {("plugin_" if p.get("is_plugin") else "terminal_") + str(p["id"]): p for p in json.load(open(sys.argv[1]))}
+assert set(sys.argv[2:]).issubset(panes), (sys.argv[2:], panes)
 parent, watcher, old = (panes[pane_id] for pane_id in sys.argv[2:])
 assert watcher["pane_x"] == parent["pane_x"] + parent["pane_columns"], (parent, watcher)
 assert old["is_focused"], old
 PY
   cleanup_live
+  ! "$REAL_ZELLIJ" list-sessions 2>/dev/null | grep -Fq "$session"
+  echo "live scratch cleanup: PASS ($session)"
   echo 'live placement/focus: PASS'
 fi
