@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "defaultMode": "selective",
+  "modelRules": [
+    { "pattern": 1, "mode": "strict" }
+  ],
+  "contexts": {
+    "selective": "Use skills when their trigger clearly matches the task.",
+    "strict": "Follow the strict workflow."
+  }
+}

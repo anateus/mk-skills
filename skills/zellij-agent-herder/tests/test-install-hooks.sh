@@ -44,9 +44,11 @@ run_installer --all >/dev/null
 test -x "$CLAUDE/hooks/zellij-agent-status.sh"
 test -x "$CLAUDE/hooks/hunk-autodiff.sh"
 test -x "$CLAUDE/hooks/zellij-origin.sh"
+test -x "$CLAUDE/hooks/pane-identity.py"
 test -x "$CODEX/hooks/zellij-agent-status.sh"
 test -x "$CODEX/hooks/hunk-autodiff.sh"
 test -x "$CODEX/hooks/zellij-origin.sh"
+test -x "$CODEX/hooks/pane-identity.py"
 compgen -G "$CLAUDE/settings.json.bak.*" >/dev/null
 compgen -G "$CODEX/hooks.json.bak.*" >/dev/null
 run_installer --all >/dev/null
@@ -71,6 +73,7 @@ assert {"UserPromptSubmit", "PermissionRequest", "Stop", "SessionStart", "PostTo
 session_start = [h.get("command", "") for g in x["hooks"]["SessionStart"] for h in g["hooks"]]
 assert sum("zellij-origin.sh" in command for command in session_start) == 1
 assert sum("zellij-agent-status.sh" in command for command in session_start) == 1
+assert all("ZAH_IDENTITY_SCRIPT=" in h.get("command", "") for groups in x["hooks"].values() for g in groups for h in g.get("hooks", []) if "zellij-agent-status.sh" in h.get("command", ""))
 PY
 echo "Claude install: PASS"
 echo "Codex install: PASS"
@@ -98,6 +101,7 @@ for root in "$CLAUDE" "$CODEX"; do
   test ! -e "$root/hooks/zellij-agent-status.sh"
   test ! -e "$root/hooks/hunk-autodiff.sh"
   test ! -e "$root/hooks/zellij-origin.sh"
+  test ! -e "$root/hooks/pane-identity.py"
 done
 echo "uninstall preservation: PASS"
 

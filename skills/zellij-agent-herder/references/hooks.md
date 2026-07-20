@@ -32,7 +32,7 @@ Shared Claude Code and Codex lifecycle hooks installed by one script. They give 
 bash "<skill-base-dir>/scripts/install-hooks.sh" --all
 ```
 
-`--all` is the default; use `--claude` or `--codex` to target one host. The idempotent installer copies `zellij-agent-status.sh`, `zellij-origin.sh`, and `hunk-autodiff.sh` into each host's `hooks/` directory, backs up a changed `~/.claude/settings.json` or `~/.codex/hooks.json` as `.bak.<timestamp>.<pid>`, and replaces only entries owned by these installed script paths. Existing hook groups and commands are preserved.
+`--all` is the default; use `--claude` or `--codex` to target one host. The idempotent installer copies `zellij-agent-status.sh`, `pane-identity.py`, `zellij-origin.sh`, and `hunk-autodiff.sh` into each host's `hooks/` directory, backs up a changed `~/.claude/settings.json` or `~/.codex/hooks.json` as `.bak.<timestamp>.<pid>`, and replaces only entries owned by these installed script paths. Existing hook groups and commands are preserved.
 
 Claude registers status on `UserPromptSubmit`, `Stop`, `Notification`, and `SessionEnd`; origin on `SessionStart`; and async autodiff on `PostToolUse` matching `Edit|Write|MultiEdit|NotebookEdit`. Codex registers status on `SessionStart`, `UserPromptSubmit`, `PermissionRequest`, and `Stop`; origin on `SessionStart`; and synchronous autodiff on `PostToolUse` matching `apply_patch|Edit|Write`.
 
@@ -40,7 +40,9 @@ After installing Codex hooks, open `/hooks` in the **next Codex interactive sess
 
 ## Status hook (`zellij-agent-status.sh`)
 
-Stamps `"<base> · <status>"` into the current pane's title:
+Assigns a stable identity on first observation, then stamps `"<breadcrumb> · <status>"` into the current pane's title. Roots render as `"<display-label> (<emoji> <full-name>) · <status>"`, preferring a useful existing pane base and otherwise the repository/cwd name. A useful native session name is preferred for identity; generic `agent`/`claude`/`codex`/`yolo`, spinner-prefixed, cwd, and repository identity names receive a persisted curated emoji plus adjective-noun fallback. Parent ancestry previously assigned by the peer wrapper remains intact.
+
+Identity metadata is the source of truth at `${XDG_CACHE_HOME:-$HOME/.cache}/zellij-agent-herder/panes/<session>/<pane>.json`. The hook never reconstructs lineage from a rendered title. Plain panes not observed by this hook and not created through `zellij-peer.sh` remain unaffected.
 
 | Event | Status |
 |---|---|
@@ -51,9 +53,9 @@ Stamps `"<base> · <status>"` into the current pane's title:
 
 `Notification` fires for several distinct subtypes — `permission_prompt`, `idle_prompt` (a "you've been idle" nudge, not actually blocked), `agent_completed`, etc. Only `permission_prompt` maps to `blocked`; other `Notification` subtypes are ignored so an agent that's simply idle doesn't get mislabeled as blocked.
 
-`SessionEnd` fires whenever the Claude Code process actually exits (`/exit`, Ctrl+D, `/clear`, logout, etc.) — without it, the last stamped status (e.g. `blocked`) stays stuck in the pane title forever after the agent is gone, since none of the other three events fire on exit. The hook strips the `" · <status>"` suffix back to the bare base title rather than stamping a new status.
+`SessionEnd` fires whenever the Claude Code process actually exits (`/exit`, Ctrl+D, `/clear`, logout, etc.) — without it, the last stamped status (e.g. `blocked`) stays stuck in the pane title forever after the agent is gone, since none of the other three events fire on exit. The hook strips only the `" · <status>"` suffix and retains the cached breadcrumb.
 
-No-ops when: run outside zellij (`ZELLIJ_PANE_ID` unset), `zellij`/`python3` absent, the hook JSON carries an `agent_id` (a **subagent** — never stamp its parent's pane), the event is `SubagentStop` (never revive idle), or a `Notification` whose `notification_type` isn't `permission_prompt`. The separator is `" · "` (space, U+00B7, space), byte-identical to what `zj_resolve_id`/`zj_wait_status` split on. `zj_wait_status` reads it back.
+No-ops when: run outside zellij (`ZELLIJ_PANE_ID` unset), `zellij`/`python3` absent, the hook JSON carries an `agent_id` (a **subagent** — never stamp its parent's pane), the event is `SubagentStop` (never revive idle), or a `Notification` whose `notification_type` isn't `permission_prompt`. The separator is exactly `" · "` (space, U+00B7, space), byte-identical to what `zj_resolve_id`/`zj_wait_status` split on. `zj_wait_status` reads it back.
 
 ## Origin and hunk-autodiff hooks
 

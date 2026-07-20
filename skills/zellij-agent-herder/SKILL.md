@@ -19,10 +19,11 @@ If `$ZELLIJ` is **unset** you are **not inside zellij** — say so and stop; not
 - Session targeting is the global flag: `zellij --session <name> action <cmd>`, or `$ZELLIJ_SESSION_NAME`. Helpers default to `ZJ_SESSION=$ZELLIJ_SESSION_NAME`.
 - `--name`/`-n` sets the **title only** (not addressable) — resolve name→id with `zj_resolve_id`.
 - Spawn only via **`zj_spawn`**: it places beside the current pane (no focus steal) when a human is attached, and falls back to plain `new-pane` when headless — because `--near-current-pane`/`-d` silently no-op with no client.
+- Agent panes created by `zellij-peer.sh` or observed by the status hook receive stable breadcrumb identities. Plain panes are unaffected.
 
 ## Helpers
 
-`source "<skill-base-dir>/scripts/zj.sh"` (bash/zsh) — gives `_zj`, `_zj_panes`, `zj_resolve_id`, `zj_pane_exists`, `zj_client_count`, `zj_spawn`, `zj_watch_worktree`, `zj_watch_session`, `zj_review_stream`, `zj_wait_output`, `zj_wait_exit`, `zj_wait_status`. All paths are relative to this skill's base directory (printed on load); never hardcode an install path.
+`source "<skill-base-dir>/scripts/zj.sh"` (bash/zsh) — gives `_zj`, `_zj_panes`, `zj_resolve_id`, `zj_close_pane`, `zj_pane_exists`, `zj_client_count`, `zj_spawn`, `zj_watch_worktree`, `zj_watch_session`, `zj_review_stream`, `zj_wait_output`, `zj_wait_exit`, `zj_wait_status`. All paths are relative to this skill's base directory (printed on load); never hardcode an install path.
 
 **From fish or another non-POSIX shell** (can't source a bash lib): invoke a helper instead — `bash "<skill-base-dir>/scripts/zj.sh" zj_spawn -n worker -- bash`, `bash "<skill-base-dir>/scripts/zj.sh" zj_wait_output <id> <match> 10`. The peer wrapper and installer are already invocation-based, so they work from any shell.
 
@@ -36,7 +37,7 @@ If `$ZELLIJ` is **unset** you are **not inside zellij** — say so and stop; not
 | reopen a stream for completion review | `zj_review_stream <repo_root> <base_sha> [label]` |
 | send text | `_zj write-chars -p <id> "text"` |
 | send Enter | `_zj write -p <id> 13` (twice for Codex) |
-| close | `_zj close-pane -p <id>` |
+| close | `zj_close_pane <id>` (also removes cached identity) |
 | switch tab | `_zj go-to-tab-name <name>` (steals attached view) |
 | wait for text | `zj_wait_output <id> <match> <timeout> [--regex]` |
 | wait for exit | `zj_wait_exit <id> <timeout>` or `zellij run --block-until-exit-success -- CMD` |
@@ -45,6 +46,12 @@ If `$ZELLIJ` is **unset** you are **not inside zellij** — say so and stop; not
 ## Peer agents
 
 To spawn/drive peer coding agents, use `scripts/zellij-peer.sh {start\|ask\|wait\|read\|list\|close}`. **REQUIRED SUB-SKILL / see** `references/peer-agents.md` for workflows, per-role prompting, and the rule: inspect the peer's actual file changes yourself before reporting success.
+
+## Pane identity breadcrumbs
+
+Peer and lifecycle-observed agent panes render stable lineage, for example `mk-skills (🦀 funky-crab) · working`, then `🦀 f-c > 🌿 schema-review · working`. A root preserves a useful existing pane base as its display label, falling back to the repository/cwd name. Useful native session names are retained as identities. Generic `agent`/`claude`/`codex`/`yolo` labels, spinner-prefixed variants, and cwd/repository identity names receive a persisted adjective-noun fallback with a concrete emoji.
+
+Metadata lives under `${XDG_CACHE_HOME:-$HOME/.cache}/zellij-agent-herder/panes/<session>/<pane>.json`; ancestry is never recovered from title text. `zj_resolve_id` accepts an explicit pane ID, full/rendered base, or stable leaf identity name. The status separator remains exactly ` · `.
 
 ## Watching headless worktree agents
 

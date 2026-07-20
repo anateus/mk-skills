@@ -1,0 +1,81 @@
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const path = require('node:path');
+
+const {
+  loadPolicy,
+  selectMode,
+  renderContext,
+} = require('../../lib/mode-policy');
+
+const fixture = (name) => path.join(__dirname, '..', 'fixtures', 'policies', name);
+
+test('explicit valid overrides win over model rules', () => {
+  const { policy } = loadPolicy(fixture('valid.json'));
+  for (const mode of ['strict', 'selective', 'off']) {
+    const result = selectMode({ model: 'gpt-mini', override: mode, policy });
+    assert.equal(result.mode, mode);
+    assert.equal(result.reason, 'override');
+  }
+});
+
+test('smaller model rule selects strict', () => {
+  const { policy } = loadPolicy(fixture('valid.json'));
+  assert.equal(selectMode({ model: 'gpt-mini', policy }).mode, 'strict');
+});
+
+test('capable model rule selects selective', () => {
+  const { policy } = loadPolicy(fixture('valid.json'));
+  assert.equal(selectMode({ model: 'gpt-5.6', policy }).mode, 'selective');
+});
+
+test('unknown model selects configured default', () => {
+  const { policy } = loadPolicy(fixture('valid.json'));
+  const result = selectMode({ model: 'future-model', policy });
+  assert.equal(result.mode, 'selective');
+  assert.equal(result.reason, 'default');
+});
+
+test('invalid override fails open with one diagnostic', () => {
+  const { policy } = loadPolicy(fixture('valid.json'));
+  const result = selectMode({ model: 'gpt-mini', override: 'maximum', policy });
+  assert.equal(result.mode, 'selective');
+  assert.equal(result.diagnostics.length, 1);
+});
+
+test('missing and malformed policies use the built-in fallback', () => {
+  for (const target of [
+    fixture('missing.json'),
+    fixture('malformed.json'),
+    fixture('invalid-rules.json'),
+  ]) {
+    const result = loadPolicy(target);
+    assert.equal(result.policy.defaultMode, 'selective');
+    assert.ok(result.diagnostics.length > 0);
+    assert.match(renderContext({ mode: 'selective', policy: result.policy }), /clear/i);
+  }
+});
+
+test('off renders no context', () => {
+  const { policy } = loadPolicy(fixture('valid.json'));
+  assert.equal(renderContext({ mode: 'off', policy }), '');
+});
+
+test('strict context is compact and preserves optional external workflow', () => {
+  const { policy } = loadPolicy(fixture('valid.json'));
+  const context = renderContext({ mode: 'strict', policy });
+  const words = context.trim().split(/\s+/).length;
+  assert.ok(words >= 150 && words <= 250, `strict context has ${words} words`);
+  assert.match(context, /steps in order/i);
+  assert.match(context, /fresh commands/i);
+  for (const optional of ['Commits', 'pull requests', 'issue trackers', 'worktrees', 'subagents']) {
+    assert.match(context, new RegExp(`${optional}.*optional`, 'is'));
+  }
+});
+
+test('selective context stays below 100 words and uses clear triggers', () => {
+  const { policy } = loadPolicy(fixture('valid.json'));
+  const context = renderContext({ mode: 'selective', policy });
+  assert.ok(context.trim().split(/\s+/).length < 100);
+  assert.match(context, /trigger clearly matches/i);
+});

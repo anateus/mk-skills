@@ -42,12 +42,12 @@ configure_host() {
   local hooks_dir="$root/hooks"
   if [ "$ACTION" = install ]; then
     mkdir -p "$hooks_dir"
-    for script in zellij-agent-status.sh hunk-autodiff.sh zellij-origin.sh; do
+    for script in zellij-agent-status.sh hunk-autodiff.sh zellij-origin.sh pane-identity.py; do
       cp "$SRC/$script" "$hooks_dir/$script"
       chmod +x "$hooks_dir/$script"
     done
   else
-    for script in zellij-agent-status.sh hunk-autodiff.sh zellij-origin.sh; do
+    for script in zellij-agent-status.sh hunk-autodiff.sh zellij-origin.sh pane-identity.py; do
       rm -f "$hooks_dir/$script"
     done
     [ -f "$config" ] || return 0
@@ -85,6 +85,11 @@ host = os.environ["ZAH_HOST_NAME"]
 directory = os.environ["ZAH_HOOKS_DIR"]
 names = ("zellij-agent-status.sh", "hunk-autodiff.sh", "zellij-origin.sh")
 commands = {name: "ZAH_HOST=%s bash '%s'" % (host, os.path.join(directory, name)) for name in names}
+commands["zellij-agent-status.sh"] = "ZAH_HOST=%s ZAH_IDENTITY_SCRIPT='%s' bash '%s'" % (
+    host,
+    os.path.join(directory, "pane-identity.py"),
+    os.path.join(directory, "zellij-agent-status.sh"),
+)
 
 def owned(entry):
     command = entry.get("command", "") if isinstance(entry, dict) else ""

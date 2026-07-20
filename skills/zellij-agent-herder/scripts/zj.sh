@@ -4,6 +4,37 @@
 # Target session: set ZJ_SESSION, else falls back to $ZELLIJ_SESSION_NAME.
 
 ZJ_SESSION="${ZJ_SESSION:-${ZELLIJ_SESSION_NAME:-}}"
+ZJ_IDENTITY_SCRIPT="${ZAH_IDENTITY_SCRIPT:-${ZJ_IDENTITY_SCRIPT:-}}"
+
+# Resolve pane-identity.py when the caller did not supply its installed/source path.
+if [ -z "$ZJ_IDENTITY_SCRIPT" ]; then
+  _zj_source_path=""
+  if [ -n "${BASH_VERSION:-}" ]; then
+    _zj_source_path="${BASH_SOURCE[0]}"
+  elif [ -n "${ZSH_VERSION:-}" ]; then
+    _zj_source_path="$(eval 'printf %s "${(%):-%x}"')"
+  fi
+  for _zj_identity_candidate in \
+    "${_zj_source_path:+$(cd "$(dirname "$_zj_source_path")" 2>/dev/null && pwd)/pane-identity.py}" \
+    "${HOME:-}/.claude/skills/zellij-agent-herder/scripts/pane-identity.py" \
+    "${HOME:-}/.agents/skills/zellij-agent-herder/scripts/pane-identity.py" \
+    "${CODEX_HOME:-}/skills/zellij-agent-herder/scripts/pane-identity.py"
+  do
+    if [ -f "$_zj_identity_candidate" ]; then
+      ZJ_IDENTITY_SCRIPT="$_zj_identity_candidate"; break
+    fi
+  done
+  unset _zj_identity_candidate _zj_source_path
+fi
+
+zj_identity() {
+  [ -n "$ZJ_IDENTITY_SCRIPT" ] && [ -f "$ZJ_IDENTITY_SCRIPT" ] || return 1
+  python3 "$ZJ_IDENTITY_SCRIPT" "$@"
+}
+
+zj_normalize_pane_id() {
+  case "$1" in terminal_*|plugin_*) echo "$1" ;; *) echo "terminal_$1" ;; esac
+}
 
 # Locate the controller from this file, whether sourced by bash/zsh or executed by bash
 # for fish callers. Keep the shell-facing API here; pane lifecycle belongs to Python.
@@ -39,18 +70,32 @@ for p in panes:
 }
 
 # zj_resolve_id <name> -> prints terminal_N (exit 1 not found, 2 ambiguous).
-# Matches full title OR base name before " · " (our status suffix).
+# Matches explicit ids, titles/bases, and stable cached identity names in this session.
 zj_resolve_id() {
   _zj_panes | python3 -c '
-import sys, json
-name = sys.argv[1]; hits = []
+import json, os, pathlib, sys
+name, session = sys.argv[1:3]; hits = []
+cache = pathlib.Path(os.environ.get("XDG_CACHE_HOME") or pathlib.Path.home()/".cache")
+cache = cache/"zellij-agent-herder"/"panes"/session
 for line in sys.stdin:
     p = json.loads(line); t = str(p.get("title",""))
-    if t == name or t.split(" · ")[0] == name: hits.append(p["id"])
+    pid = p["id"]; identity_name = ""
+    try: identity_name = str(json.loads((cache/(pid+".json")).read_text()).get("name", ""))
+    except Exception: pass
+    if pid == name or t == name or t.split(" · ",1)[0] == name or identity_name == name:
+        hits.append(pid)
 if len(hits) == 1: print(hits[0])
 elif not hits: sys.exit(1)
 else: sys.stderr.write("ambiguous: %d match %r\n" % (len(hits), name)); sys.exit(2)
-' "$1"
+' "$1" "${ZJ_SESSION:-${ZELLIJ_SESSION_NAME:-default}}"
+}
+
+# zj_close_pane <pane_id> -> close and remove only this session-scoped identity.
+zj_close_pane() {
+  local pane_id; pane_id="$(zj_normalize_pane_id "$1")"
+  _zj close-pane -p "$pane_id"
+  zj_identity remove --session "${ZJ_SESSION:-${ZELLIJ_SESSION_NAME:-default}}" --pane "$pane_id" \
+    >/dev/null 2>&1 || true
 }
 
 # zj_pane_exists <pane_id> -> exit 0 if present, else 1.
