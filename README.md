@@ -1,32 +1,46 @@
 # mk-skills
 
-Agent skills for [Claude Code](https://claude.com/claude-code), installable with the [`skills`](https://github.com/vercel-labs/skills) CLI.
+A portable, curated software-development skill set for Codex and Claude Code. Selective invocation is the default: load a skill when its trigger clearly matches, and scale ceremony to the task's risk. Strict mode adds explicit sequencing and verification without changing the skills or requiring external workflow.
 
-## Install
+## Curated skills
+
+The core set covers `clarifying-work`, `specifying-work`, `planning-work`, `test-driven-development`, `diagnosing-bugs`, `implementing-work`, `reviewing-code`, `handling-review-feedback`, `verifying-work`, `handing-off-work`, `strict-mode`, and `curating-skills`.
+
+`zellij-agent-herder` is also included for optional pane orchestration. It and the curated workflow are bidirectionally independent: every curated skill works without zellij, and the herder works without strict mode or the curated skills. When independent tasks benefit from peers, the peer-ready plans make pairing low effort; sequential execution remains fully supported.
+
+## Codex plugin
+
+Install or link this repository through the Codex plugin workflow so `.codex-plugin/plugin.json`, `skills/`, `hooks/`, `lib/`, and `config/` remain together. Before trusting the plugin, review [`hooks/hooks.json`](hooks/hooks.json) and [`hooks/run-hook.js`](hooks/run-hook.js): the synchronous `SessionStart` hook reads the documented event fields, loads the shared local policy, and writes context JSON.
+
+Choose a profile with an environment override:
 
 ```bash
-# all skills, into the current project (./.claude/skills/)
+MK_SKILLS_MODE=strict|selective|off
+```
+
+Use one concrete value, for example `MK_SKILLS_MODE=strict codex`. Until reasoning effort becomes a stable hook field, pair a low-reasoning Codex profile with `strict` explicitly; the hook deliberately does not inspect transcripts. `off` disables policy injection but leaves skills available for explicit use.
+
+## Claude Code adapter
+
+Claude support is a required deliverable, not a separate skill fork. Package or link the repository as a Claude plugin and expose [`adapters/claude/hooks.json`](adapters/claude/hooks.json) as its hook declaration. It invokes the same runner and `config/mode-policy.json` through `CLAUDE_PLUGIN_ROOT`, so both hosts select identical text. Review the hook command before enabling the plugin. Startup, resume, clear, and compact use the shared selector where Claude supports those `SessionStart` sources.
+
+For skills-only installation, the existing CLI remains available:
+
+```bash
 npx skills add anateus/mk-skills
-
-# global (~/.claude/skills/)
 npx skills add anateus/mk-skills -g
-
-# a single skill
-npx skills add anateus/mk-skills --skill zellij-agent-herder
 ```
 
-## Skills
+Skills are self-contained and work offline after installation. Network access is used only for deliberate upstream curation; [`curating-skills`](skills/curating-skills/SKILL.md) reviews pinned sources and produces a manual merge report without overwriting local skills.
 
-| Skill | What it does | Requires |
-|---|---|---|
-| **zellij-agent-herder** | Control zellij panes/tabs/sessions and drive peer coding agents from inside a zellij pane — spawn/read/send/close, wait on output or status, live pane-title status, and an auto `hunk diff --watch` pane on first file change. | `zellij` ≥ 0.44 (developed against 0.45); `hunk` 0.17+ for the diff feature. Helpers source under bash/zsh; from fish, invoke via `bash <dir>/scripts/zj.sh <helper> …`. |
+## Validate
 
-### Setup — zellij-agent-herder hooks
-
-The pane-title status and auto-diff features ride Claude Code lifecycle hooks. Install them once:
+Run all repository-owned hook, skill, and curation tests, optional plugin-schema validation, and the diff check with:
 
 ```bash
-bash "<skill-base-dir>/scripts/install-hooks.sh"
+node scripts/validate.js
 ```
 
-(idempotent; backs up `~/.claude/settings.json`, preserves existing hooks). See the skill's `references/hooks.md` for what it writes and how to uninstall.
+Set `PLUGIN_VALIDATOR=/path/to/validate_plugin.py` to select a validator. If neither that override nor the standard local validator exists, the plugin-schema check is clearly skipped while repository-owned checks continue.
+
+For zellij pane-title status and auto-diff setup, see [`skills/zellij-agent-herder/references/hooks.md`](skills/zellij-agent-herder/references/hooks.md). Those hooks are optional and independent of both host adapters above.
