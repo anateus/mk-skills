@@ -379,12 +379,24 @@ if [ "${LIVE_ZELLIJ:-0}" = 1 ]; then
   "$REAL_ZELLIJ" --session "$session" action rename-pane -p "$parent" agent-parent
   old="$("$REAL_ZELLIJ" --session "$session" action new-pane --direction right --name observer -- sleep 60)"
   live_sid="focus-guard-$RANDOM"
-  PATH="$ORIGINAL_PATH" ZAH_HOST=codex ZELLIJ_SESSION_NAME="$session" ZELLIJ_PANE_ID="${parent#terminal_}" bash "$ORIGIN" <<EOF
-{"hook_event_name":"SessionStart","session_id":"$live_sid","model":"gpt-5","turn_id":"origin","cwd":"$T/repo"}
-EOF
-  PATH="$ORIGINAL_PATH" ZAH_HOST=codex bash "$AUTODIFF" >/dev/null <<EOF
-{"hook_event_name":"PostToolUse","session_id":"$live_sid","model":"gpt-5","turn_id":"edit","cwd":"$T/repo","tool_name":"apply_patch","tool_input":{"file_path":"$T/repo/a.txt"}}
-EOF
+  printf '%s\n' "{\"hook_event_name\":\"SessionStart\",\"session_id\":\"$live_sid\",\"model\":\"gpt-5\",\"turn_id\":\"origin\",\"cwd\":\"$T/repo\"}" > "$T/live-origin.json"
+  printf '%s\n' "{\"hook_event_name\":\"PostToolUse\",\"session_id\":\"$live_sid\",\"model\":\"gpt-5\",\"turn_id\":\"edit\",\"cwd\":\"$T/repo\",\"tool_name\":\"apply_patch\",\"tool_input\":{\"file_path\":\"$T/repo/a.txt\"}}" > "$T/live-autodiff.json"
+  printf -v hook_command 'PATH=%q ZAH_HOST=codex bash %q < %q && PATH=%q ZAH_HOST=codex bash %q < %q > %q && printf done > %q' \
+    "$ORIGINAL_PATH" "$ORIGIN" "$T/live-origin.json" \
+    "$ORIGINAL_PATH" "$AUTODIFF" "$T/live-autodiff.json" \
+    "$T/live-hook.out" "$T/live-hook.done"
+  "$REAL_ZELLIJ" --session "$session" action write-chars -p "$parent" "$hook_command"
+  "$REAL_ZELLIJ" --session "$session" action write -p "$parent" 13
+  hook_done=0
+  for _ in $(seq 1 100); do
+    if [ -f "$T/live-hook.done" ]; then
+      hook_done=1
+      break
+    fi
+    sleep 0.05
+  done
+  [ "$hook_done" = 1 ]
+  [ "$(cat "$T/live-hook.done")" = done ]
   watcher="$("$REAL_ZELLIJ" --session "$session" action list-panes -j | python3 -c 'import json,sys; p=next(p for p in json.load(sys.stdin) if not p.get("is_plugin") and p.get("title", "").startswith("diff:")); print("terminal_" + str(p["id"]))')"
   "$REAL_ZELLIJ" --session "$session" action list-panes -j -g -s > "$T/live-panes.json"
   "$REAL_ZELLIJ" --session "$session" action list-clients > "$T/live-clients.txt"

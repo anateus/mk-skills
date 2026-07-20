@@ -372,6 +372,16 @@ def restore_guard_focus(
         direction = focus_direction(focused, original)
         if direction is None or attempt == limit:
             return False
+        if deadline is not None and time.monotonic() >= deadline:
+            return False
+        rows = clients(session)
+        if len(rows) != 1:
+            return False
+        observed = rows[0][1]
+        if observed == original_id:
+            return True
+        if observed != watcher_id:
+            return False
         zellij(session, ["move-focus", direction])
         for _ in range(10):
             if deadline is not None and time.monotonic() >= deadline:

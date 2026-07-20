@@ -90,6 +90,26 @@ class FocusGuardTests(unittest.TestCase):
         self.assertFalse(restored)
         move.assert_not_called()
 
+    def test_rechecks_watcher_focus_immediately_before_move(self):
+        rows = iter([
+            [("1", "terminal_10")],
+            [("1", "terminal_77")],
+        ])
+        panes = {
+            "terminal_9": {"pane_x": 0, "pane_y": 0, "pane_columns": 40, "pane_rows": 24},
+            "terminal_10": {"pane_x": 40, "pane_y": 0, "pane_columns": 40, "pane_rows": 24},
+        }
+        move = mock.Mock()
+        with mock.patch.object(hunk_stream, "clients", side_effect=lambda _s: next(rows)), \
+             mock.patch.object(hunk_stream, "pane_map", return_value=panes), \
+             mock.patch.object(hunk_stream, "zellij", move):
+            restored = hunk_stream.restore_guard_focus(
+                "s", "terminal_9", "terminal_10",
+            )
+
+        self.assertFalse(restored)
+        move.assert_not_called()
+
     def test_hard_deadline_bounds_polling_and_process_exits(self):
         clock = FakeClock(step=0.1)
         clients = mock.Mock(return_value=[("1", "terminal_9")])
