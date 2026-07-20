@@ -79,7 +79,6 @@ else:
 PY
 chmod +x "$T/bin/zellij"
 ORIGINAL_PATH="$PATH"
-REAL_ZELLIJ="$(command -v zellij)"
 export PATH="$T/bin:$PATH"
 
 P1="$(python3 "$CTL" ensure --session s --parent terminal_1 --root "$T/repo" --base "$BASE" --kind worktree --label repo)"
@@ -119,8 +118,10 @@ unset ZELLIJ_FAKE_BAD_ID
 
 # Roll-up closes only the supplied child panes and keeps the original fixed base.
 printf '%s\n' '[{"client_id":1,"focused_pane":"terminal_9"}]' > "$ZELLIJ_DATA/clients.json"
+rollup_new_before="$(grep -c 'new-pane' "$ZELLIJ_LOG")"
 AGG="$(python3 "$CTL" rollup --session s --parent terminal_1 --root "$T/repo" --base "$BASE" --label session --child-pane "$P7" --child-pane "$P8")"
 [ -n "$AGG" ]
+[ "$(( $(grep -c 'new-pane' "$ZELLIJ_LOG") - rollup_new_before ))" = 1 ]
 grep -q "close-pane -p $P7" "$ZELLIJ_LOG"
 grep -q "close-pane -p $P8" "$ZELLIJ_LOG"
 last_new="$(grep 'new-pane' "$ZELLIJ_LOG" | tail -1)"
@@ -132,9 +133,14 @@ for pane_id in sys.argv[2:]:
     state = next(state for state in states if state.get("pane_id") == pane_id)
     assert state.get("complete") is True
 PY
+python3 - "$ZELLIJ_DATA/panes.json" "$P6" <<'PY'
+import json, sys
+assert sys.argv[2] in {pane["id"] for pane in json.load(open(sys.argv[1]))}
+PY
 echo 'reconciliation/placement/rollup: PASS'
 
 if [ "${LIVE_ZELLIJ:-0}" = 1 ]; then
+  REAL_ZELLIJ="$(PATH="$ORIGINAL_PATH"; command -v zellij)"
   session="zhs-$PPID-$RANDOM"
   cleanup_live() { "$REAL_ZELLIJ" delete-session --force "$session" >/dev/null 2>&1 || true; }
   trap 'cleanup_live; rm -rf "$T"' EXIT
