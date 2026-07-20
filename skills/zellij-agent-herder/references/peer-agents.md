@@ -6,12 +6,26 @@ Spawn and drive peer coding agents (Claude, Codex, …) in sibling panes. All li
 
 | Command | Effect |
 |---|---|
-| `start <name> [--cwd DIR] [--direction right\|down] -- <agent-cmd...>` | Spawn a named pane running the agent command; prints its `terminal_N`. Spawn is adaptive (beside the current pane when a human is attached, plain when headless). |
+| `start <name> [--cwd DIR] [--direction right\|down] -- <agent-cmd...>` | Spawn an identified child pane; prints its real `terminal_N`. Spawn is adaptive (beside the current pane when a human is attached, plain when headless). |
 | `ask <name> "<prompt>"` | `write-chars` the prompt into the pane, then Enter (`write 13`). |
 | `wait <name> [--status idle] [--timeout S]` | Block until the pane's status token equals `--status` (default `idle`, timeout 300s). Requires the status hook installed in the peer's agent. |
 | `read <name> [--lines N]` | Dump the pane's full scrollback, last `N` lines (default 200). |
 | `list` | One row per pane: `id  base-title  status`. |
 | `close <name>` | Close the pane. |
+
+## Stable identity and lineage
+
+After `start` receives the real pane ID, it persists the child identity and parent ancestry, then renames the pane to a breadcrumb:
+
+```text
+mk-skills (🦀 funky-crab) · working
+🦀 f-c > 🌿 schema-review · working
+🦀 f-c > 🌿 s-r > 🍎 test-runner · idle
+```
+
+Useful `<name>` values become the stable leaf name. A root persists a useful existing pane base as its display label, otherwise the repository/cwd name, and wraps its emoji identity in parentheses. Generic names (`agent`, `claude`, `codex`, `yolo` and their prefixed/spinner variants) or identity names equal to the cwd/repository fall back to a stable adjective-noun plus a concrete emoji. Metadata is session-scoped at `${XDG_CACHE_HOME:-$HOME/.cache}/zellij-agent-herder/panes/<session>/<pane>.json`, so grandchildren inherit ancestry without parsing titles.
+
+Later commands may address the explicit pane ID, current rendered base, or stable leaf name. `close` removes that pane's cache record. Panes created outside the peer wrapper remain unchanged unless the lifecycle status hook observes them.
 
 **`PEER_DOUBLE_ENTER=1`** — some composers (notably Codex) need Enter pressed twice to submit. Export this and `ask` sends a second `write 13`.
 
