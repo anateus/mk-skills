@@ -152,6 +152,7 @@ printf '#!/usr/bin/env bash\nexit 0\n' > "$T/bin/hunk"
 chmod +x "$T/bin/hunk"
 ORIGINAL_PATH="$PATH"
 export PATH="$T/bin:$PATH"
+export ZAH_FOCUS_GUARD_WINDOW=0
 
 P1="$(python3 "$CTL" ensure --session s --parent terminal_1 --root "$T/repo" --base "$BASE" --kind worktree --label repo)"
 P2="$(python3 "$CTL" ensure --session s --parent terminal_1 --root "$T/repo" --base "$BASE" --kind worktree --label repo)"
@@ -346,6 +347,7 @@ PY
 echo 'origin/hooks/status normalization: PASS'
 
 if [ "${LIVE_ZELLIJ:-0}" = 1 ]; then
+  unset ZAH_FOCUS_GUARD_WINDOW
   REAL_ZELLIJ="$(PATH="$ORIGINAL_PATH"; command -v zellij)"
   session="zt8-$PPID-$RANDOM"
   feeder_pid=""
@@ -376,7 +378,14 @@ if [ "${LIVE_ZELLIJ:-0}" = 1 ]; then
   parent="$("$REAL_ZELLIJ" --session "$session" action list-panes -j | python3 -c 'import json,sys; p=next(p for p in json.load(sys.stdin) if not p.get("is_plugin")); print("terminal_" + str(p["id"]))')"
   "$REAL_ZELLIJ" --session "$session" action rename-pane -p "$parent" agent-parent
   old="$("$REAL_ZELLIJ" --session "$session" action new-pane --direction right --name observer -- sleep 60)"
-  watcher="$(PATH="$ORIGINAL_PATH" python3 "$CTL" ensure --session "$session" --parent "$parent" --root "$T/repo" --base "$BASE" --kind worktree --label live --explicit)"
+  live_sid="focus-guard-$RANDOM"
+  PATH="$ORIGINAL_PATH" ZAH_HOST=codex ZELLIJ_SESSION_NAME="$session" ZELLIJ_PANE_ID="${parent#terminal_}" bash "$ORIGIN" <<EOF
+{"hook_event_name":"SessionStart","session_id":"$live_sid","model":"gpt-5","turn_id":"origin","cwd":"$T/repo"}
+EOF
+  PATH="$ORIGINAL_PATH" ZAH_HOST=codex bash "$AUTODIFF" >/dev/null <<EOF
+{"hook_event_name":"PostToolUse","session_id":"$live_sid","model":"gpt-5","turn_id":"edit","cwd":"$T/repo","tool_name":"apply_patch","tool_input":{"file_path":"$T/repo/a.txt"}}
+EOF
+  watcher="$("$REAL_ZELLIJ" --session "$session" action list-panes -j | python3 -c 'import json,sys; p=next(p for p in json.load(sys.stdin) if not p.get("is_plugin") and p.get("title", "").startswith("diff:")); print("terminal_" + str(p["id"]))')"
   "$REAL_ZELLIJ" --session "$session" action list-panes -j -g -s > "$T/live-panes.json"
   "$REAL_ZELLIJ" --session "$session" action list-clients > "$T/live-clients.txt"
   python3 - "$T/live-panes.json" "$parent" "$watcher" "$old" <<'PY'
@@ -388,6 +397,14 @@ assert watcher["pane_x"] == parent["pane_x"] + parent["pane_columns"], (parent, 
 assert old["is_focused"], old
 PY
   python3 - "$T/live-clients.txt" "$old" <<'PY'
+import sys
+rows = [line.split() for line in open(sys.argv[1]).read().splitlines()[1:]]
+assert len(rows) == 1 and sys.argv[2] in rows[0], (rows, sys.argv[2])
+PY
+  sleep 1.2
+  ! pgrep -f "[h]unk-stream.py focus-guard --session $session" >/dev/null
+  "$REAL_ZELLIJ" --session "$session" action list-clients > "$T/live-clients-final.txt"
+  python3 - "$T/live-clients-final.txt" "$old" <<'PY'
 import sys
 rows = [line.split() for line in open(sys.argv[1]).read().splitlines()[1:]]
 assert len(rows) == 1 and sys.argv[2] in rows[0], (rows, sys.argv[2])

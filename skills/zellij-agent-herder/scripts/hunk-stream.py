@@ -349,6 +349,89 @@ def restore_focus(session: str, wanted_id: str, limit: int = 8) -> None:
             time.sleep(0.01)
 
 
+def restore_guard_focus(
+    session: str, original_id: str, watcher_id: str, limit: int = 8,
+    deadline: float | None = None,
+) -> bool:
+    for attempt in range(limit + 1):
+        if deadline is not None and time.monotonic() >= deadline:
+            return False
+        rows = clients(session)
+        if len(rows) != 1:
+            return False
+        focused_id = rows[0][1]
+        if focused_id == original_id:
+            return True
+        if focused_id != watcher_id:
+            return False
+        current = pane_map(session)
+        focused = current.get(watcher_id)
+        original = current.get(original_id)
+        if focused is None or original is None:
+            return False
+        direction = focus_direction(focused, original)
+        if direction is None or attempt == limit:
+            return False
+        zellij(session, ["move-focus", direction])
+        for _ in range(10):
+            if deadline is not None and time.monotonic() >= deadline:
+                return False
+            rows = clients(session)
+            if len(rows) != 1:
+                return False
+            observed = rows[0][1]
+            if observed == original_id:
+                return True
+            if observed != watcher_id:
+                return False
+            delay = 0.01 if deadline is None else min(0.01, max(0.0, deadline - time.monotonic()))
+            time.sleep(delay)
+    return False
+
+
+def focus_guard(
+    session: str, original_id: str, watcher_id: str,
+    window: float = 1.0, interval: float = 0.02,
+) -> None:
+    deadline = time.monotonic() + max(0.0, window)
+    while time.monotonic() < deadline:
+        try:
+            rows = clients(session)
+            current = pane_map(session)
+        except (OSError, ValueError, subprocess.CalledProcessError):
+            return
+        if len(rows) != 1 or original_id not in current or watcher_id not in current:
+            return
+        focused = rows[0][1]
+        if focused == watcher_id:
+            try:
+                if not restore_guard_focus(
+                    session, original_id, watcher_id, deadline=deadline,
+                ):
+                    return
+            except (OSError, ValueError, subprocess.CalledProcessError):
+                return
+        elif focused != original_id:
+            return
+        remaining = max(0.0, deadline - time.monotonic())
+        time.sleep(min(max(0.0, interval), remaining))
+
+
+def launch_focus_guard(session: str, original_id: str, watcher_id: str) -> None:
+    subprocess.Popen(
+        [
+            sys.executable, os.path.abspath(__file__), "focus-guard",
+            "--session", session, "--original", original_id,
+            "--watcher", watcher_id,
+        ],
+        stdin=subprocess.DEVNULL,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+        start_new_session=True,
+        close_fds=True,
+    )
+
+
 def request_matches(state: dict[str, Any], request: dict[str, Any]) -> bool:
     fields = ("session", "parent_pane", "root", "common_dir", "base", "kind", "label")
     return all(state.get(field) == request[field] for field in fields)
@@ -378,6 +461,7 @@ def spawn_hunk(request: dict[str, Any], title: str) -> str:
             if parent in current and old_focus in current:
                 place_right(session, parent, spawned)
                 restore_focus(session, old_focus)
+                launch_focus_guard(session, old_focus, spawned)
         except (OSError, ValueError, subprocess.CalledProcessError):
             pass
     return spawned
@@ -477,6 +561,10 @@ def main() -> None:
     rollup.add_argument("--base", required=True)
     rollup.add_argument("--label", required=True)
     rollup.add_argument("--child-pane", action="append", default=[])
+    guard = commands.add_parser("focus-guard")
+    guard.add_argument("--session", required=True)
+    guard.add_argument("--original", required=True)
+    guard.add_argument("--watcher", required=True)
     commands.add_parser("edit")
     args = parser.parse_args()
     if args.command == "signature":
@@ -497,6 +585,15 @@ def main() -> None:
             args.session, args.parent, args.root, args.base, args.label,
             args.child_pane,
         ))
+    elif args.command == "focus-guard":
+        try:
+            focus_guard(
+                args.session, args.original, args.watcher,
+                float(os.environ.get("ZAH_FOCUS_GUARD_WINDOW", "1.0")),
+                float(os.environ.get("ZAH_FOCUS_GUARD_INTERVAL", "0.02")),
+            )
+        except (OSError, ValueError, subprocess.CalledProcessError):
+            pass
     else:
         try:
             payload = json.load(sys.stdin)
