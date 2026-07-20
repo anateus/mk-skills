@@ -81,4 +81,12 @@ Use `--claude` or `--codex` for one host. It backs up changed configuration, rem
 
 `bash "<skill-base-dir>/scripts/setup-shared-agent-config.sh"` creates canonical shared guidance at `~/.agents/AGENTS.md`, imports it from `~/.claude/CLAUDE.md`, symlinks `~/.codex/AGENTS.md` to it, merges already-installed official Hindsight Codex hooks into `~/.codex/hooks.json`, and sets `~/.hindsight/codex.json` to `{"bankId":"claude_code","dynamicBankId":false}` while preserving other fields such as credentials. Changed files are backed up.
 
-Ordinary setup never downloads Hindsight. If `~/.hindsight/codex/hooks.json` is absent, install the official integration first, or use the explicit `--install-hindsight` flow only when the `hindsight codex install --directory` interface is available and verified, then rerun ordinary setup. Review and trust the merged Codex definitions with `/hooks` in the next interactive session.
+Ordinary setup never downloads Hindsight. If `~/.hindsight/codex/hooks.json` is absent but an official integration is already available in a trusted local checkout, use:
+
+```
+bash "<skill-base-dir>/scripts/setup-shared-agent-config.sh" --hindsight-source <official-codex-integration-dir>
+```
+
+The local source must be a regular, non-symlink directory containing regular `hooks/hooks.json`, `settings.json`, and `scripts/` content with `SessionStart`, `UserPromptSubmit`, and `Stop` hook groups. The installer rejects symlinks and malformed JSON/structure before mutation, copies scripts and settings through a temporary directory without downloading, substitutes `__SCRIPTS_DIR__` with the final installed path, and atomically replaces changed `~/.hindsight/codex` content after backing up an existing installation.
+
+Alternatively, use the explicit `--install-hindsight` flow only when the `hindsight codex install --directory` interface is available and verified, then rerun ordinary setup. Review and trust the merged Codex definitions with `/hooks` in the next interactive session.

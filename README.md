@@ -38,3 +38,11 @@ bash "<skill-base-dir>/scripts/setup-shared-agent-config.sh"
 ```
 
 This backs up changed personal configuration, keeps credentials intact, imports `~/.agents/AGENTS.md` into Claude, and symlinks Codex to the same guidance. It does not download missing Hindsight hooks during ordinary setup. See `references/hooks.md` for the explicit installation prerequisite, verification, recovery, and uninstall behavior.
+
+If an official Codex integration already exists in a trusted local checkout, install it without downloading:
+
+```bash
+bash "<skill-base-dir>/scripts/setup-shared-agent-config.sh" --hindsight-source <official-codex-integration-dir>
+```
+
+The source must contain regular `hooks/hooks.json`, `settings.json`, and `scripts/` content with the required lifecycle hook groups. The installer rejects symlinks and malformed structure, stages a local copy under `~/.hindsight/codex`, substitutes its installed scripts path, and then applies the shared configuration.
