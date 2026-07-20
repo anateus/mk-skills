@@ -53,6 +53,18 @@ command, rest = args[0], args[1:]
 if command == "list-panes":
     print(json.dumps(load("panes")))
 elif command == "list-clients":
+    pending_path = os.path.join(data, "pending-focus.json")
+    if os.path.exists(pending_path):
+        pending = json.load(open(pending_path))
+        pending["polls"] -= 1
+        if pending["polls"] <= 0:
+            clients = load("clients")
+            clients[0]["focused_pane"] = pending["pane_id"]
+            save("clients", clients)
+            os.unlink(pending_path)
+        else:
+            with open(pending_path, "w") as target:
+                json.dump(pending, target)
     print("CLIENT_ID ZELLIJ_PANE_ID")
     for client in load("clients"):
         print(client["client_id"], client["focused_pane"])
@@ -108,7 +120,7 @@ elif command == "move-focus":
     direction = rest[0]
     panes = load("panes")
     clients = load("clients")
-    current = next(pane for pane in panes if pane["id"] == clients[0]["focused_pane"])
+    current = next(pane for pane in panes if pane["is_focused"])
     if direction == "left":
         candidate = max((pane for pane in panes if pane["pane_x"] < current["pane_x"]),
                         key=lambda pane: pane["pane_x"], default=None)
@@ -116,10 +128,11 @@ elif command == "move-focus":
         candidate = min((pane for pane in panes if pane["pane_x"] > current["pane_x"]),
                         key=lambda pane: pane["pane_x"], default=None)
     if candidate is not None:
-        clients[0]["focused_pane"] = candidate["id"]
         for pane in panes:
             pane["is_focused"] = pane is candidate
-    save("panes", panes); save("clients", clients)
+        with open(os.path.join(data, "pending-focus.json"), "w") as target:
+            json.dump({"pane_id": candidate["id"], "polls": 10}, target)
+    save("panes", panes)
 elif command == "close-pane":
     pane_id = rest[rest.index("-p") + 1]
     save("panes", [pane for pane in load("panes") if pane["id"] != pane_id])
@@ -139,6 +152,7 @@ printf '#!/usr/bin/env bash\nexit 0\n' > "$T/bin/hunk"
 chmod +x "$T/bin/hunk"
 ORIGINAL_PATH="$PATH"
 export PATH="$T/bin:$PATH"
+export ZAH_FOCUS_GUARD_WINDOW=0
 
 P1="$(python3 "$CTL" ensure --session s --parent terminal_1 --root "$T/repo" --base "$BASE" --kind worktree --label repo)"
 P2="$(python3 "$CTL" ensure --session s --parent terminal_1 --root "$T/repo" --base "$BASE" --kind worktree --label repo)"
@@ -157,6 +171,16 @@ assert watcher["pane_x"] == parent["pane_x"] + parent["pane_columns"], (parent, 
 assert clients == [{"client_id": 1, "focused_pane": "terminal_9"}], clients
 PY
 
+printf 'live-change\n' >> "$T/repo/a.txt"
+S_LIVE="$(python3 "$CTL" signature --root "$T/repo" --base "$BASE")"
+P_LIVE="$(python3 "$CTL" ensure --session s --parent terminal_1 --root "$T/repo" --base "$BASE" --kind worktree --label repo)"
+[ "$P_LIVE" = "$P1" ]
+python3 - "$XDG_CACHE_HOME/zellij-agent-herder/streams/$K1.json" "$S_LIVE" <<'PY'
+import json, sys
+with open(sys.argv[1]) as source:
+    state = json.load(source)
+assert state["signature"] == sys.argv[2], state
+PY
 zellij --session s action close-pane -p "$P1"
 P3="$(python3 "$CTL" ensure --session s --parent terminal_1 --root "$T/repo" --base "$BASE" --kind worktree --label repo)"
 [ -z "$P3" ]
@@ -333,20 +357,59 @@ PY
 echo 'origin/hooks/status normalization: PASS'
 
 if [ "${LIVE_ZELLIJ:-0}" = 1 ]; then
+  unset ZAH_FOCUS_GUARD_WINDOW
   REAL_ZELLIJ="$(PATH="$ORIGINAL_PATH"; command -v zellij)"
   session="zt8-$PPID-$RANDOM"
-  cleanup_live() { "$REAL_ZELLIJ" delete-session --force "$session" >/dev/null 2>&1 || true; }
+  feeder_pid=""
+  client_pid=""
+  cleanup_live() {
+    "$REAL_ZELLIJ" delete-session --force "$session" >/dev/null 2>&1 || true
+    [ -z "$feeder_pid" ] || kill "$feeder_pid" >/dev/null 2>&1 || true
+    [ -z "$client_pid" ] || kill "$client_pid" >/dev/null 2>&1 || true
+    [ -z "$feeder_pid" ] || wait "$feeder_pid" 2>/dev/null || true
+    [ -z "$client_pid" ] || wait "$client_pid" 2>/dev/null || true
+  }
   trap 'cleanup_live; rm -rf "$T"' EXIT
   command -v hunk >/dev/null
-  script -q /dev/null "$REAL_ZELLIJ" --session "$session" options --default-shell zsh >/dev/null 2>&1 &
-  for _ in $(seq 1 50); do "$REAL_ZELLIJ" --session "$session" action list-panes -j >/dev/null 2>&1 && break; sleep 0.1; done
+  sleep 600 | script -q /dev/null "$REAL_ZELLIJ" --session "$session" options --default-shell zsh >/dev/null 2>&1 &
+  client_pid=$!
+  feeder_pid="$(jobs -p %%)"
+  ready=0
+  for _ in $(seq 1 200); do
+    if "$REAL_ZELLIJ" --session "$session" action list-panes -j >/dev/null 2>&1; then
+      ready=1
+      break
+    fi
+    sleep 0.1
+  done
+  [ "$ready" = 1 ]
   setup="$("$REAL_ZELLIJ" --session "$session" action list-panes -j | python3 -c 'import json,sys; print(next(("plugin_" + str(p["id"]) for p in json.load(sys.stdin) if p.get("plugin_url") == "configuration"), ""))')"
   [ -z "$setup" ] || "$REAL_ZELLIJ" --session "$session" action close-pane -p "$setup"
   parent="$("$REAL_ZELLIJ" --session "$session" action list-panes -j | python3 -c 'import json,sys; p=next(p for p in json.load(sys.stdin) if not p.get("is_plugin")); print("terminal_" + str(p["id"]))')"
   "$REAL_ZELLIJ" --session "$session" action rename-pane -p "$parent" agent-parent
   old="$("$REAL_ZELLIJ" --session "$session" action new-pane --direction right --name observer -- sleep 60)"
-  watcher="$(PATH="$ORIGINAL_PATH" python3 "$CTL" ensure --session "$session" --parent "$parent" --root "$T/repo" --base "$BASE" --kind worktree --label live --explicit)"
+  live_sid="focus-guard-$RANDOM"
+  printf '%s\n' "{\"hook_event_name\":\"SessionStart\",\"session_id\":\"$live_sid\",\"model\":\"gpt-5\",\"turn_id\":\"origin\",\"cwd\":\"$T/repo\"}" > "$T/live-origin.json"
+  printf '%s\n' "{\"hook_event_name\":\"PostToolUse\",\"session_id\":\"$live_sid\",\"model\":\"gpt-5\",\"turn_id\":\"edit\",\"cwd\":\"$T/repo\",\"tool_name\":\"apply_patch\",\"tool_input\":{\"file_path\":\"$T/repo/a.txt\"}}" > "$T/live-autodiff.json"
+  printf -v hook_command 'PATH=%q ZAH_HOST=codex bash %q < %q && PATH=%q ZAH_HOST=codex bash %q < %q > %q && printf done > %q' \
+    "$ORIGINAL_PATH" "$ORIGIN" "$T/live-origin.json" \
+    "$ORIGINAL_PATH" "$AUTODIFF" "$T/live-autodiff.json" \
+    "$T/live-hook.out" "$T/live-hook.done"
+  "$REAL_ZELLIJ" --session "$session" action write-chars -p "$parent" "$hook_command"
+  "$REAL_ZELLIJ" --session "$session" action write -p "$parent" 13
+  hook_done=0
+  for _ in $(seq 1 100); do
+    if [ -f "$T/live-hook.done" ]; then
+      hook_done=1
+      break
+    fi
+    sleep 0.05
+  done
+  [ "$hook_done" = 1 ]
+  [ "$(cat "$T/live-hook.done")" = done ]
+  watcher="$("$REAL_ZELLIJ" --session "$session" action list-panes -j | python3 -c 'import json,sys; p=next(p for p in json.load(sys.stdin) if not p.get("is_plugin") and p.get("title", "").startswith("diff:")); print("terminal_" + str(p["id"]))')"
   "$REAL_ZELLIJ" --session "$session" action list-panes -j -g -s > "$T/live-panes.json"
+  "$REAL_ZELLIJ" --session "$session" action list-clients > "$T/live-clients.txt"
   python3 - "$T/live-panes.json" "$parent" "$watcher" "$old" <<'PY'
 import json, sys
 panes = {("plugin_" if p.get("is_plugin") else "terminal_") + str(p["id"]): p for p in json.load(open(sys.argv[1]))}
@@ -355,7 +418,22 @@ parent, watcher, old = (panes[pane_id] for pane_id in sys.argv[2:])
 assert watcher["pane_x"] == parent["pane_x"] + parent["pane_columns"], (parent, watcher)
 assert old["is_focused"], old
 PY
+  python3 - "$T/live-clients.txt" "$old" <<'PY'
+import sys
+rows = [line.split() for line in open(sys.argv[1]).read().splitlines()[1:]]
+assert len(rows) == 1 and sys.argv[2] in rows[0], (rows, sys.argv[2])
+PY
+  sleep 1.2
+  ! pgrep -f "[h]unk-stream.py focus-guard --session $session" >/dev/null
+  "$REAL_ZELLIJ" --session "$session" action list-clients > "$T/live-clients-final.txt"
+  python3 - "$T/live-clients-final.txt" "$old" <<'PY'
+import sys
+rows = [line.split() for line in open(sys.argv[1]).read().splitlines()[1:]]
+assert len(rows) == 1 and sys.argv[2] in rows[0], (rows, sys.argv[2])
+PY
   cleanup_live
+  ! kill -0 "$feeder_pid" 2>/dev/null
+  ! kill -0 "$client_pid" 2>/dev/null
   ! "$REAL_ZELLIJ" list-sessions 2>/dev/null | grep -Fq "$session"
   echo "live scratch cleanup: PASS ($session)"
   echo 'live placement/focus: PASS'
