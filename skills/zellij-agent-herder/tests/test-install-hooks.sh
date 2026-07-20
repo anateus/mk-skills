@@ -17,9 +17,10 @@ test ! -e "$PRISTINE_CODEX"
 
 ORPHAN_CLAUDE="$TMP/orphan-claude"
 mkdir -p "$ORPHAN_CLAUDE/hooks"
-touch "$ORPHAN_CLAUDE/hooks/zellij-agent-status.sh" "$ORPHAN_CLAUDE/hooks/unrelated.sh"
+touch "$ORPHAN_CLAUDE/hooks/zellij-agent-status.sh" "$ORPHAN_CLAUDE/hooks/hunk-stream.py" "$ORPHAN_CLAUDE/hooks/unrelated.sh"
 CLAUDE_CONFIG_DIR="$ORPHAN_CLAUDE" CODEX_CONFIG_DIR="$PRISTINE_CODEX" bash "$INSTALLER" --uninstall --claude
 test ! -e "$ORPHAN_CLAUDE/hooks/zellij-agent-status.sh"
+test ! -e "$ORPHAN_CLAUDE/hooks/hunk-stream.py"
 test -e "$ORPHAN_CLAUDE/hooks/unrelated.sh"
 test ! -e "$ORPHAN_CLAUDE/settings.json"
 
@@ -45,13 +46,23 @@ test -x "$CLAUDE/hooks/zellij-agent-status.sh"
 test -x "$CLAUDE/hooks/hunk-autodiff.sh"
 test -x "$CLAUDE/hooks/zellij-origin.sh"
 test -x "$CLAUDE/hooks/pane-identity.py"
+test -x "$CLAUDE/hooks/hunk-stream.py"
+test -r "$CLAUDE/hooks/hunk-stream.py"
 test -x "$CODEX/hooks/zellij-agent-status.sh"
 test -x "$CODEX/hooks/hunk-autodiff.sh"
 test -x "$CODEX/hooks/zellij-origin.sh"
 test -x "$CODEX/hooks/pane-identity.py"
+test -x "$CODEX/hooks/hunk-stream.py"
+test -r "$CODEX/hooks/hunk-stream.py"
+cmp "$ROOT/scripts/hunk-stream.py" "$CLAUDE/hooks/hunk-stream.py"
+cmp "$ROOT/scripts/hunk-stream.py" "$CODEX/hooks/hunk-stream.py"
+cp "$CLAUDE/hooks/hunk-stream.py" "$TMP/claude-hunk-stream.first"
+cp "$CODEX/hooks/hunk-stream.py" "$TMP/codex-hunk-stream.first"
 compgen -G "$CLAUDE/settings.json.bak.*" >/dev/null
 compgen -G "$CODEX/hooks.json.bak.*" >/dev/null
 run_installer --all >/dev/null
+cmp "$TMP/claude-hunk-stream.first" "$CLAUDE/hooks/hunk-stream.py"
+cmp "$TMP/codex-hunk-stream.first" "$CODEX/hooks/hunk-stream.py"
 
 python3 - "$CLAUDE/settings.json" "$CODEX/hooks.json" <<'PY'
 import json, sys
@@ -80,6 +91,7 @@ echo "Codex install: PASS"
 
 claude_before=$(find "$CLAUDE" -maxdepth 1 -name 'settings.json.bak.*' | wc -l | tr -d ' ')
 codex_before=$(find "$CODEX" -maxdepth 1 -name 'hooks.json.bak.*' | wc -l | tr -d ' ')
+touch "$CLAUDE/hooks/unrelated.sh" "$CODEX/hooks/unrelated.sh"
 run_installer --uninstall --all >/dev/null
 claude_after=$(find "$CLAUDE" -maxdepth 1 -name 'settings.json.bak.*' | wc -l | tr -d ' ')
 codex_after=$(find "$CODEX" -maxdepth 1 -name 'hooks.json.bak.*' | wc -l | tr -d ' ')
@@ -102,6 +114,8 @@ for root in "$CLAUDE" "$CODEX"; do
   test ! -e "$root/hooks/hunk-autodiff.sh"
   test ! -e "$root/hooks/zellij-origin.sh"
   test ! -e "$root/hooks/pane-identity.py"
+  test ! -e "$root/hooks/hunk-stream.py"
+  test -e "$root/hooks/unrelated.sh"
 done
 echo "uninstall preservation: PASS"
 
