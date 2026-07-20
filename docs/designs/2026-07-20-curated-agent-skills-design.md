@@ -126,6 +126,20 @@ Fetch configured upstream repositories, review changes since the last recorded c
 
 `zellij-agent-herder` remains intact. Worktree management, branch finishing, parallel-agent orchestration, and PR lifecycle may be added later as optional skills, but they are excluded from the initial portable core.
 
+### `zellij-agent-herder` harmonization
+
+The curated skills and `zellij-agent-herder` must compose without depending on one another:
+
+- No curated skill requires zellij, Herdr, subagents, or parallel execution.
+- `zellij-agent-herder` does not require the curated workflow or strict mode.
+- When zellij orchestration is available and the task benefits from independent work, a curated skill may recommend or invoke `zellij-agent-herder` through normal skill discovery rather than duplicating pane-management instructions.
+- Plans and reviews should describe units of work, dependencies, fixed comparison points, expected outputs, and verification clearly enough to become peer-agent briefs.
+- Parallel execution remains conditional on independence and file ownership. Sequential execution remains valid.
+- Strict mode may require explicit coordination and verification when peers are used, but it must not require peers to be used.
+- Peer results remain inputs to the primary agent's verification; orchestration success is not evidence that the underlying work is correct.
+
+This creates a clean seam: the curated skills decide what engineering work is appropriate, while `zellij-agent-herder` can provide the execution topology when the user or environment chooses it.
+
 ## Repository Layout
 
 ```text
@@ -230,6 +244,8 @@ Use representative pressure scenarios to compare baseline, selective, and strict
 - review distinguishes correctness, specification, and standards findings;
 - completion claims cite fresh evidence;
 - strict mode increases sequencing adherence without inventing PR or tracker work.
+- the same plan can execute locally or through `zellij-agent-herder` without changing its engineering requirements;
+- peer-agent use adds coordination and result verification without becoming mandatory.
 
 ### Curation tests
 
@@ -242,7 +258,7 @@ Use representative pressure scenarios to compare baseline, selective, and strict
 
 1. Establish the Codex plugin, policy schema, selector, and strict-mode injection.
 2. Add the curated skills and structural validation.
-3. Add behavioral tests for selective and strict profiles.
+3. Add behavioral tests for selective and strict profiles, including optional `zellij-agent-herder` composition.
 4. Add provenance, upstream-review tooling, and attribution.
 5. Complete the Claude Code adapter using shared policy fixtures.
 6. Update installation documentation for both supported harnesses.
