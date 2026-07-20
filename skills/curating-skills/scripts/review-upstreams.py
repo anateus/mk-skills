@@ -91,6 +91,12 @@ def prepare_repo(source, cache_dir):
         raise ReviewError(
             f"{source['name']}: reviewed commit {source['reviewedCommit']} or branch head is unavailable: {error}",
         ) from error
+    try:
+        run_git(repo, "merge-base", "--is-ancestor", reviewed, head)
+    except ReviewError as error:
+        raise ReviewError(
+            f"{source['name']}: reviewed commit {reviewed} is not an ancestor of branch head {head}",
+        ) from error
     return repo, reviewed, head
 
 

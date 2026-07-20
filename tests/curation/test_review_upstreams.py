@@ -131,6 +131,22 @@ class ReviewUpstreamsTests(unittest.TestCase):
         self.assertIn("reviewed commit", result.stderr.lower())
         self.assertEqual(before, self.manifest.read_bytes())
 
+    def test_divergent_reviewed_commit_fails_without_writing_report(self):
+        self.git("checkout", "--orphan", "replacement", cwd=self.work)
+        self.git("rm", "-rf", ".", cwd=self.work)
+        self.write("skills/changed/SKILL.md", "replacement history\n")
+        self.git("add", ".", cwd=self.work)
+        self.git("commit", "-m", "replace upstream history", cwd=self.work)
+        replacement = self.git("rev-parse", "HEAD", cwd=self.work).stdout.strip()
+        self.git("push", "--force", str(self.remote), "replacement:main", cwd=self.work)
+
+        before = self.manifest.read_bytes()
+        result = self.run_review()
+        self.assertNotEqual(0, result.returncode)
+        self.assertIn("not an ancestor", result.stderr.lower())
+        self.assertFalse(self.output.exists())
+        self.assertEqual(before, self.manifest.read_bytes())
+
     def test_fetch_failure_is_nonzero_and_preserves_manifest(self):
         self.write_manifest(str(self.root / "missing.git"), self.reviewed)
         before = self.manifest.read_bytes()

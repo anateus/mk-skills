@@ -24,6 +24,18 @@ test('smaller model rule selects strict', () => {
   assert.equal(selectMode({ model: 'gpt-mini', policy }).mode, 'strict');
 });
 
+test('shipped policy selects strict for conservative small and older model families', () => {
+  const { policy } = loadPolicy(path.join(__dirname, '..', '..', 'config', 'mode-policy.json'));
+  for (const model of [
+    'gpt-5-mini', 'gpt-4.1-nano', 'o4-mini', 'claude-3-5-haiku', 'gpt-3.5-turbo',
+  ]) {
+    assert.equal(selectMode({ model, policy }).mode, 'strict', model);
+  }
+  for (const model of ['gpt-5.6-codex', 'claude-opus-4-1']) {
+    assert.equal(selectMode({ model, policy }).mode, 'selective', model);
+  }
+});
+
 test('capable model rule selects selective', () => {
   const { policy } = loadPolicy(fixture('valid.json'));
   assert.equal(selectMode({ model: 'gpt-5.6', policy }).mode, 'selective');

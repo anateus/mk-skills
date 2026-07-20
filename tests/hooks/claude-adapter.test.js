@@ -74,6 +74,20 @@ test('Codex and Claude make the same default decision for an unknown model', () 
   assert.match(contextOf(claude), /trigger clearly matches/i);
 });
 
+test('Claude accepts a missing optional model and preserves explicit overrides', () => {
+  const event = JSON.parse(fixture('claude-session-start.json'));
+  delete event.model;
+  for (const [mode, expected] of [
+    ['strict', /steps in order/i],
+    ['selective', /trigger clearly matches/i],
+    ['off', /^$/],
+  ]) {
+    const output = runHost('claude', JSON.stringify(event), mode);
+    assert.match(contextOf(output), expected);
+    assert.equal(Object.hasOwn(output, 'systemMessage'), false);
+  }
+});
+
 test('unified validator runs repository checks and supports optional plugin validation', () => {
   const source = fs.readFileSync(path.join(root, 'scripts', 'validate.js'), 'utf8');
   const hooks = source.indexOf('tests/hooks/*.test.js');

@@ -20,6 +20,8 @@ MK_SKILLS_MODE=strict|selective|off
 
 Use one concrete value, for example `MK_SKILLS_MODE=strict codex`. Until reasoning effort becomes a stable hook field, pair a low-reasoning Codex profile with `strict` explicitly; the hook deliberately does not inspect transcripts. `off` disables policy injection but leaves skills available for explicit use.
 
+Without an override, conservative small-model markers (`mini`, `nano`, and `haiku`) and legacy GPT-3.x/Claude 2–3 families select strict mode automatically. Other and unknown model identifiers remain selective; adjust `config/mode-policy.json` when a host introduces a new stable model family.
+
 ## Claude Code adapter
 
 Claude support is a required deliverable, not a separate skill fork. Package or link the repository as a Claude plugin and expose [`adapters/claude/hooks.json`](adapters/claude/hooks.json) as its hook declaration. It invokes the same runner and `config/mode-policy.json` through `CLAUDE_PLUGIN_ROOT`, so both hosts select identical text. Review the hook command before enabling the plugin. Startup, resume, clear, and compact use the shared selector where Claude supports those `SessionStart` sources.

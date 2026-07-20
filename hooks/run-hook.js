@@ -45,13 +45,14 @@ process.stdin.on('end', () => {
       || typeof parsed !== 'object'
       || Array.isArray(parsed)
       || parsed.hook_event_name !== 'SessionStart'
-      || typeof parsed.model !== 'string'
-      || parsed.model.length === 0
+      || (parsed.model !== undefined && (
+        typeof parsed.model !== 'string' || parsed.model.length === 0
+      ))
       || typeof parsed.cwd !== 'string'
     ) throw new Error('invalid');
     event = {
       hook_event_name: parsed.hook_event_name,
-      model: parsed.model,
+      model: parsed.model || '',
       cwd: parsed.cwd,
     };
   } catch (error) {
