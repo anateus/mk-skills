@@ -46,7 +46,10 @@ try:
         target.write("\n")
         target.flush()
         os.fsync(target.fileno())
-    os.replace(temporary, path)
+    try:
+        os.link(temporary, path)
+    except FileExistsError:
+        pass
 finally:
     if os.path.exists(temporary):
         os.unlink(temporary)

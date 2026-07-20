@@ -161,6 +161,11 @@ assert json.load(open(sys.argv[1])) == {
 }
 PY
 export ZELLIJ_PANE_ID=7
+printf '%s\n' '{"hook_event_name":"SessionStart","session_id":"claude-session","cwd":"'$T'/repo"}' | bash "$ORIGIN"
+python3 - "$XDG_CACHE_HOME/zellij-agent-herder/origins/claude-claude-session.json" <<'PY'
+import json, sys
+assert json.load(open(sys.argv[1]))["parent_pane"] == "terminal_1"
+PY
 printf '%s\n' '{"hook_event_name":"SessionStart","session_id":"claude-session","agent_id":"child","cwd":"'$T'/repo"}' | bash "$ORIGIN"
 before="$(grep -c 'new-pane' "$ZELLIJ_LOG")"
 printf '%s\n' '{"hook_event_name":"PostToolUse","session_id":"claude-session","cwd":"'$T'/repo","tool_name":"Edit","tool_input":{"file_path":"'$T'/repo/a.txt"}}' | bash "$AUTODIFF"
