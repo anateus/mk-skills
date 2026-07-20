@@ -11,7 +11,8 @@ AGENTS="$TMP/agents"
 CLAUDE="$TMP/claude"
 CODEX="$TMP/codex"
 HINDSIGHT="$TMP/hindsight"
-mkdir -p "$AGENTS" "$CLAUDE" "$CODEX" "$HINDSIGHT/codex"
+SOURCE="$TMP/hindsight-source"
+mkdir -p "$AGENTS" "$CLAUDE" "$CODEX" "$HINDSIGHT" "$SOURCE/hooks" "$SOURCE/scripts"
 
 SENTINEL="$TMP/unrelated-guidance"
 printf 'sentinel must remain unchanged\n' > "$SENTINEL"
@@ -45,9 +46,16 @@ cat > "$CODEX/hooks.json" <<'JSON'
 JSON
 
 TOKEN="runtime-token-$(date +%s)-$$-$RANDOM"
-cat > "$HINDSIGHT/codex/hooks.json" <<JSON
-{"hooks":{"SessionStart":[{"hooks":[{"type":"command","command":"python3 $HINDSIGHT/codex/session-start.py"}]}],"UserPromptSubmit":[{"hooks":[{"type":"command","command":"python3 $HINDSIGHT/codex/prompt.py"}]}],"Stop":[{"hooks":[{"type":"command","command":"python3 $HINDSIGHT/codex/stop.py"}]}]}}
+cat > "$SOURCE/hooks/hooks.json" <<'JSON'
+{"hooks":{"SessionStart":[{"hooks":[{"type":"command","command":"python3 __SCRIPTS_DIR__/session-start.py"}]}],"UserPromptSubmit":[{"hooks":[{"type":"command","command":"python3 __SCRIPTS_DIR__/prompt.py"}]}],"Stop":[{"hooks":[{"type":"command","command":"python3 __SCRIPTS_DIR__/stop.py"}]}]}}
 JSON
+printf '{"integration":"official-codex"}\n' > "$SOURCE/settings.json"
+for script in session-start.py prompt.py stop.py; do
+  printf '#!/usr/bin/env python3\n' > "$SOURCE/scripts/$script"
+done
+chmod 755 "$SOURCE/scripts/session-start.py" "$SOURCE/scripts/stop.py"
+chmod 644 "$SOURCE/scripts/prompt.py"
+chmod 640 "$SOURCE/settings.json" "$SOURCE/hooks/hooks.json"
 cat > "$HINDSIGHT/codex.json" <<JSON
 {"endpoint":"https://memory.invalid","apiToken":"$TOKEN","bankId":"old","dynamicBankId":true,"extra":"preserve"}
 JSON
@@ -63,8 +71,26 @@ EOF
 chmod +x "$FAKE_BIN/hindsight"
 
 OUTPUT="$TMP/setup-output"
-PATH="$FAKE_BIN:$PATH" bash "$SETUP" --agents-dir "$AGENTS" --claude-dir "$CLAUDE" --codex-dir "$CODEX" --hindsight-dir "$HINDSIGHT" >"$OUTPUT" 2>&1
+if PATH="$FAKE_BIN:$PATH" bash "$SETUP" --agents-dir "$AGENTS" --claude-dir "$CLAUDE" --codex-dir "$CODEX" --hindsight-dir "$HINDSIGHT" >"$OUTPUT" 2>&1; then
+  exit 1
+fi
 test ! -e "$FAKE_CALLED"
+test ! -e "$HINDSIGHT/codex"
+
+PATH="$FAKE_BIN:$PATH" bash "$SETUP" --agents-dir "$AGENTS" --claude-dir "$CLAUDE" --codex-dir "$CODEX" --hindsight-dir "$HINDSIGHT" --hindsight-source "$SOURCE" >"$OUTPUT" 2>&1
+test ! -e "$FAKE_CALLED"
+test -f "$HINDSIGHT/codex/hooks.json"
+test -f "$HINDSIGHT/codex/settings.json"
+test -x "$HINDSIGHT/codex/scripts/session-start.py"
+test ! -x "$HINDSIGHT/codex/scripts/prompt.py"
+test -x "$HINDSIGHT/codex/scripts/stop.py"
+python3 - "$SOURCE/hooks/hooks.json" "$HINDSIGHT/codex/hooks.json" "$SOURCE/settings.json" "$HINDSIGHT/codex/settings.json" <<'PY'
+import os, stat, sys
+for source, installed in zip(sys.argv[1::2], sys.argv[2::2]):
+    assert stat.S_IMODE(os.stat(source).st_mode) == stat.S_IMODE(os.stat(installed).st_mode)
+PY
+if grep -R -Fq '__SCRIPTS_DIR__' "$HINDSIGHT/codex"; then exit 1; fi
+grep -Fq "$HINDSIGHT/codex/scripts/session-start.py" "$HINDSIGHT/codex/hooks.json"
 
 CANONICAL="$AGENTS/AGENTS.md"
 test -f "$CANONICAL"
@@ -119,17 +145,19 @@ echo 'shared Hindsight bank: PASS'
 # Replacing a changed regular canonical file also preserves its content in a backup.
 printf 'changed regular canonical guidance\n' > "$CANONICAL"
 regular_backups_before=$(find "$AGENTS" -maxdepth 1 -name 'AGENTS.md.bak.*' | wc -l | tr -d ' ')
-bash "$SETUP" --agents-dir "$AGENTS" --claude-dir "$CLAUDE" --codex-dir "$CODEX" --hindsight-dir "$HINDSIGHT" >/dev/null
+bash "$SETUP" --agents-dir "$AGENTS" --claude-dir "$CLAUDE" --codex-dir "$CODEX" --hindsight-dir "$HINDSIGHT" --hindsight-source "$SOURCE" >/dev/null
 test "$(find "$AGENTS" -maxdepth 1 -name 'AGENTS.md.bak.*' | wc -l | tr -d ' ')" -gt "$regular_backups_before"
 grep -q 'changed regular canonical guidance' "$AGENTS"/AGENTS.md.bak.*
 
 # A second run is idempotent: one import and one copy of every official hook.
 hook_backups_before=$(find "$CODEX" -maxdepth 1 -name 'hooks.json.bak.*' | wc -l | tr -d ' ')
 config_backups_before=$(find "$HINDSIGHT" -maxdepth 1 -name 'codex.json.bak.*' | wc -l | tr -d ' ')
-bash "$SETUP" --agents-dir "$AGENTS" --claude-dir "$CLAUDE" --codex-dir "$CODEX" --hindsight-dir "$HINDSIGHT" >/dev/null
+integration_backups_before=$(find "$HINDSIGHT" -maxdepth 1 -name 'codex.bak.*' | wc -l | tr -d ' ')
+bash "$SETUP" --agents-dir "$AGENTS" --claude-dir "$CLAUDE" --codex-dir "$CODEX" --hindsight-dir "$HINDSIGHT" --hindsight-source "$SOURCE" >/dev/null
 test "$(grep -Fxc "@$CANONICAL" "$CLAUDE/CLAUDE.md")" -eq 1
 test "$(find "$CODEX" -maxdepth 1 -name 'hooks.json.bak.*' | wc -l | tr -d ' ')" -eq "$hook_backups_before"
 test "$(find "$HINDSIGHT" -maxdepth 1 -name 'codex.json.bak.*' | wc -l | tr -d ' ')" -eq "$config_backups_before"
+test "$(find "$HINDSIGHT" -maxdepth 1 -name 'codex.bak.*' | wc -l | tr -d ' ')" -eq "$integration_backups_before"
 python3 - "$CODEX/hooks.json" <<'PY'
 import json, sys
 hooks = json.load(open(sys.argv[1]))["hooks"]
@@ -137,3 +165,24 @@ for event, needle in (("SessionStart", "session-start.py"), ("UserPromptSubmit",
     commands = [hook.get("command", "") for group in hooks[event] for hook in group.get("hooks", [])]
     assert sum(needle in value for value in commands) == 1
 PY
+
+# Explicit sources are rejected when required files are missing or content escapes via symlink.
+BAD_SOURCE="$TMP/bad-source"
+mkdir -p "$BAD_SOURCE/hooks" "$BAD_SOURCE/scripts" "$TMP/outside"
+cp "$SOURCE/hooks/hooks.json" "$BAD_SOURCE/hooks/hooks.json"
+cp "$SOURCE/settings.json" "$BAD_SOURCE/settings.json"
+ln -s "$TMP/outside/escaped.py" "$BAD_SOURCE/scripts/escaped.py"
+BAD_HINDSIGHT="$TMP/bad-hindsight"
+if bash "$SETUP" --agents-dir "$TMP/bad-agents" --claude-dir "$TMP/bad-claude" --codex-dir "$TMP/bad-codex" --hindsight-dir "$BAD_HINDSIGHT" --hindsight-source "$BAD_SOURCE" >/dev/null 2>&1; then
+  exit 1
+fi
+test ! -e "$BAD_HINDSIGHT/codex"
+
+MALFORMED_SOURCE="$TMP/malformed-source"
+mkdir -p "$MALFORMED_SOURCE/hooks" "$MALFORMED_SOURCE/scripts"
+printf 'not json\n' > "$MALFORMED_SOURCE/hooks/hooks.json"
+printf '{}\n' > "$MALFORMED_SOURCE/settings.json"
+if bash "$SETUP" --agents-dir "$TMP/malformed-agents" --claude-dir "$TMP/malformed-claude" --codex-dir "$TMP/malformed-codex" --hindsight-dir "$TMP/malformed-hindsight" --hindsight-source "$MALFORMED_SOURCE" >/dev/null 2>&1; then
+  exit 1
+fi
+test ! -e "$TMP/malformed-hindsight/codex"

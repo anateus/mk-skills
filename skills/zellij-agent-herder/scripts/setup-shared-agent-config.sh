@@ -7,21 +7,23 @@ CLAUDE_DIR="$HOME/.claude"
 CODEX_DIR="$HOME/.codex"
 HINDSIGHT_DIR="$HOME/.hindsight"
 INSTALL_HINDSIGHT=false
+HINDSIGHT_SOURCE=""
 
 usage() {
-  echo "usage: $0 [--agents-dir DIR] [--claude-dir DIR] [--codex-dir DIR] [--hindsight-dir DIR] [--install-hindsight]" >&2
+  echo "usage: $0 [--agents-dir DIR] [--claude-dir DIR] [--codex-dir DIR] [--hindsight-dir DIR] [--hindsight-source DIR] [--install-hindsight]" >&2
   exit 2
 }
 
 while [ "$#" -gt 0 ]; do
   case "$1" in
-    --agents-dir|--claude-dir|--codex-dir|--hindsight-dir)
+    --agents-dir|--claude-dir|--codex-dir|--hindsight-dir|--hindsight-source)
       [ "$#" -ge 2 ] || usage
       case "$1" in
         --agents-dir) AGENTS_DIR="$2" ;;
         --claude-dir) CLAUDE_DIR="$2" ;;
         --codex-dir) CODEX_DIR="$2" ;;
         --hindsight-dir) HINDSIGHT_DIR="$2" ;;
+        --hindsight-source) HINDSIGHT_SOURCE="$2" ;;
       esac
       shift 2
       ;;
@@ -29,6 +31,49 @@ while [ "$#" -gt 0 ]; do
     *) usage ;;
   esac
 done
+
+if [ -n "$HINDSIGHT_SOURCE" ]; then
+  [ ! -L "$HINDSIGHT_SOURCE" ] || { echo "Hindsight source root must not be a symlink" >&2; exit 1; }
+  python3 - "$HINDSIGHT_SOURCE" <<'PY'
+import json, os, pathlib, sys
+
+root = pathlib.Path(sys.argv[1])
+required = (root / "hooks" / "hooks.json", root / "settings.json")
+scripts = root / "scripts"
+if not root.is_dir() or not scripts.is_dir() or scripts.is_symlink():
+    raise SystemExit("Hindsight source requires a regular scripts directory")
+for path in required:
+    if not path.is_file() or path.is_symlink():
+        raise SystemExit(f"Hindsight source is missing regular file: {path}")
+for directory, names, files in os.walk(scripts, followlinks=False):
+    base = pathlib.Path(directory)
+    for name in names + files:
+        path = base / name
+        if path.is_symlink():
+            raise SystemExit(f"Hindsight source contains escaping symlink: {path}")
+        if name in files and not path.is_file():
+            raise SystemExit(f"Hindsight source contains non-regular file: {path}")
+with required[0].open(encoding="utf-8") as stream:
+    hooks_doc = json.load(stream)
+with required[1].open(encoding="utf-8") as stream:
+    settings = json.load(stream)
+if not isinstance(hooks_doc, dict) or not isinstance(settings, dict):
+    raise SystemExit("Hindsight hooks and settings must be JSON objects")
+hooks = hooks_doc.get("hooks", hooks_doc)
+if not isinstance(hooks, dict):
+    raise SystemExit("Hindsight hooks must be a JSON object")
+for event in ("SessionStart", "UserPromptSubmit", "Stop"):
+    groups = hooks.get(event)
+    if not isinstance(groups, list):
+        raise SystemExit(f"Hindsight source requires {event} hook groups")
+    for group in groups:
+        if not isinstance(group, dict) or not isinstance(group.get("hooks"), list):
+            raise SystemExit(f"Malformed Hindsight {event} hook group")
+        for hook in group["hooks"]:
+            if not isinstance(hook, dict) or not isinstance(hook.get("command"), str):
+                raise SystemExit(f"Malformed Hindsight {event} hook command")
+PY
+fi
 
 backup_if_changed() {
   local current="$1" replacement="$2"
@@ -44,7 +89,8 @@ mkdir -p "$AGENTS_DIR" "$CLAUDE_DIR" "$CODEX_DIR" "$HINDSIGHT_DIR"
 CANONICAL="$AGENTS_DIR/AGENTS.md"
 GUIDANCE_TMP="$(mktemp "${TMPDIR:-/tmp}/shared-agent-guidance.XXXXXX")"
 CLAUDE_TMP="$(mktemp "${TMPDIR:-/tmp}/shared-claude-overlay.XXXXXX")"
-trap 'rm -f "$GUIDANCE_TMP" "$CLAUDE_TMP"' EXIT
+INSTALL_TMP=""
+trap 'rm -f "$GUIDANCE_TMP" "$CLAUDE_TMP"; [ -z "$INSTALL_TMP" ] || rm -rf "$INSTALL_TMP"' EXIT
 
 cat > "$GUIDANCE_TMP" <<'EOF'
 # Shared agent guidance
@@ -95,7 +141,46 @@ if [ ! -L "$CODEX_GUIDANCE" ] || [ "$(readlink "$CODEX_GUIDANCE" 2>/dev/null || 
   ln -s "$CANONICAL" "$CODEX_GUIDANCE"
 fi
 
-HINDSIGHT_HOOKS="$HINDSIGHT_DIR/codex/hooks.json"
+HINDSIGHT_CODEX_DIR="$HINDSIGHT_DIR/codex"
+if [ -n "$HINDSIGHT_SOURCE" ]; then
+  INSTALL_TMP="$(mktemp -d "$HINDSIGHT_DIR/.codex.install.XXXXXX")"
+  mkdir -p "$INSTALL_TMP/scripts"
+  cp -p "$HINDSIGHT_SOURCE/settings.json" "$INSTALL_TMP/settings.json"
+  cp -pR "$HINDSIGHT_SOURCE/scripts/." "$INSTALL_TMP/scripts/"
+  python3 - "$HINDSIGHT_SOURCE/hooks/hooks.json" "$INSTALL_TMP/hooks.json" "$HINDSIGHT_CODEX_DIR/scripts" <<'PY'
+import json, os, stat, sys
+
+source, target, scripts_dir = sys.argv[1:]
+with open(source, encoding="utf-8") as stream:
+    document = json.load(stream)
+def substitute(value):
+    if isinstance(value, str):
+        return value.replace("__SCRIPTS_DIR__", scripts_dir)
+    if isinstance(value, list):
+        return [substitute(item) for item in value]
+    if isinstance(value, dict):
+        return {key: substitute(item) for key, item in value.items()}
+    return value
+document = substitute(document)
+with open(target, "w", encoding="utf-8") as stream:
+    json.dump(document, stream, indent=2)
+    stream.write("\n")
+os.chmod(target, stat.S_IMODE(os.stat(source).st_mode))
+PY
+  if grep -R -Fq '__SCRIPTS_DIR__' "$INSTALL_TMP"; then
+    echo "Hindsight source contains an unresolved scripts placeholder" >&2
+    exit 1
+  fi
+  if [ ! -d "$HINDSIGHT_CODEX_DIR" ] || ! diff -qr "$INSTALL_TMP" "$HINDSIGHT_CODEX_DIR" >/dev/null 2>&1; then
+    if [ -e "$HINDSIGHT_CODEX_DIR" ] || [ -L "$HINDSIGHT_CODEX_DIR" ]; then
+      mv "$HINDSIGHT_CODEX_DIR" "$HINDSIGHT_CODEX_DIR.bak.$(date +%Y%m%d%H%M%S).$$"
+    fi
+    mv "$INSTALL_TMP" "$HINDSIGHT_CODEX_DIR"
+    INSTALL_TMP=""
+  fi
+fi
+
+HINDSIGHT_HOOKS="$HINDSIGHT_CODEX_DIR/hooks.json"
 if [ ! -f "$HINDSIGHT_HOOKS" ] && [ "$INSTALL_HINDSIGHT" = true ]; then
   if command -v hindsight >/dev/null 2>&1; then
     hindsight codex install --directory "$HINDSIGHT_DIR/codex"
