@@ -44,7 +44,11 @@ test('invalid override fails open with one diagnostic', () => {
 });
 
 test('missing and malformed policies use the built-in fallback', () => {
-  for (const target of [fixture('missing.json'), fixture('malformed.json')]) {
+  for (const target of [
+    fixture('missing.json'),
+    fixture('malformed.json'),
+    fixture('invalid-rules.json'),
+  ]) {
     const result = loadPolicy(target);
     assert.equal(result.policy.defaultMode, 'selective');
     assert.ok(result.diagnostics.length > 0);

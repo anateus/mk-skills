@@ -40,7 +40,15 @@ process.stdin.on('end', () => {
   let override;
   try {
     const parsed = JSON.parse(input);
-    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) throw new Error('invalid');
+    if (
+      !parsed
+      || typeof parsed !== 'object'
+      || Array.isArray(parsed)
+      || parsed.hook_event_name !== 'SessionStart'
+      || typeof parsed.model !== 'string'
+      || parsed.model.length === 0
+      || typeof parsed.cwd !== 'string'
+    ) throw new Error('invalid');
     event = {
       hook_event_name: parsed.hook_event_name,
       model: parsed.model,

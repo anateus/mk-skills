@@ -53,11 +53,13 @@ test('unknown model returns selective context', () => {
 });
 
 test('malformed stdin exits zero with selective context and a concise diagnostic', () => {
-  const result = runHook('{not json', 'strict');
-  assert.equal(result.status, 0);
-  assert.match(contextOf(result.output), /trigger clearly matches/i);
-  assert.match(result.output.systemMessage, /malformed hook input/i);
-  assert.ok(result.output.systemMessage.length < 160);
+  for (const input of ['{not json', '{}']) {
+    const result = runHook(input, 'strict');
+    assert.equal(result.status, 0);
+    assert.match(contextOf(result.output), /trigger clearly matches/i);
+    assert.match(result.output.systemMessage, /malformed hook input/i);
+    assert.ok(result.output.systemMessage.length < 160);
+  }
 });
 
 test('all session lifecycle sources use the same selector', () => {
