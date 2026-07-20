@@ -24,20 +24,19 @@ The hook no-ops silently outside zellij (`$ZELLIJ` unset) — presence, not trut
 
 ## Status + hunk-autodiff (`scripts/install-hooks.sh`)
 
-Two Claude Code lifecycle hooks, both installed by one script. They give an agent running in a zellij pane a live status in its pane title and an automatic diff pane when it starts changing files.
+Shared Claude Code and Codex lifecycle hooks installed by one script. They give a top-level agent running in a zellij pane a live status in its pane title, remember its originating pane, and associate edits with a persistent Hunk review stream.
 
 ## Install
 
 ```
-bash "<skill-base-dir>/scripts/install-hooks.sh"
+bash "<skill-base-dir>/scripts/install-hooks.sh" --all
 ```
 
-Idempotent and safe to re-run. It:
-1. Copies `zellij-agent-status.sh` and `hunk-autodiff.sh` into `~/.claude/hooks/` (chmod +x).
-2. Backs up `~/.claude/settings.json` (`.bak.<timestamp>`).
-3. Registers, without clobbering existing hooks (e.g. herdr's `SessionStart`):
-   - `UserPromptSubmit`, `Stop`, `Notification`, `SessionEnd` → `zellij-agent-status.sh`
-   - `PostToolUse` (matcher `Edit|Write|MultiEdit|NotebookEdit`, `"async": true`) → `hunk-autodiff.sh`
+`--all` is the default; use `--claude` or `--codex` to target one host. The idempotent installer copies `zellij-agent-status.sh`, `zellij-origin.sh`, and `hunk-autodiff.sh` into each host's `hooks/` directory, backs up a changed `~/.claude/settings.json` or `~/.codex/hooks.json` as `.bak.<timestamp>.<pid>`, and replaces only entries owned by these installed script paths. Existing hook groups and commands are preserved.
+
+Claude registers status on `UserPromptSubmit`, `Stop`, `Notification`, and `SessionEnd`; origin on `SessionStart`; and async autodiff on `PostToolUse` matching `Edit|Write|MultiEdit|NotebookEdit`. Codex registers status on `SessionStart`, `UserPromptSubmit`, `PermissionRequest`, and `Stop`; origin on `SessionStart`; and synchronous autodiff on `PostToolUse` matching `apply_patch|Edit|Write`.
+
+After installing Codex hooks, open `/hooks` in the **next Codex interactive session** and trust the new or changed definitions. Do not assume a hook is trusted merely because it is present in `hooks.json`.
 
 ## Status hook (`zellij-agent-status.sh`)
 
@@ -56,18 +55,13 @@ Stamps `"<base> · <status>"` into the current pane's title:
 
 No-ops when: run outside zellij (`ZELLIJ_PANE_ID` unset), `zellij`/`python3` absent, the hook JSON carries an `agent_id` (a **subagent** — never stamp its parent's pane), the event is `SubagentStop` (never revive idle), or a `Notification` whose `notification_type` isn't `permission_prompt`. The separator is `" · "` (space, U+00B7, space), byte-identical to what `zj_resolve_id`/`zj_wait_status` split on. `zj_wait_status` reads it back.
 
-## hunk-autodiff hook (`hunk-autodiff.sh`)
+## Origin and hunk-autodiff hooks
 
-On the agent's **first file change in a worktree this turn**, opens `hunk diff --watch` in a plain tiled pane (never `--near-current-pane`/`-d` — see `references/pitfalls.md` on why that misplaces/hides the pane when a background agent, not the human, issues the spawn).
+`zellij-origin.sh` records the first top-level `SessionStart` origin as `(host session id, Zellij session, origin pane)`. `hunk-autodiff.sh` normalizes the host's `PostToolUse` payload and routes qualifying edits into a stream identified by **(Zellij session, origin pane, git common directory, worktree root/kind)**. A subagent does not overwrite the origin or stamp parent status, but edits surfaced through the parent lifecycle can contribute to that parent stream.
 
-Skips when: outside zellij; subagent (`agent_id`); not a git repo; clean tree; a live hunk session already tracks the repo (`hunk session get --repo <root>` exits 0); or a per-`(root, prompt_id)` dedup marker under `~/.cache/zellij-agent-herder/` already fired this turn (written **before** opening, so a retry within the turn won't double-open).
+The first stream request chooses a fixed base (upstream merge-base when available, otherwise `HEAD`) and retains it as the stream changes. `zj_watch_worktree` accepts an explicit fixed branch point; `zj_watch_session` rolls completed worktree panes into one parent-tree aggregate against that same base. Automatic requests reuse a live matching pane. If the human closes a pane while its signature is unchanged, automatic requests record and respect that dismissal; `zj_review_stream` explicitly reopens it for completion review.
 
-**Known limitation:** `hunk diff --watch` runs under a local daemon whose session can **outlive its zellij pane**. If a human closes the diff pane, `hunk session get` may still report the session live, so the hook won't reopen the diff on the next change that turn. Kill the stray watcher (or start a fresh turn) to reset.
-
-## Toggles
-
-- **When it fires.** Default is first-change (`PostToolUse`). To fire at turn-end instead, move the `hunk-autodiff.sh` registration from `PostToolUse` to `Stop` in `~/.claude/settings.json` (and drop the matcher).
-- **Dedup strategy.** This port dedups per `(root, prompt_id)` (one open attempt per turn per repo). The original `hunk.autodiff` plugin instead tracked a diff signature to "stay closed" once dismissed — swap that in if you prefer dismissal to survive across turns.
+With exactly one attached client and a valid origin pane, the controller briefly focuses the origin, opens the Hunk pane split-right, and restores the client's former focus. Headless, multi-client, or missing-origin cases use a plain tiled pane. Every spawn is reconciled against `list-panes` rather than trusting `new-pane` output alone.
 
 ## Driving a live session
 
@@ -75,4 +69,16 @@ Once a `hunk diff --watch` pane is open, an agent can inspect/annotate it via th
 
 ## Uninstall
 
-Remove the two files `~/.claude/hooks/zellij-agent-status.sh` and `~/.claude/hooks/hunk-autodiff.sh`, and delete their entries from `~/.claude/settings.json` (the `UserPromptSubmit`/`Stop`/`Notification` status entries and the `PostToolUse` hunk entry). A settings backup from install time sits alongside as `settings.json.bak.<timestamp>`.
+Use the ownership-scoped uninstaller rather than deleting hook groups by hand:
+
+```
+bash "<skill-base-dir>/scripts/install-hooks.sh" --uninstall --all
+```
+
+Use `--claude` or `--codex` for one host. It backs up changed configuration, removes the three installed scripts, and removes only hook entries whose command resolves to those scripts in that host's hooks directory; unrelated entries, empty groups, and other hooks remain intact.
+
+## Shared guidance and Hindsight
+
+`bash "<skill-base-dir>/scripts/setup-shared-agent-config.sh"` creates canonical shared guidance at `~/.agents/AGENTS.md`, imports it from `~/.claude/CLAUDE.md`, symlinks `~/.codex/AGENTS.md` to it, merges already-installed official Hindsight Codex hooks into `~/.codex/hooks.json`, and sets `~/.hindsight/codex.json` to `{"bankId":"claude_code","dynamicBankId":false}` while preserving other fields such as credentials. Changed files are backed up.
+
+Ordinary setup never downloads Hindsight. If `~/.hindsight/codex/hooks.json` is absent, install the official integration first, or use the explicit `--install-hindsight` flow only when the `hindsight codex install --directory` interface is available and verified, then rerun ordinary setup. Review and trust the merged Codex definitions with `/hooks` in the next interactive session.

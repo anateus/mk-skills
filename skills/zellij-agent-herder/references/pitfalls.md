@@ -7,7 +7,7 @@ Sharp edges of driving zellij headlessly, and how each surfaces.
 - **Directional/relative spawn silently no-ops headless.** `new-pane --near-current-pane` and `new-pane -d <dir>` exit 0 and print a `terminal_N` string but create **no pane** when no client is attached. Always spawn via `zj_spawn`, which detects this and falls back to plain `new-pane`. Symptom: a later `list-panes` / `zj_resolve_id` can't find the pane you "just spawned."
 - **Don't trust `new-pane`'s printed id.** It prints even on the no-op. Recover the real id from `list-panes -j` (or resolve by name).
 - **Focus theft.** Plain `new-pane`, `zellij run`, `new-tab`, `go-to-tab*`, `focus-*`, `move-focus` move an attached human's view. Prefer `zj_spawn` (uses `--near-current-pane` when attached) and avoid tab/focus actions when a human may be watching.
-- **Relative placement can fail even *with* a client attached.** `--near-current-pane`/`-d` also misbehaves when the pane issuing the `action` isn't the client's *focused* pane — the pane prints a `terminal_N` but never appears in `list-panes` (observed with `zj_client_count == 1` but focus on a different pane; `list-clients` shows which pane the client is actually focused on). For a pane you only want to **watch**, not interact with, spawn a **plain tiled `new-pane`** (no direction flag) — `zj_watch_worktree` and `hunk-autodiff.sh` both do exactly this. The focus-theft that `--near-current-pane` avoids doesn't matter for a passive watcher. This bit `hunk-autodiff.sh` in production once already (2026-07-16): it conditioned placement only on `zj_client_count`, not focus, so a hunk-diff pane spawned by a background agent the human wasn't looking at printed a real id but never actually appeared — the id was still valid enough to close later, producing a "closing a pane that was never visible" report. Fixed by dropping the directional branch entirely.
+- **Relative placement requires the client's focus to match the origin.** The stream controller handles this when exactly one client is attached: it saves the focused pane, focuses the recorded origin, opens the review pane to the right, and restores the old focus. With no client, multiple clients, or a missing origin it uses plain tiled `new-pane`. Do not recreate that sequence manually, and do not trust the printed id: the controller verifies it against `list-panes` and can recover by its unique title.
 - **Floating panes won't render under `hide_floating_panes = true`.** A `--floating` pane *does* show in `list-panes` but stays invisible under that setting — another reason to use tiled for watcher panes.
 
 ## Reading panes
@@ -40,9 +40,15 @@ Sharp edges of driving zellij headlessly, and how each surfaces.
 
 ## hunk pane didn't open
 
-Walk the skip conditions: is `<cwd>` inside a **git repo**? Is the tree **dirty**? Is a **live hunk session already open** for the repo (`hunk session get --repo <root>` exits 0 — including a stray watcher that outlived its pane)? Did the **per-turn dedup marker** already fire (`~/.cache/zellij-agent-herder/turn-*`)? Is `hunk` on PATH? Any one of these is a deliberate no-op.
+Walk the prerequisites: is the edit tool supported for this host? Is `<cwd>` inside a **git repo**? Was a top-level origin captured at `SessionStart`? Is `hunk` on PATH? Inspect stream state under `${XDG_CACHE_HOME:-~/.cache}/zellij-agent-herder/streams/` without editing it while hooks are active.
 
-**A `zj_watch_worktree` pane keeps dying / re-spawning.** While the worktree is still clean, `hunk diff <base> --watch` exits on the empty diff and the restart loop respawns it every ~2s — harmless; it sticks once the agent writes its first file. A pane that keeps dying *after* the worktree is dirty usually means the wrong base (an empty `HEAD` diff) or the worktree dir was removed. `hunk` **sessions outlive their panes** (no clean close CLI), so failed spawns leave stale `live` sessions — `hunk session list` to inspect; they persist across the pane closing.
+If a tracked pane was closed and the diff signature did not change, the stream is intentionally treated as manually dismissed and automatic hooks stay quiet. Run `zj_review_stream <repo_root> <fixed_base> [label]` for explicit completion review. If the diff changed, a later qualifying edit should reopen it automatically.
+
+If state points to a pane that no longer exists but behavior does not match the dismissal rules, first confirm the correct Zellij session and origin pane, then inspect `list-panes -j` and the cached stream JSON. Remove a stale stream state file only when no related hook/controller process is running; otherwise use `zj_review_stream`, which reconciles state safely.
+
+**A worktree pane disappeared after roll-up.** This is expected: `zj_watch_session` marks the supplied child streams complete, closes only their panes, and opens one aggregate stream over the parent root against the original fixed base. Do not substitute current `HEAD`, which would hide committed merges.
+
+**Codex hooks are configured but silent.** Validate `~/.codex/hooks.json`, then use `/hooks` in a new interactive Codex session to trust the definitions. Configuration installation does not grant trust automatically.
 
 ## Triggering / the `ZELLIJ` env var
 

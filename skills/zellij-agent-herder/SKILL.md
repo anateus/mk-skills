@@ -22,7 +22,7 @@ If `$ZELLIJ` is **unset** you are **not inside zellij** — say so and stop; not
 
 ## Helpers
 
-`source "<skill-base-dir>/scripts/zj.sh"` (bash/zsh) — gives `_zj`, `_zj_panes`, `zj_resolve_id`, `zj_pane_exists`, `zj_client_count`, `zj_spawn`, `zj_watch_worktree`, `zj_watch_session`, `zj_wait_output`, `zj_wait_exit`, `zj_wait_status`. All paths are relative to this skill's base directory (printed on load); never hardcode an install path.
+`source "<skill-base-dir>/scripts/zj.sh"` (bash/zsh) — gives `_zj`, `_zj_panes`, `zj_resolve_id`, `zj_pane_exists`, `zj_client_count`, `zj_spawn`, `zj_watch_worktree`, `zj_watch_session`, `zj_review_stream`, `zj_wait_output`, `zj_wait_exit`, `zj_wait_status`. All paths are relative to this skill's base directory (printed on load); never hardcode an install path.
 
 **From fish or another non-POSIX shell** (can't source a bash lib): invoke a helper instead — `bash "<skill-base-dir>/scripts/zj.sh" zj_spawn -n worker -- bash`, `bash "<skill-base-dir>/scripts/zj.sh" zj_wait_output <id> <match> 10`. The peer wrapper and installer are already invocation-based, so they work from any shell.
 
@@ -33,6 +33,7 @@ If `$ZELLIJ` is **unset** you are **not inside zellij** — say so and stop; not
 | list panes | `_zj_panes` (or `zellij action list-panes -j`) |
 | read a pane | `_zj dump-screen -p <id> --full` (plain, never `-a`) |
 | spawn | `zj_spawn -d right --cwd DIR -n NAME -- CMD` |
+| reopen a stream for completion review | `zj_review_stream <repo_root> <base_sha> [label]` |
 | send text | `_zj write-chars -p <id> "text"` |
 | send Enter | `_zj write -p <id> 13` (twice for Codex) |
 | close | `_zj close-pane -p <id>` |
@@ -51,22 +52,24 @@ Herding isn't only for interactive peer panes. When a controller dispatches **he
 
 ```
 BASE=$(git rev-parse HEAD)                                 # fixed branch point, capture once
-zj_watch_worktree <worktree_abs_path> $BASE [label]        # one per worktree; echoes the pane id
+zj_watch_worktree <worktree_abs_path> "$BASE" [label]      # one per worktree; echoes the pane id
 # ... fan-out runs; controller merges each worktree into the parent tree in order ...
-zj_watch_session <parent_repo_root> $BASE session <id>...   # teardown: swap N panes for 1 aggregate
+zj_watch_session <parent_repo_root> "$BASE" session <id>... # teardown: swap N panes for 1 aggregate
 ```
 
+- A review stream is identified by its **Zellij session, originating pane, and git identity** (git common directory plus the worktree root/kind). Hooks persist the top-level agent's origin pane, so work done from another focused pane—or by a subagent whose edit is reported through the parent lifecycle—still belongs to the originating parent stream. Subagents do not create independent origin or status records.
 - **During fan-out**, open one `zj_watch_worktree` pane per worktree.
 - **At teardown**, once the worktrees are merged and removed, call `zj_watch_session` once with the pane ids the watchers returned: it closes them (their dirs are gone, so their restart loops would otherwise spin) and opens **one aggregate pane** over the parent tree showing the **whole session's work** — parent tree vs the *same* `$BASE`, spanning every merged commit plus anything uncommitted.
+- **At explicit completion review**, call `zj_review_stream <repo_root> "$BASE" [label]`. It reuses the live pane or deliberately reopens a manually dismissed unchanged stream; automatic edit hooks respect that dismissal until the diff changes.
 - **Leave review notes as work lands.** Each `--watch` pane is a live hunk session, so whenever a significant chunk of work completes (a worktree finishes, or the aggregate lands), use the **`/hunk-review`** skill to walk the hunks and drop inline comments on that diff — drive it through `hunk session *`, never a hand-run `hunk diff`. The notes stay attached to the live session for a reviewer or the human to read.
-- **Plain tiled pane, always** — never `--near-current-pane`/`-d`: relative placement no-ops headless *and* misbehaves when the issuing pane isn't the client's focused pane, and a passive watcher has no focus to steal. Both helpers handle this (do **not** route them through `zj_spawn`).
+- **Placement preserves the human's view.** With exactly one attached client, the controller temporarily focuses the recorded origin, opens the review split to its right, then restores the previous focus. With no client, multiple clients, or an unavailable origin, it falls back to a plain tiled pane and verifies the returned pane id.
 - **Diff base = the fixed SHA the worktrees branched from**, not `main` (advances when you merge a sibling → phantom "removed" lines) and not `HEAD` (empties on commit — the aggregate pane in particular goes blank the moment merges land).
 
-This is the controller-driven fan-out counterpart to the hunk hook below, which only follows the *current* agent's own edits (subagents are intentionally no-pane).
+This is the controller-driven fan-out counterpart to the Hunk hook below. Hooks skip subagent-origin/status records while keeping qualifying parent-lifecycle edits associated with the top-level agent's originating stream.
 
 ## Hooks (status + hunk)
 
-Run `bash "<skill-base-dir>/scripts/install-hooks.sh"` once to get live pane-title status (`working`/`idle`/`blocked`) and an automatic `hunk diff --watch` pane on the first file change. See `references/hooks.md`. Drive a live diff via the `hunk-review` skill.
+Run `bash "<skill-base-dir>/scripts/install-hooks.sh" --all` once to install Claude Code and Codex lifecycle hooks for live pane-title status (`working`/`idle`/`blocked`), origin tracking, and automatic stream review on file changes. Codex requires reviewing the definitions with `/hooks` in the next interactive session. See `references/hooks.md`. Drive a live diff via the `hunk-review` skill.
 
 ## Pointers
 
