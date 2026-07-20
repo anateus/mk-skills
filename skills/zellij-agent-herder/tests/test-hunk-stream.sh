@@ -2,6 +2,9 @@
 set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "$0")/../../../" && pwd)"
 CTL="$ROOT_DIR/skills/zellij-agent-herder/scripts/hunk-stream.py"
+ORIGIN="$ROOT_DIR/skills/zellij-agent-herder/scripts/zellij-origin.sh"
+AUTODIFF="$ROOT_DIR/skills/zellij-agent-herder/scripts/hunk-autodiff.sh"
+STATUS="$ROOT_DIR/skills/zellij-agent-herder/scripts/zellij-agent-status.sh"
 T="$(mktemp -d)"; trap 'rm -rf "$T"' EXIT
 export HOME="$T/home" XDG_CACHE_HOME="$T/cache"; mkdir -p "$HOME"
 git -C "$T" init -q repo
@@ -74,6 +77,14 @@ elif command == "new-pane":
 elif command == "close-pane":
     pane_id = rest[rest.index("-p") + 1]
     save("panes", [pane for pane in load("panes") if pane["id"] != pane_id])
+elif command == "rename-pane":
+    pane_id = rest[rest.index("-p") + 1]
+    title = rest[-1]
+    panes = load("panes")
+    for pane in panes:
+        if pane["id"] == pane_id:
+            pane["title"] = title
+    save("panes", panes)
 else:
     raise SystemExit("unsupported fake zellij command: " + repr(args))
 PY
@@ -138,6 +149,97 @@ import json, sys
 assert sys.argv[2] in {pane["id"] for pane in json.load(open(sys.argv[1]))}
 PY
 echo 'reconciliation/placement/rollup: PASS'
+
+# Hook adapters retain the top-level pane even when later events run elsewhere.
+export ZELLIJ_SESSION_NAME=claude-s ZELLIJ_PANE_ID=1
+printf '%s\n' '{"hook_event_name":"SessionStart","session_id":"claude-session","cwd":"'$T'/repo"}' | bash "$ORIGIN"
+python3 - "$XDG_CACHE_HOME/zellij-agent-herder/origins/claude-claude-session.json" <<'PY'
+import json, sys
+assert json.load(open(sys.argv[1])) == {
+    "host": "claude", "session_id": "claude-session",
+    "zellij_session": "claude-s", "parent_pane": "terminal_1",
+}
+PY
+export ZELLIJ_PANE_ID=7
+printf '%s\n' '{"hook_event_name":"SessionStart","session_id":"claude-session","agent_id":"child","cwd":"'$T'/repo"}' | bash "$ORIGIN"
+before="$(grep -c 'new-pane' "$ZELLIJ_LOG")"
+printf '%s\n' '{"hook_event_name":"PostToolUse","session_id":"claude-session","cwd":"'$T'/repo","tool_name":"Edit","tool_input":{"file_path":"'$T'/repo/a.txt"}}' | bash "$AUTODIFF"
+[ "$(( $(grep -c 'new-pane' "$ZELLIJ_LOG") - before ))" = 1 ]
+grep -q 'focus-pane-id terminal_1' "$ZELLIJ_LOG"
+for tool in MultiEdit NotebookEdit; do
+  sid="claude-$tool"
+  ZAH_HOST=claude ZELLIJ_SESSION_NAME="s-$sid" ZELLIJ_PANE_ID=1 bash "$ORIGIN" <<EOF
+{"hook_event_name":"SessionStart","session_id":"$sid","cwd":"$T/repo"}
+EOF
+  before="$(grep -c 'new-pane' "$ZELLIJ_LOG")"
+  ZELLIJ_PANE_ID=7 bash "$AUTODIFF" <<EOF
+{"hook_event_name":"PostToolUse","session_id":"$sid","cwd":"$T/repo","tool_name":"$tool","tool_input":{"file_path":"$T/repo/a.txt"}}
+EOF
+  [ "$(( $(grep -c 'new-pane' "$ZELLIJ_LOG") - before ))" = 1 ]
+done
+
+export ZELLIJ_PANE_ID=1
+export ZELLIJ_SESSION_NAME=codex-s
+printf '%s\n' '{"hook_event_name":"SessionStart","session_id":"codex-session","model":"gpt-5","turn_id":"turn-1","cwd":"'$T'/repo"}' | bash "$ORIGIN"
+export ZELLIJ_PANE_ID=7
+printf '%s\n' '{"hook_event_name":"SessionStart","session_id":"codex-session","model":"gpt-5","turn_id":"turn-child","context":{"agent_id":"child"},"cwd":"'$T'/repo"}' | bash "$ORIGIN"
+python3 - "$XDG_CACHE_HOME/zellij-agent-herder/origins/codex-codex-session.json" <<'PY'
+import json, sys
+assert json.load(open(sys.argv[1]))["parent_pane"] == "terminal_1"
+PY
+for tool in apply_patch Edit Write; do
+  sid="codex-$tool"
+  ZAH_HOST=codex ZELLIJ_SESSION_NAME="s-$sid" ZELLIJ_PANE_ID=1 bash "$ORIGIN" <<EOF
+{"hook_event_name":"SessionStart","session_id":"$sid","cwd":"$T/repo"}
+EOF
+  before="$(grep -c 'new-pane' "$ZELLIJ_LOG")"
+  ZELLIJ_PANE_ID=7 bash "$AUTODIFF" <<EOF
+{"hook_event_name":"PostToolUse","session_id":"$sid","model":"gpt-5","turn_id":"turn-$tool","cwd":"$T/repo","tool_name":"$tool","tool_input":{"file_path":"$T/repo/a.txt"}}
+EOF
+  [ "$(( $(grep -c 'new-pane' "$ZELLIJ_LOG") - before ))" = 1 ]
+done
+before="$(grep -c 'new-pane' "$ZELLIJ_LOG")"
+printf '%s\n' '{"hook_event_name":"PostToolUse","session_id":"codex-session","model":"gpt-5","turn_id":"turn-read","cwd":"'$T'/repo","tool_name":"Read","tool_input":{"file_path":"'$T'/repo/a.txt"}}' | bash "$AUTODIFF"
+[ "$(grep -c 'new-pane' "$ZELLIJ_LOG")" = "$before" ]
+
+# Claude mappings stay intact; Codex adds PermissionRequest and clears stale status on SessionStart.
+export ZELLIJ_SESSION_NAME=status-s
+ZELLIJ_PANE_ID=1 bash "$STATUS" <<'EOF'
+{"hook_event_name":"UserPromptSubmit","session_id":"codex-session","model":"gpt-5","turn_id":"turn-status"}
+EOF
+python3 - "$ZELLIJ_DATA/panes.json" <<'PY'
+import json, sys
+pane = next(p for p in json.load(open(sys.argv[1])) if p["id"] == "terminal_1")
+assert pane["title"] == "parent · working", pane
+PY
+ZELLIJ_PANE_ID=1 bash "$STATUS" <<'EOF'
+{"hook_event_name":"PermissionRequest","session_id":"codex-session","model":"gpt-5","turn_id":"turn-status"}
+EOF
+python3 - "$ZELLIJ_DATA/panes.json" <<'PY'
+import json, sys
+pane = next(p for p in json.load(open(sys.argv[1])) if p["id"] == "terminal_1")
+assert pane["title"] == "parent · blocked", pane
+PY
+ZELLIJ_PANE_ID=1 bash "$STATUS" <<'EOF'
+{"hook_event_name":"UserPromptSubmit","session_id":"codex-session","model":"gpt-5","turn_id":"turn-child","context":{"agent_id":"child"}}
+EOF
+ZELLIJ_PANE_ID=1 bash "$STATUS" <<'EOF'
+{"hook_event_name":"Stop","session_id":"codex-session","model":"gpt-5","turn_id":"turn-status"}
+EOF
+python3 - "$ZELLIJ_DATA/panes.json" <<'PY'
+import json, sys
+pane = next(p for p in json.load(open(sys.argv[1])) if p["id"] == "terminal_1")
+assert pane["title"] == "parent · idle", pane
+PY
+ZELLIJ_PANE_ID=1 bash "$STATUS" <<'EOF'
+{"hook_event_name":"SessionStart","session_id":"codex-next","model":"gpt-5","turn_id":"turn-next"}
+EOF
+python3 - "$ZELLIJ_DATA/panes.json" <<'PY'
+import json, sys
+pane = next(p for p in json.load(open(sys.argv[1])) if p["id"] == "terminal_1")
+assert pane["title"] == "parent", pane
+PY
+echo 'origin/hooks/status normalization: PASS'
 
 if [ "${LIVE_ZELLIJ:-0}" = 1 ]; then
   REAL_ZELLIJ="$(PATH="$ORIGINAL_PATH"; command -v zellij)"

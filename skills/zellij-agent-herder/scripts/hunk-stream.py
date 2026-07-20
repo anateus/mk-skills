@@ -10,6 +10,7 @@ import hashlib
 import json
 import os
 import subprocess
+import sys
 import tempfile
 import uuid
 from collections.abc import Iterator
@@ -128,6 +129,82 @@ def locked_state(cache_dir: str, key: str) -> Iterator[dict[str, Any]]:
 
 def cache_root() -> str:
     return os.environ.get("XDG_CACHE_HOME", os.path.expanduser("~/.cache"))
+
+
+def hook_host(payload: dict[str, Any]) -> str:
+    return os.environ.get("ZAH_HOST") or (
+        "codex" if "model" in payload or "turn_id" in payload else "claude"
+    )
+
+
+def is_subagent(payload: dict[str, Any]) -> bool:
+    if any(payload.get(key) for key in ("agent_id", "subagent_id", "subagent")):
+        return True
+    context = payload.get("context")
+    return isinstance(context, dict) and any(
+        context.get(key) for key in ("agent_id", "subagent_id", "subagent")
+    )
+
+
+def origin_record(payload: dict[str, Any]) -> dict[str, Any] | None:
+    session_id = payload.get("session_id")
+    if not isinstance(session_id, str) or not session_id or "/" in session_id:
+        return None
+    path = os.path.join(
+        cache_root(), "zellij-agent-herder", "origins",
+        f"{hook_host(payload)}-{session_id}.json",
+    )
+    try:
+        with open(path, encoding="utf-8") as source:
+            value = json.load(source)
+    except (OSError, ValueError):
+        return None
+    return value if isinstance(value, dict) else None
+
+
+def edit_payload(payload: dict[str, Any]) -> str:
+    if is_subagent(payload) or payload.get("hook_event_name") != "PostToolUse":
+        return ""
+    edit_tools = (
+        ("apply_patch", "Edit", "Write") if hook_host(payload) == "codex"
+        else ("Edit", "Write", "MultiEdit", "NotebookEdit")
+    )
+    if payload.get("tool_name") not in edit_tools:
+        return ""
+    tool_input = payload.get("tool_input")
+    file_path = tool_input.get("file_path") if isinstance(tool_input, dict) else None
+    start = os.path.dirname(file_path) if isinstance(file_path, str) else payload.get("cwd")
+    if not isinstance(start, str) or not os.path.isdir(start):
+        start = payload.get("cwd")
+    if not isinstance(start, str):
+        return ""
+    try:
+        root = canonical_path(run_git(start, ["rev-parse", "--show-toplevel"]).strip())
+    except (OSError, subprocess.CalledProcessError):
+        return ""
+    origin = origin_record(payload)
+    if not origin:
+        return ""
+    session = origin.get("zellij_session")
+    parent = origin.get("parent_pane")
+    if not isinstance(session, str) or not session or not isinstance(parent, str):
+        return ""
+    common_dir = git_common_dir(root)
+    key = stream_key(session, parent, common_dir, {"root": root, "kind": "worktree"})
+    state_path = os.path.join(cache_root(), "zellij-agent-herder", "streams", f"{key}.json")
+    try:
+        with open(state_path, encoding="utf-8") as source:
+            existing_base = json.load(source).get("base")
+    except (OSError, ValueError, AttributeError):
+        existing_base = None
+    if isinstance(existing_base, str) and existing_base:
+        base = existing_base
+    else:
+        try:
+            base = run_git(root, ["merge-base", "HEAD", "@{upstream}"]).strip()
+        except subprocess.CalledProcessError:
+            base = run_git(root, ["rev-parse", "HEAD"]).strip()
+    return ensure_stream(session, parent, root, base, "worktree", None, False)
 
 
 def zellij(session: str, args: list[str]) -> str:
@@ -299,6 +376,7 @@ def main() -> None:
     rollup.add_argument("--base", required=True)
     rollup.add_argument("--label", required=True)
     rollup.add_argument("--child-pane", action="append", default=[])
+    commands.add_parser("edit")
     args = parser.parse_args()
     if args.command == "signature":
         print(diff_signature(args.root, args.base))
@@ -313,11 +391,18 @@ def main() -> None:
             args.session, args.parent, args.root, args.base, args.kind,
             args.label, args.explicit,
         ))
-    else:
+    elif args.command == "rollup":
         print(rollup_stream(
             args.session, args.parent, args.root, args.base, args.label,
             args.child_pane,
         ))
+    else:
+        try:
+            payload = json.load(sys.stdin)
+        except (ValueError, OSError):
+            payload = {}
+        if isinstance(payload, dict):
+            print(edit_payload(payload))
 
 
 if __name__ == "__main__":
