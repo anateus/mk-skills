@@ -36,6 +36,16 @@ zj_normalize_pane_id() {
   case "$1" in terminal_*|plugin_*) echo "$1" ;; *) echo "terminal_$1" ;; esac
 }
 
+# Locate the controller from this file, whether sourced by bash/zsh or executed by bash
+# for fish callers. Keep the shell-facing API here; pane lifecycle belongs to Python.
+if [ -n "${ZSH_VERSION:-}" ]; then
+  eval '_ZJ_SCRIPT_PATH=${(%):-%x}'
+else
+  _ZJ_SCRIPT_PATH="${BASH_SOURCE[0]}"
+fi
+_ZJ_SCRIPT_DIR="$(cd "$(dirname "$_ZJ_SCRIPT_PATH")" && pwd -P)"
+_ZJ_HUNK_STREAM="$_ZJ_SCRIPT_DIR/hunk-stream.py"
+
 _zj() {  # run a zellij action against the target session
   if [ -n "${ZJ_SESSION:-}" ]; then zellij --session "$ZJ_SESSION" action "$@"
   else zellij action "$@"; fi
@@ -126,28 +136,29 @@ zj_spawn() {
   fi
 }
 
-# zj_watch_worktree <worktree_abs_path> <base_sha> [label] -> spawns a passive,
-# human-facing `hunk diff <base_sha> --watch` pane over a worktree; echoes its terminal_N.
-# For watching HEADLESS worktree subagents (Agent tool, isolation:"worktree") live: the
-# agents run headless with structured returns; this pane is only for the human to watch.
-# ALWAYS a plain tiled new-pane (never -d/--near-current-pane): relative placement no-ops
-# headless AND misbehaves when the issuing pane isn't the client's focused pane, and a
-# passive watcher has no focus to steal — so zj_spawn's attached-path is wrong here.
-# Diff base MUST be the fixed SHA the worktrees branched from: `main` advances when you
-# merge a sibling -> phantom "removed" lines in the others; `HEAD` empties on commit.
-# Restart loop keeps the pane alive while the worktree is still clean (hunk exits on an
-# empty diff); the next iteration picks up the agent's first write. Close with
-# `_zj close-pane -p <id>` at worktree teardown, else hunk errors once the dir vanishes.
+_zj_stream() {
+  local command="$1" root="$2" requested_root="$2" base="$3" label="$4"; shift 4
+  local caller="$1"; shift
+  command -v hunk >/dev/null 2>&1 \
+    || { echo "$caller: hunk not on PATH" >&2; return 2; }
+  root="$(cd "$root" 2>/dev/null && pwd -P)" \
+    || { echo "$caller: root not found: $requested_root" >&2; return 1; }
+  [ -n "${ZJ_SESSION:-}" ] \
+    || { echo "$caller: ZJ_SESSION is not set" >&2; return 1; }
+  local parent="${ZELLIJ_PANE_ID:-terminal_0}" output
+  local args=("$_ZJ_HUNK_STREAM" "$command" --session "$ZJ_SESSION" --parent "$parent" \
+    --root "$root" --base "$base" --label "$label")
+  while [ "$#" -gt 0 ]; do args+=("$1"); shift; done
+  output="$(python3 "${args[@]}")" || return 1
+  [ -n "$output" ] || return 1
+  printf '%s\n' "$output"
+}
+
+# zj_watch_worktree <worktree_abs_path> <base_sha> [label] -> pane_id.
 zj_watch_worktree() {
-  local wt="$1" base="$2"
-  local label="${3:-$(basename "$wt")}"
-  command -v hunk >/dev/null 2>&1 || { echo "zj_watch_worktree: hunk not on PATH" >&2; return 2; }
-  _zj new-pane --name "diff:$label" --cwd "$wt" \
-    -- bash -lc "while true; do hunk diff $base --watch; sleep 2; done" >/dev/null 2>&1
-  local id
-  id="$(zj_resolve_id "diff:$label")" \
-    || { echo "zj_watch_worktree: pane 'diff:$label' did not appear (spawn no-op?)" >&2; return 1; }
-  echo "$id"
+  local root="$1" base="$2"
+  local label="${3:-$(basename "$1")}" # Use the historical default label.
+  _zj_stream ensure "$root" "$base" "$label" zj_watch_worktree --kind worktree
 }
 
 # zj_watch_session <parent_repo_root> <base_sha> <label> [worktree_pane_id...]
@@ -161,9 +172,16 @@ zj_watch_worktree() {
 # aggregate pane's terminal_N.
 zj_watch_session() {
   local root="$1" base="$2" label="$3"; shift 3
-  local id
-  for id in "$@"; do zj_close_pane "$id" >/dev/null 2>&1 || true; done
-  zj_watch_worktree "$root" "$base" "$label"
+  local args=() id
+  for id in "$@"; do args+=(--child-pane "$id"); done
+  _zj_stream rollup "$root" "$base" "$label" zj_watch_session "${args[@]}"
+}
+
+# zj_review_stream <repo_root> <base_sha> [label] -> explicitly reopen its stream.
+zj_review_stream() {
+  local root="$1" base="$2"
+  local label="${3:-$(basename "$1")}" # Use the historical default label.
+  _zj_stream ensure "$root" "$base" "$label" zj_review_stream --kind worktree --explicit
 }
 
 # zj_wait_output <pane_id> <match> <timeout_s> [interval_s] [--regex]

@@ -10,16 +10,23 @@ ZAH_INPUT="$input" python3 - <<'PY'
 import json, os, pathlib, subprocess, sys
 try: h = json.loads(os.environ.get("ZAH_INPUT","") or "{}")
 except Exception: h = {}
-if h.get("agent_id"): sys.exit(0)                 # subagent — ignore
+context = h.get("context")
+if h.get("agent_id") or h.get("subagent_id") or h.get("subagent"): sys.exit(0)
+if isinstance(context, dict) and any(context.get(k) for k in ("agent_id", "subagent_id", "subagent")): sys.exit(0)
 evt = str(h.get("hook_event_name") or "")
+host = os.environ.get("ZAH_HOST") or ("codex" if "model" in h or "turn_id" in h else "claude")
 if evt == "SubagentStop": sys.exit(0)             # never revive idle
-if evt == "Notification":
+if evt == "Notification" and host == "claude":
     # Notification fires for several subtypes (permission_prompt, idle_prompt,
     # agent_completed, ...); only a real permission prompt means "blocked".
     if str(h.get("notification_type") or "") != "permission_prompt": sys.exit(0)
     status = "blocked"
-elif evt == "SessionEnd":
+elif evt == "PermissionRequest" and host == "codex":
+    status = "blocked"
+elif evt == "SessionEnd" and host == "claude":
     status = None                                  # clear the suffix, don't stamp one
+elif evt == "SessionStart" and host == "codex":
+    status = None                                  # Codex has no SessionEnd cleanup
 elif evt not in ("UserPromptSubmit", "Stop"):
     sys.exit(0)
 else:
