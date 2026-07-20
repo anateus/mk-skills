@@ -348,10 +348,20 @@ echo 'origin/hooks/status normalization: PASS'
 if [ "${LIVE_ZELLIJ:-0}" = 1 ]; then
   REAL_ZELLIJ="$(PATH="$ORIGINAL_PATH"; command -v zellij)"
   session="zt8-$PPID-$RANDOM"
-  cleanup_live() { "$REAL_ZELLIJ" delete-session --force "$session" >/dev/null 2>&1 || true; }
+  feeder_pid=""
+  client_pid=""
+  cleanup_live() {
+    "$REAL_ZELLIJ" delete-session --force "$session" >/dev/null 2>&1 || true
+    [ -z "$feeder_pid" ] || kill "$feeder_pid" >/dev/null 2>&1 || true
+    [ -z "$client_pid" ] || kill "$client_pid" >/dev/null 2>&1 || true
+    [ -z "$feeder_pid" ] || wait "$feeder_pid" 2>/dev/null || true
+    [ -z "$client_pid" ] || wait "$client_pid" 2>/dev/null || true
+  }
   trap 'cleanup_live; rm -rf "$T"' EXIT
   command -v hunk >/dev/null
-  tail -f /dev/null | script -q /dev/null "$REAL_ZELLIJ" --session "$session" options --default-shell zsh >/dev/null 2>&1 &
+  sleep 600 | script -q /dev/null "$REAL_ZELLIJ" --session "$session" options --default-shell zsh >/dev/null 2>&1 &
+  client_pid=$!
+  feeder_pid="$(jobs -p %%)"
   ready=0
   for _ in $(seq 1 200); do
     if "$REAL_ZELLIJ" --session "$session" action list-panes -j >/dev/null 2>&1; then
@@ -383,6 +393,8 @@ rows = [line.split() for line in open(sys.argv[1]).read().splitlines()[1:]]
 assert len(rows) == 1 and sys.argv[2] in rows[0], (rows, sys.argv[2])
 PY
   cleanup_live
+  ! kill -0 "$feeder_pid" 2>/dev/null
+  ! kill -0 "$client_pid" 2>/dev/null
   ! "$REAL_ZELLIJ" list-sessions 2>/dev/null | grep -Fq "$session"
   echo "live scratch cleanup: PASS ($session)"
   echo 'live placement/focus: PASS'
