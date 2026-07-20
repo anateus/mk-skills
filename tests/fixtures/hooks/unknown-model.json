@@ -1,0 +1,6 @@
+{
+  "hook_event_name": "SessionStart",
+  "source": "resume",
+  "model": "future-model-family",
+  "cwd": "/tmp/example-project"
+}

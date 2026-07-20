@@ -1,0 +1,24 @@
+{
+  "name": "mk-skills",
+  "version": "0.1.0",
+  "description": "Curated, selectively invoked software-development skills for Codex.",
+  "author": {
+    "name": "Michael Katsevman",
+    "email": "michael@domu.ai",
+    "url": "https://github.com/anateus"
+  },
+  "repository": "https://github.com/anateus/mk-skills",
+  "license": "MIT",
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "MK Skills",
+    "shortDescription": "Curated software-development skills",
+    "longDescription": "A concise, composable set of software-development skills with selective and strict operating profiles.",
+    "developerName": "Michael Katsevman",
+    "category": "Developer Tools",
+    "capabilities": ["Write"],
+    "defaultPrompt": [
+      "Use the appropriate engineering skills for this task."
+    ]
+  }
+}
