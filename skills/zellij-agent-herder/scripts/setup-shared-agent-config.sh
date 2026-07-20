@@ -63,6 +63,9 @@ Use the zellij-agent-herder work-stream-aware Hunk review flow to open or update
 EOF
 
 backup_if_changed "$CANONICAL" "$GUIDANCE_TMP"
+if [ -L "$CANONICAL" ]; then
+  rm "$CANONICAL"
+fi
 cp "$GUIDANCE_TMP" "$CANONICAL"
 
 CLAUDE_FILE="$CLAUDE_DIR/CLAUDE.md"
