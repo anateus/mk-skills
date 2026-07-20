@@ -40,12 +40,17 @@ configure_host() {
   fi
 
   local hooks_dir="$root/hooks"
-  mkdir -p "$hooks_dir"
   if [ "$ACTION" = install ]; then
+    mkdir -p "$hooks_dir"
     for script in zellij-agent-status.sh hunk-autodiff.sh zellij-origin.sh; do
       cp "$SRC/$script" "$hooks_dir/$script"
       chmod +x "$hooks_dir/$script"
     done
+  else
+    for script in zellij-agent-status.sh hunk-autodiff.sh zellij-origin.sh; do
+      rm -f "$hooks_dir/$script"
+    done
+    [ -f "$config" ] || return 0
   fi
 
   [ -f "$config" ] || printf '{}\n' > "$config"
@@ -66,9 +71,15 @@ with open(path, encoding="utf-8") as source:
 if not isinstance(cfg, dict):
     cfg = {}
 
-hooks = cfg.setdefault("hooks", {})
-if not isinstance(hooks, dict):
-    hooks = cfg["hooks"] = {}
+action = os.environ["ZAH_ACTION"]
+if action == "install":
+    hooks = cfg.setdefault("hooks", {})
+    if not isinstance(hooks, dict):
+        hooks = cfg["hooks"] = {}
+else:
+    hooks = cfg.get("hooks")
+    if not isinstance(hooks, dict):
+        raise SystemExit(0)
 
 host = os.environ["ZAH_HOST_NAME"]
 directory = os.environ["ZAH_HOOKS_DIR"]
@@ -85,6 +96,7 @@ def owned(entry):
     return any(os.path.basename(path) in names for path in paths)
 
 def remove_owned():
+    removed = False
     for event in list(hooks):
         groups = hooks[event]
         if not isinstance(groups, list):
@@ -99,6 +111,8 @@ def remove_owned():
                 kept.append(group)
                 continue
             remaining = [entry for entry in entries if not owned(entry)]
+            if len(remaining) != len(entries):
+                removed = True
             if remaining:
                 updated = dict(group)
                 updated["hooks"] = remaining
@@ -107,9 +121,10 @@ def remove_owned():
             hooks[event] = kept
         else:
             del hooks[event]
+    return removed
 
-remove_owned()
-if os.environ["ZAH_ACTION"] == "install":
+removed = remove_owned()
+if action == "install":
     def add(event, name, matcher=None, asynchronous=False):
         entry = {"type": "command", "command": commands[name], "timeout": 10}
         if asynchronous:
@@ -125,6 +140,8 @@ if os.environ["ZAH_ACTION"] == "install":
     if os.environ["ZAH_ORIGIN_STATUS"] == "true":
         add("SessionStart", "zellij-agent-status.sh")
     add("PostToolUse", "hunk-autodiff.sh", os.environ["ZAH_MATCHER"], os.environ["ZAH_ASYNC"] == "true")
+elif not removed:
+    raise SystemExit(0)
 
 with open(path, "w", encoding="utf-8") as target:
     json.dump(cfg, target, indent=2)
@@ -133,11 +150,6 @@ PY
 
   if cmp -s "$backup" "$config"; then
     rm "$backup"
-  fi
-  if [ "$ACTION" = uninstall ]; then
-    for script in zellij-agent-status.sh hunk-autodiff.sh zellij-origin.sh; do
-      rm -f "$hooks_dir/$script"
-    done
   fi
 }
 
