@@ -21,3 +21,137 @@ K1="$(python3 "$CTL" state-key --session s --parent terminal_1 --root "$T/repo" 
 K2="$(python3 "$CTL" state-key --session s --parent terminal_1 --root "$T/repo" --kind worktree)"
 [ "$K1" = "$K2" ]
 echo 'identity/signature: PASS'
+
+mkdir -p "$T/bin"
+export ZELLIJ_LOG="$T/zellij.log" ZELLIJ_DATA="$T/zellij-data"
+mkdir -p "$ZELLIJ_DATA"
+printf '%s\n' '[{"id":"terminal_1","title":"parent","is_focused":false},{"id":"terminal_9","title":"old","is_focused":true}]' > "$ZELLIJ_DATA/panes.json"
+printf '%s\n' '[{"client_id":1,"focused_pane":"terminal_9"}]' > "$ZELLIJ_DATA/clients.json"
+printf '9\n' > "$ZELLIJ_DATA/next"
+touch "$ZELLIJ_LOG"
+cat > "$T/bin/zellij" <<'PY'
+#!/usr/bin/env python3
+import json, os, sys
+
+data = os.environ["ZELLIJ_DATA"]
+args = sys.argv[1:]
+with open(os.environ["ZELLIJ_LOG"], "a") as log:
+    log.write(" ".join(args) + "\n")
+if len(args) >= 3 and args[0] == "--session" and args[2] == "action":
+    args = args[3:]
+def load(name):
+    with open(os.path.join(data, name + ".json")) as source:
+        return json.load(source)
+def save(name, value):
+    with open(os.path.join(data, name + ".json"), "w") as target:
+        json.dump(value, target)
+command, rest = args[0], args[1:]
+if command == "list-panes":
+    print(json.dumps(load("panes")))
+elif command == "list-clients":
+    print("CLIENT_ID ZELLIJ_PANE_ID")
+    for client in load("clients"):
+        print(client["client_id"], client["focused_pane"])
+elif command == "focus-pane-id":
+    pane_id = rest[0]
+    panes = load("panes")
+    for pane in panes:
+        pane["is_focused"] = pane["id"] == pane_id
+    clients = load("clients")
+    for client in clients:
+        client["focused_pane"] = pane_id
+    save("panes", panes); save("clients", clients)
+elif command == "new-pane":
+    with open(os.path.join(data, "next"), "r+") as counter:
+        number = int(counter.read()) + 1
+        counter.seek(0); counter.write(str(number)); counter.truncate()
+    title = rest[rest.index("--name") + 1]
+    pane_id = "terminal_" + str(number)
+    panes = load("panes")
+    panes.append({"id": pane_id, "title": title, "is_focused": False})
+    save("panes", panes)
+    print("terminal_999" if os.environ.get("ZELLIJ_FAKE_BAD_ID") else pane_id)
+elif command == "close-pane":
+    pane_id = rest[rest.index("-p") + 1]
+    save("panes", [pane for pane in load("panes") if pane["id"] != pane_id])
+else:
+    raise SystemExit("unsupported fake zellij command: " + repr(args))
+PY
+chmod +x "$T/bin/zellij"
+ORIGINAL_PATH="$PATH"
+REAL_ZELLIJ="$(command -v zellij)"
+export PATH="$T/bin:$PATH"
+
+P1="$(python3 "$CTL" ensure --session s --parent terminal_1 --root "$T/repo" --base "$BASE" --kind worktree --label repo)"
+P2="$(python3 "$CTL" ensure --session s --parent terminal_1 --root "$T/repo" --base "$BASE" --kind worktree --label repo)"
+[ "$P1" = "$P2" ]
+[ "$(grep -c 'new-pane' "$ZELLIJ_LOG")" = 1 ]
+grep -q 'focus-pane-id terminal_1' "$ZELLIJ_LOG"
+grep -q 'new-pane --direction right' "$ZELLIJ_LOG"
+grep -q 'focus-pane-id terminal_9' "$ZELLIJ_LOG"
+
+zellij --session s action close-pane -p "$P1"
+P3="$(python3 "$CTL" ensure --session s --parent terminal_1 --root "$T/repo" --base "$BASE" --kind worktree --label repo)"
+[ -z "$P3" ]
+[ "$(grep -c 'new-pane' "$ZELLIJ_LOG")" = 1 ]
+printf 'changed\n' >> "$T/repo/a.txt"
+P4="$(python3 "$CTL" ensure --session s --parent terminal_1 --root "$T/repo" --base "$BASE" --kind worktree --label repo)"
+[ -n "$P4" ]
+[ "$(grep -c 'new-pane' "$ZELLIJ_LOG")" = 2 ]
+zellij --session s action close-pane -p "$P4"
+P5="$(python3 "$CTL" ensure --session s --parent terminal_1 --root "$T/repo" --base "$BASE" --kind worktree --label repo)"
+[ -z "$P5" ]
+P6="$(python3 "$CTL" ensure --session s --parent terminal_1 --root "$T/repo" --base "$BASE" --kind worktree --label repo --explicit)"
+[ -n "$P6" ]
+
+# With no attached client, spawning falls back to plain tiled new-pane.
+printf '[]\n' > "$ZELLIJ_DATA/clients.json"
+before="$(wc -l < "$ZELLIJ_LOG")"
+P7="$(python3 "$CTL" ensure --session s --parent terminal_2 --root "$T/repo" --base "$BASE" --kind worktree --label fallback --explicit)"
+tail -n "+$((before + 1))" "$ZELLIJ_LOG" | grep -q 'new-pane --cwd'
+! tail -n "+$((before + 1))" "$ZELLIJ_LOG" | grep -q -- '--direction'
+
+# A bad returned ID is recovered via the unique generated pane title.
+export ZELLIJ_FAKE_BAD_ID=1
+P8="$(python3 "$CTL" ensure --session s --parent terminal_3 --root "$T/repo" --base "$BASE" --kind worktree --label recovered --explicit)"
+unset ZELLIJ_FAKE_BAD_ID
+[ "$P8" != terminal_999 ]
+
+# Roll-up closes only the supplied child panes and keeps the original fixed base.
+printf '%s\n' '[{"client_id":1,"focused_pane":"terminal_9"}]' > "$ZELLIJ_DATA/clients.json"
+AGG="$(python3 "$CTL" rollup --session s --parent terminal_1 --root "$T/repo" --base "$BASE" --label session --child-pane "$P7" --child-pane "$P8")"
+[ -n "$AGG" ]
+grep -q "close-pane -p $P7" "$ZELLIJ_LOG"
+grep -q "close-pane -p $P8" "$ZELLIJ_LOG"
+last_new="$(grep 'new-pane' "$ZELLIJ_LOG" | tail -1)"
+case "$last_new" in *"hunk diff $BASE --watch"*) ;; *) exit 1 ;; esac
+python3 - "$XDG_CACHE_HOME" "$P7" "$P8" <<'PY'
+import glob, json, os, sys
+states = [json.load(open(path)) for path in glob.glob(os.path.join(sys.argv[1], "zellij-agent-herder", "streams", "*.json"))]
+for pane_id in sys.argv[2:]:
+    state = next(state for state in states if state.get("pane_id") == pane_id)
+    assert state.get("complete") is True
+PY
+echo 'reconciliation/placement/rollup: PASS'
+
+if [ "${LIVE_ZELLIJ:-0}" = 1 ]; then
+  session="zhs-$PPID-$RANDOM"
+  cleanup_live() { "$REAL_ZELLIJ" delete-session --force "$session" >/dev/null 2>&1 || true; }
+  trap 'cleanup_live; rm -rf "$T"' EXIT
+  command -v hunk >/dev/null
+  script -q /dev/null "$REAL_ZELLIJ" --session "$session" options --default-shell zsh >/dev/null 2>&1 &
+  for _ in $(seq 1 50); do "$REAL_ZELLIJ" --session "$session" action list-panes -j >/dev/null 2>&1 && break; sleep 0.1; done
+  parent="$("$REAL_ZELLIJ" --session "$session" action new-pane -- sleep 60)"
+  old="$("$REAL_ZELLIJ" --session "$session" action new-pane -- sleep 60)"
+  watcher="$(PATH="$ORIGINAL_PATH" python3 "$CTL" ensure --session "$session" --parent "$parent" --root "$T/repo" --base "$BASE" --kind worktree --label live --explicit)"
+  "$REAL_ZELLIJ" --session "$session" action list-panes -j -g -s > "$T/live-panes.json"
+  python3 - "$T/live-panes.json" "$parent" "$watcher" "$old" <<'PY'
+import json, sys
+panes = {("plugin_" if p.get("is_plugin") else "terminal_") + str(p["id"]): p for p in json.load(open(sys.argv[1]))}
+parent, watcher, old = (panes[pane_id] for pane_id in sys.argv[2:])
+assert watcher["pane_x"] == parent["pane_x"] + parent["pane_columns"], (parent, watcher)
+assert old["is_focused"], old
+PY
+  cleanup_live
+  echo 'live placement/focus: PASS'
+fi
