@@ -1,6 +1,6 @@
 ---
 name: test-driven-development
-description: Use when implementing a behavior change or defect fix that can be expressed through a useful observable seam.
+description: Implement observable behavior changes through narrow red-green cycles at public seams, with proportional alternatives when a test adds little value. Use when the user asks for test-first or TDD work, or when implementing a behavior change or defect fix that has a useful observable seam.
 ---
 
 # Test-Driven Development
@@ -27,4 +27,3 @@ Existing untested code is not itself an exception when the requested behavior ca
 ## Outcome
 
 Report the behavior seam, red evidence, minimal green change, and fresh verification when applicable. For an alternative, report the evidence used and its limitations.
-

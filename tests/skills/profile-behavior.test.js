@@ -21,6 +21,7 @@ test('selective profile scales down for a trivial edit', () => {
 
 test('strict profile sequences work without adding external side effects', () => {
   const strict = context('strict');
+  assert.match(strict, /^The strict operating profile is active\. Read and apply the `strict-mode` skill before acting\./);
   assert.match(strict, /identify.*skills/is);
   assert.match(strict, /steps in order/i);
   assert.match(strict, /checkpoints/i);

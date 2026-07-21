@@ -1,11 +1,13 @@
 ---
 name: reviewing-code
-description: Use when a bounded change needs evidence-based review before it is accepted, handed off, or released.
+description: Review a fixed code change or diff for correctness, risk, specification compliance, repository standards, and test adequacy. Use when the user asks to review, audit, or assess a diff, patch, pull request, commit range, or completed implementation before acceptance or release.
 ---
 
 # Reviewing Code
 
 Review a stable change, not a moving target. Establish a fixed comparison point and record diff provenance: repository, base and head revisions or equivalent snapshots, working-tree inclusion, and any generated content excluded from inspection. Accept an optional specification when one exists.
+
+For a committed range, run `"<skill-base-dir>/scripts/review-package" BASE HEAD`; it writes a complete package under `${TMPDIR:-/tmp}` and prints only its path. The package covers committed `BASE..HEAD` only. Read [diff provenance](references/diff-provenance.md) when the review includes staged, unstaged, untracked, generated, or mixed state.
 
 ## Review axes
 
@@ -24,4 +26,3 @@ A small, low-risk diff can be reviewed in one pass. Use independent or parallel 
 ## Report
 
 Lead with actionable findings ordered by severity. Each finding identifies location, observed problem, impact, evidence, and a proportionate remedy. Separate blocking defects from risks and minor improvements. Then summarize reviewed scope, verification performed, residual uncertainty, and explicitly state when no findings were found.
-

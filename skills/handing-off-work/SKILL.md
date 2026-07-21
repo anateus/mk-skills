@@ -1,6 +1,6 @@
 ---
 name: handing-off-work
-description: Use when unfinished or completed work needs a concise, resumable transfer to another session or collaborator.
+description: Create a concise, redacted, resumable transfer that references durable artifacts and distinguishes verified facts from remaining work. Use when work must move to another session, agent, or collaborator, whether unfinished or complete.
 ---
 
 # Handing Off Work

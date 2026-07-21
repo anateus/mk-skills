@@ -1,6 +1,6 @@
 ---
 name: specifying-work
-description: Use when agreed intent needs a concise, reviewable behavior contract before implementation or planning.
+description: Turn agreed intent and repository evidence into a concise behavior contract with acceptance criteria, testing seams, constraints, and non-goals. Use when the user asks for a specification, design contract, requirements, or acceptance criteria before planning or implementation.
 ---
 
 # Specifying Work
@@ -24,7 +24,8 @@ Name assumptions and unresolved choices rather than hiding them in implementatio
 
 Seek approval when material unresolved choices would change scope, architecture, externally visible behavior, or irreversible work. If prior discussion already resolved those choices, present the synthesis for review and proceed according to the request. Editorial preferences and discoverable implementation facts do not create an approval gate.
 
+For a consequential draft whose assumptions or alternatives need pressure-testing, use `adversarial-refinement` before seeking final approval.
+
 ## Quality check
 
 The specification is ready when a planner can identify what changes, what stays stable, where behavior can be observed, and how each acceptance criterion will be judged without guessing at user intent.
-

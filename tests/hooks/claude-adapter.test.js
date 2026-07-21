@@ -61,6 +61,7 @@ test('Codex and Claude emit host-correct envelopes with identical policy context
     const codex = runHost('codex', codexInput, mode);
     const claude = runHost('claude', claudeInput, mode);
     assert.equal(contextOf(claude), contextOf(codex));
+    if (mode === 'strict') assert.match(contextOf(codex), /strict operating profile is active.*`strict-mode`/i);
     assert.equal(countContextFields(claude), 1);
   }
 });
@@ -93,14 +94,23 @@ test('unified validator runs repository checks and supports optional plugin vali
   const hooks = source.indexOf('tests/hooks/*.test.js');
   const skills = source.indexOf('tests/skills/*.test.js');
   const curation = source.indexOf('tests.curation.test_review_upstreams');
+  const zellijCommands = [
+    'test-pane-identity.py', 'test-hunk-focus-guard.py', 'test-hunk-stream.sh',
+    'test-install-hooks.sh', 'test-shared-agent-config.sh',
+  ].map((name) => source.indexOf(name));
   const plugin = source.indexOf('PLUGIN_VALIDATOR');
   const diff = source.indexOf("'git', ['diff', '--check']");
   assert.ok(hooks >= 0 && skills >= hooks);
   assert.ok(curation > skills);
+  assert.ok(zellijCommands.every((position) => position > curation));
+  assert.ok(zellijCommands.every((position) => position < plugin));
   assert.ok(plugin > curation);
   assert.ok(diff > plugin);
   assert.match(source, /skip.*plugin-schema|plugin-schema.*skip/is);
   assert.match(source, /import yaml/);
+  assert.match(source, /\['-B', '-m', 'unittest'/);
+  assert.match(source, /validator file absent/i);
+  assert.match(source, /PyYAML unavailable/i);
 });
 
 test('README documents every Task 9 operating and installation contract', () => {

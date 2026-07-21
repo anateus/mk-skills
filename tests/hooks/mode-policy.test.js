@@ -78,6 +78,7 @@ test('strict context is compact and preserves optional external workflow', () =>
   const context = renderContext({ mode: 'strict', policy });
   const words = context.trim().split(/\s+/).length;
   assert.ok(words >= 150 && words <= 250, `strict context has ${words} words`);
+  assert.match(context, /^The strict operating profile is active\. Read and apply the `strict-mode` skill before acting\./);
   assert.match(context, /steps in order/i);
   assert.match(context, /fresh commands/i);
   for (const optional of ['Commits', 'pull requests', 'issue trackers', 'worktrees', 'subagents']) {

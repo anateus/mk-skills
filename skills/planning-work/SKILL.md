@@ -1,6 +1,6 @@
 ---
 name: planning-work
-description: Use when a reviewed request or specification needs an executable implementation sequence grounded in an existing codebase.
+description: Create a codebase-grounded, executable implementation sequence using narrow vertical slices, dependencies, owned files, expected outputs, and verification. Use when the user asks for an implementation plan or when a reviewed request or specification has multi-step dependencies.
 ---
 
 # Planning Work
@@ -28,6 +28,8 @@ Write boundaries that are peer-ready: a reader can execute a slice from its inpu
 Zellij and peers remain optional execution choices. Suggest peer execution only when slices are independent, ownership is non-overlapping, and coordination cost is justified. Peer-ready wording does not imply dispatch, and peer results still require verification by the responsible agent.
 
 Tracker publication, commits, branches, and worktrees belong to repository or user policy, not the core plan format.
+
+When sequencing, dependency, rollout, or rollback assumptions are materially uncertain, use `adversarial-refinement` on the draft plan.
 
 ## Final check
 

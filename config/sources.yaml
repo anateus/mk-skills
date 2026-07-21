@@ -5,11 +5,15 @@
       "name": "matt-pocock-skills",
       "url": "https://github.com/mattpocock/skills",
       "branch": "main",
-      "reviewedCommit": "9603c1cc8118d08bc1b3bf34cf714f62178dea3b",
+      "reviewedCommit": "ed37663cc5fbef691ddfecd080dff42f7e7e350d",
       "license": "MIT",
       "mappings": [
         {
           "localSkill": "clarifying-work",
+          "upstreamPaths": ["skills/productivity/grilling"]
+        },
+        {
+          "localSkill": "adversarial-refinement",
           "upstreamPaths": ["skills/productivity/grilling"]
         },
         {
@@ -99,6 +103,10 @@
       "mappings": [
         {
           "localSkill": "clarifying-work",
+          "upstreamPaths": ["skills/brainstorming"]
+        },
+        {
+          "localSkill": "adversarial-refinement",
           "upstreamPaths": ["skills/brainstorming"]
         },
         {

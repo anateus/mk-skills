@@ -1,6 +1,6 @@
 ---
 name: diagnosing-bugs
-description: Use when behavior is failing, inconsistent, flaky, or unexplained and the cause is not yet established by evidence.
+description: Diagnose failures by reproducing, minimizing, and testing competing hypotheses before changing behavior. Use when behavior is failing, inconsistent, flaky, regressed, or unexplained and the cause is not established by evidence.
 ---
 
 # Diagnosing Bugs
@@ -17,6 +17,8 @@ Build a tight feedback loop that distinguishes causes before editing. The object
 6. Demonstrate the original reproduction now passes and add regression protection at a useful behavior seam. Run fresh affected verification.
 
 Keep experiments cheap and reversible. Logs, temporary assertions, history, and dependency inspection are evidence sources; none substitutes for testing a hypothesis.
+
+If the investigation is stuck or appears to have converged suspiciously early, optionally use `adversarial-refinement` to pressure-test the diagnosis. Competing hypotheses remain part of this base loop.
 
 ## When reproduction is unavailable
 

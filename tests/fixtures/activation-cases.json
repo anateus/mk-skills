@@ -1,0 +1,146 @@
+[
+  {
+    "id": "ambiguous-cross-system-change",
+    "prompt": "Change how account deletion propagates between the API, worker, and billing system. The desired timing and partial-failure behavior are not specified.",
+    "expectedSkills": ["clarifying-work"],
+    "forbiddenSkills": [],
+    "expectedReferences": [],
+    "rubric": ["Inspects local contracts and surfaces consumers, failure recovery, ownership, and unresolved decisions before selecting a solution."]
+  },
+  {
+    "id": "explicit-specification",
+    "prompt": "Write a specification with acceptance criteria for adding organization-level API keys.",
+    "expectedSkills": ["specifying-work"],
+    "forbiddenSkills": [],
+    "expectedReferences": [],
+    "rubric": ["Produces a behavior contract with constraints, seams, acceptance criteria, and non-goals."]
+  },
+  {
+    "id": "explicit-implementation-plan",
+    "prompt": "Make an implementation plan for migrating this service from local sessions to signed cookies.",
+    "expectedSkills": ["planning-work"],
+    "forbiddenSkills": [],
+    "expectedReferences": [],
+    "rubric": ["Grounds ordered vertical slices, dependencies, owned files, outputs, and verification in the repository."]
+  },
+  {
+    "id": "explicit-tdd",
+    "prompt": "Use TDD and write tests first to add retry behavior to the public client API.",
+    "expectedSkills": ["test-driven-development"],
+    "forbiddenSkills": [],
+    "expectedReferences": [],
+    "rubric": ["Shows an intended behavioral red state before the minimal green change."]
+  },
+  {
+    "id": "flaky-unexplained-failure",
+    "prompt": "This test fails intermittently in CI and we do not know why. Diagnose it.",
+    "expectedSkills": ["diagnosing-bugs"],
+    "forbiddenSkills": ["implementing-work"],
+    "expectedReferences": [],
+    "rubric": ["Reproduces or narrows the failure and tests competing hypotheses before proposing a change."]
+  },
+  {
+    "id": "direct-clear-implementation",
+    "prompt": "Add a --json flag to the existing status command and implement the tests.",
+    "expectedSkills": ["implementing-work"],
+    "forbiddenSkills": ["specifying-work"],
+    "expectedReferences": [],
+    "rubric": ["Implements the clear request without requiring a formal specification."]
+  },
+  {
+    "id": "fixed-diff-review",
+    "prompt": "Review this committed diff from BASE to HEAD for release readiness.",
+    "expectedSkills": ["reviewing-code"],
+    "forbiddenSkills": [],
+    "expectedReferences": [],
+    "rubric": ["Fixes provenance and reports severity-ordered evidence-backed findings."]
+  },
+  {
+    "id": "mixed-state-review",
+    "prompt": "Review this PR plus its staged, unstaged, untracked, and generated working-tree files.",
+    "expectedSkills": ["reviewing-code"],
+    "forbiddenSkills": [],
+    "expectedReferences": ["skills/reviewing-code/references/diff-provenance.md"],
+    "rubric": ["Inventories every state layer and declares inclusions and exclusions."]
+  },
+  {
+    "id": "review-feedback-assessment",
+    "prompt": "Assess these inline review comments, apply the valid requested changes, and explain any rejection.",
+    "expectedSkills": ["handling-review-feedback"],
+    "forbiddenSkills": [],
+    "expectedReferences": [],
+    "rubric": ["Classifies each comment and verifies accepted changes."]
+  },
+  {
+    "id": "explicit-readiness-verification",
+    "prompt": "Verify and confirm this branch is tested, buildable, and ready to release.",
+    "expectedSkills": ["verifying-work"],
+    "forbiddenSkills": [],
+    "expectedReferences": [],
+    "rubric": ["Maps each readiness claim to fresh direct evidence and reports limitations."]
+  },
+  {
+    "id": "cross-session-resume",
+    "prompt": "Prepare a handoff so another session can resume this unfinished work safely.",
+    "expectedSkills": ["handing-off-work"],
+    "forbiddenSkills": [],
+    "expectedReferences": [],
+    "rubric": ["Creates a concise redacted transfer with verified facts and ordered remaining work."]
+  },
+  {
+    "id": "explicit-strict-execution",
+    "prompt": "Use strict execution for this change, with checkpoints and fresh proof before completion.",
+    "expectedSkills": ["strict-mode"],
+    "forbiddenSkills": [],
+    "expectedReferences": [],
+    "rubric": ["Selects applicable skills, orders dependencies, records checkpoints, and preserves authority boundaries."]
+  },
+  {
+    "id": "mk-skills-upstream-curation",
+    "prompt": "Inside this mk-skills checkout, deliberately review configured upstream skill changes since their recorded revisions.",
+    "expectedSkills": ["curating-skills"],
+    "forbiddenSkills": [],
+    "expectedReferences": [],
+    "rubric": ["Verifies the mk-skills checkout, reads the decision ledger, and treats upstreams as conceptual inputs."]
+  },
+  {
+    "id": "zellij-pane-control-zero",
+    "prompt": "Environment: ZELLIJ=0. Spawn a worker pane and wait for its status.",
+    "expectedSkills": ["zellij-agent-herder"],
+    "forbiddenSkills": [],
+    "expectedReferences": ["skills/zellij-agent-herder/references/peer-agents.md"],
+    "rubric": ["Treats ZELLIJ=0 as active and uses bundled spawn and wait helpers."]
+  },
+  {
+    "id": "interactive-architecture-grill",
+    "prompt": "Grill me on this architecture decision and poke holes in it one question at a time.",
+    "expectedSkills": ["adversarial-refinement"],
+    "forbiddenSkills": [],
+    "expectedReferences": [],
+    "rubric": ["Uses interactive grill mode with one material question and a recommended answer per turn."]
+  },
+  {
+    "id": "artifact-rollout-stress-test",
+    "prompt": "Stress-test this rollout plan and return findings, alternatives, and residual risks.",
+    "expectedSkills": ["adversarial-refinement"],
+    "forbiddenSkills": [],
+    "expectedReferences": ["skills/adversarial-refinement/references/challenge-lenses.md"],
+    "rubric": ["Uses artifact critique mode, inspects facts, steelmans the plan, and returns prioritized refinements."]
+  },
+  {
+    "id": "trivial-local-typo",
+    "prompt": "Fix the single typo 'teh' to 'the' in README.md.",
+    "expectedSkills": ["implementing-work"],
+    "forbiddenSkills": ["adversarial-refinement", "specifying-work", "planning-work"],
+    "expectedReferences": [],
+    "rubric": ["Makes the local mechanical edit without design or pressure-testing ceremony."]
+  },
+  {
+    "id": "straightforward-spec-no-refinement",
+    "prompt": "Write a straightforward specification for a --version flag, including acceptance criteria.",
+    "expectedSkills": ["specifying-work"],
+    "forbiddenSkills": ["adversarial-refinement"],
+    "expectedReferences": [],
+    "rubric": ["Creates the requested contract without automatically invoking adversarial refinement."]
+  }
+]

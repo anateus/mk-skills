@@ -1,6 +1,6 @@
 ---
 name: clarifying-work
-description: Use when a request is ambiguous, integration-heavy, cross-boundary, or likely to hide decisions that could cause substantial rework.
+description: Reduce consequential uncertainty by inspecting facts, separating assumptions from decisions, and mapping integration risks. Use when a request is ambiguous, integration-heavy, cross-boundary, or likely to hide decisions that could cause substantial rework.
 ---
 
 # Clarifying Work
@@ -35,3 +35,4 @@ For changes spanning boundaries, produce a compact integration map: affected pro
 
 Return the clarified objective, discovered constraints, material assumptions, and any remaining decision. Preserve the user's intent; clarification narrows uncertainty rather than inventing scope.
 
+When the request is understood but a proposed direction remains insufficiently challenged, use `adversarial-refinement`; do not keep inventing clarification questions.

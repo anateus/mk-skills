@@ -1,19 +1,21 @@
 ---
 name: curating-skills
-description: Use when deliberately reviewing configured upstream skill repositories for ideas or regressions since their recorded revisions.
+description: Compare configured upstream skill changes against recorded revisions and local behavior, record accept or reject decisions, and update provenance only after validation. Use only when maintaining the mk-skills source repository and deliberately reviewing its configured upstream skill repositories.
 ---
 
 # Curating Skills
 
-Treat upstreams as read-only inputs to a conceptual merge. Installed skills remain self-contained and offline; network access belongs only to a deliberate review.
+Treat upstreams as read-only inputs to a conceptual merge. This is an mk-skills maintainer workflow: it requires a checked-out mk-skills source repository and deliberate network access. Ordinary installed skills remain self-contained and offline.
 
 ## Produce the review bundle
 
-Run:
+Discover and verify the target repository first. `git rev-parse --show-toplevel` must succeed, and `$REPO_ROOT/.codex-plugin/plugin.json` must have `name` equal to `mk-skills`; otherwise stop clearly. Then run the bundled script from its skill base, not relative to the current directory:
 
 ```bash
-python3 skills/curating-skills/scripts/review-upstreams.py \
-  --manifest config/sources.yaml --output /tmp/upstream-review.md
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+python3 "<skill-base-dir>/scripts/review-upstreams.py" \
+  --manifest "$REPO_ROOT/config/sources.yaml" \
+  --output /tmp/upstream-review.md
 ```
 
 Use `--cache-dir PATH` to retain fetched repositories between reviews. The report lists commits, inventory changes, mapped diffs, and affected local skills. A fetch or manifest failure stops without changing provenance.
@@ -26,7 +28,7 @@ For each mapped change, compare:
 2. behavior at the recorded upstream commit;
 3. current upstream behavior.
 
-Identify the underlying idea, its benefit, and conflicts with local principles. Record an **accept** or **reject** decision and rationale. An accepted idea is adapted to local interfaces; never automatically copy upstream files. A rejected idea is still recorded so it is not reconsidered on every run.
+Read `$REPO_ROOT/config/curation-decisions.json` before deciding. Identify the underlying idea, its benefit, and conflicts with local principles. Append an **accept** or **reject** record spanning the prior pin to the exact reviewed head. An accepted idea is adapted to local interfaces; never automatically copy upstream files. A rejected idea is still recorded so it is not reconsidered on every run.
 
 Validate affected local skills and their contract tests after adaptations. Confirm attribution remains accurate. Advance `reviewedCommit` only after every relevant change has a recorded decision and validation is complete. Pin the exact reviewed head from the bundle.
 

@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "decisions": [
+    {
+      "source": "matt-pocock-skills",
+      "fromCommit": "9603c1cc8118d08bc1b3bf34cf714f62178dea3b",
+      "toCommit": "ed37663cc5fbef691ddfecd080dff42f7e7e350d",
+      "decision": "accept",
+      "disposition": "no-local-change",
+      "localSkills": ["planning-work"],
+      "summary": "Upstream removed a redundant instruction to execute tickets one at a time.",
+      "rationale": "Local planning-work already separates planning from implementation and therefore already embodies the change.",
+      "validation": [
+        "python3 -B -m unittest tests.curation.test_review_upstreams -v",
+        "node scripts/validate.js"
+      ]
+    }
+  ]
+}

@@ -1,6 +1,6 @@
 ---
 name: verifying-work
-description: Use when preparing to claim that work is complete, correct, passing, ready, or otherwise meets a stated condition.
+description: Map completion and readiness claims to fresh direct evidence, run the relevant checks, and report limitations precisely. Use when asked to verify, check, test, confirm, or prove that work is correct, complete, passing, buildable, or ready.
 ---
 
 # Verifying Work
@@ -18,4 +18,3 @@ Map each completion claim to fresh, relevant evidence before stating it as fact.
 Scale breadth to impact, but never scale away the direct check. If verification cannot run, report the blocker and narrow the claim instead of predicting success.
 
 Evidence expires when code, inputs, configuration, or environment relevant to the claim changes. Re-run the affected check after such changes.
-

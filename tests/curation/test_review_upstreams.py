@@ -165,16 +165,12 @@ class ReviewUpstreamsTests(unittest.TestCase):
 
     def test_checked_in_provenance_and_notices_preserve_sources(self):
         manifest = json.loads((ROOT / "config" / "sources.yaml").read_text())
-        expected = {
-            "matt-pocock-skills": "9603c1cc8118d08bc1b3bf34cf714f62178dea3b",
-            "spec-kitty": "0a79355f821af9038d8b150b03c930f15970ef4c",
-            "superpowers": "d884ae04edebef577e82ff7c4e143debd0bbec99",
-        }
+        expected = {"matt-pocock-skills", "spec-kitty", "superpowers"}
         sources = {source["name"]: source for source in manifest["sources"]}
-        self.assertEqual(set(expected), set(sources))
-        for name, commit in expected.items():
+        self.assertEqual(expected, set(sources))
+        for name in expected:
             source = sources[name]
-            self.assertEqual(commit, source["reviewedCommit"])
+            self.assertRegex(source["reviewedCommit"], r"^[0-9a-f]{40}$")
             self.assertEqual("MIT", source["license"])
             self.assertTrue(source["url"].startswith("https://github.com/"))
             self.assertTrue(source["branch"])
@@ -182,6 +178,23 @@ class ReviewUpstreamsTests(unittest.TestCase):
             for mapping in source["mappings"]:
                 self.assertTrue(mapping["localSkill"])
                 self.assertTrue(mapping["upstreamPaths"])
+                self.assertTrue(
+                    (ROOT / "skills" / mapping["localSkill"] / "SKILL.md").is_file(),
+                    mapping["localSkill"],
+                )
+        mapped = {
+            (source["name"], mapping["localSkill"], upstream_path)
+            for source in manifest["sources"]
+            for mapping in source["mappings"]
+            for upstream_path in mapping["upstreamPaths"]
+        }
+        self.assertIn(
+            ("matt-pocock-skills", "adversarial-refinement", "skills/productivity/grilling"),
+            mapped,
+        )
+        self.assertIn(
+            ("superpowers", "adversarial-refinement", "skills/brainstorming"), mapped,
+        )
         local = {item["name"]: item for item in manifest["localProvenance"]}
         self.assertEqual({"mk-clarify", "mk-write-plan", "mk-pr"}, set(local))
         original_root = Path(
@@ -196,6 +209,27 @@ class ReviewUpstreamsTests(unittest.TestCase):
         self.assertGreaterEqual(notices.count("MIT License"), 3)
         self.assertIn("Permission is hereby granted", notices)
 
+        ledger = json.loads((ROOT / "config" / "curation-decisions.json").read_text())
+        self.assertEqual(1, ledger["version"])
+        self.assertTrue(ledger["decisions"])
+        for decision in ledger["decisions"]:
+            self.assertEqual(
+                {"source", "fromCommit", "toCommit", "decision", "disposition", "localSkills", "summary", "rationale", "validation"},
+                set(decision),
+            )
+            self.assertIn(decision["source"], sources)
+            self.assertRegex(decision["fromCommit"], r"^[0-9a-f]{40}$")
+            self.assertRegex(decision["toCommit"], r"^[0-9a-f]{40}$")
+            self.assertIn(decision["decision"], {"accept", "reject"})
+            self.assertIn(decision["disposition"], {"adapted", "no-local-change", "rejected"})
+            self.assertTrue(decision["summary"] and decision["rationale"] and decision["validation"])
+            for skill in decision["localSkills"]:
+                self.assertTrue((ROOT / "skills" / skill / "SKILL.md").is_file())
+
+        approved = next(item for item in ledger["decisions"] if item["source"] == "matt-pocock-skills")
+        self.assertEqual("9603c1cc8118d08bc1b3bf34cf714f62178dea3b", approved["fromCommit"])
+        self.assertEqual(sources["matt-pocock-skills"]["reviewedCommit"], approved["toCommit"])
+
     def test_curation_skill_requires_conceptual_merge_not_automatic_copy(self):
         skill = (ROOT / "skills" / "curating-skills" / "SKILL.md").read_text()
         for concept in [
@@ -206,6 +240,9 @@ class ReviewUpstreamsTests(unittest.TestCase):
         self.assertRegex(skill, r"(?i)never auto(?:matically)?[- ]copy")
         self.assertRegex(skill, r"(?i)never .*push")
         self.assertRegex(skill, r"(?is)advance.*reviewedCommit.*after.*decision")
+        self.assertIn('python3 "<skill-base-dir>/scripts/review-upstreams.py"', skill)
+        self.assertIn('$REPO_ROOT/config/sources.yaml', skill)
+        self.assertNotIn('python3 skills/curating-skills/scripts/', skill)
 
 
 if __name__ == "__main__":

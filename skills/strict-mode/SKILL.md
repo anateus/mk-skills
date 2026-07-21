@@ -1,6 +1,6 @@
 ---
 name: strict-mode
-description: Use when the strict operating profile is active for work that benefits from explicit sequencing, checkpoints, and completion discipline.
+description: Apply the active strict operating profile through explicit skill selection, ordered execution, checkpoints, and fresh verification without expanding authority. Use when injected context says strict mode is active or the user explicitly requests strict execution.
 ---
 
 # Strict Mode
@@ -25,4 +25,3 @@ Orchestration is separate from strictness. Zellij, Herdr, peers, subagents, and 
 When peers are used, give each bounded scope, dependencies, expected output, and verification. Peer reports and output are evidence to verify, not proof of completion. The responsible agent inspects actual changes and performs primary verification before accepting results.
 
 Commits, pull requests, issue trackers, worktrees, releases, and destructive or external actions remain governed by explicit user or repository authority.
-
