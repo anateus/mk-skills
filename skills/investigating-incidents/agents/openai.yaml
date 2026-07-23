@@ -1,0 +1,4 @@
+interface:
+  display_name: "Investigating Incidents"
+  short_description: "Evidence-led distributed incident debugging"
+  default_prompt: "Use $investigating-incidents to investigate this production incident with an evidence ledger and bounded parallel probes."

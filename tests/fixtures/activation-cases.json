@@ -142,5 +142,17 @@
     "forbiddenSkills": ["adversarial-refinement"],
     "expectedReferences": [],
     "rubric": ["Creates the requested contract without automatically invoking adversarial refinement."]
+  },
+  {
+    "id": "distributed-production-incident",
+    "prompt": "Investigate this production throughput collapse across our queue, app, payment provider, and carrier. Several metrics disagree and I want parallel probes without repeating yesterday's work.",
+    "expectedSkills": ["investigating-incidents"],
+    "forbiddenSkills": [],
+    "expectedReferences": [
+      "skills/investigating-incidents/references/distributed-evidence.md",
+      "skills/investigating-incidents/references/evidence-ledger.md",
+      "skills/investigating-incidents/references/parallel-investigations.md"
+    ],
+    "rubric": ["Creates an evidence ledger, proves current runtime wiring, assigns distinct discriminators, and reconciles corrections before claiming root cause."]
   }
 ]
