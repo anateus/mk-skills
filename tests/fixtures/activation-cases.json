@@ -154,5 +154,29 @@
       "skills/investigating-incidents/references/parallel-investigations.md"
     ],
     "rubric": ["Creates an evidence ledger, proves current runtime wiring, assigns distinct discriminators, and reconciles corrections before claiming root cause."]
+  },
+  {
+    "id": "large-transcript-search",
+    "prompt": "Find where an upstream model shutdown was discussed across a 12 MB Claude Code session transcript (JSONL) and pull the relevant lines — without reading the whole file into context.",
+    "expectedSkills": ["data-spelunking"],
+    "forbiddenSkills": [],
+    "expectedReferences": ["skills/data-spelunking/references/large-outputs-and-transcripts.md"],
+    "rubric": ["Locates matches and reads bounded, line-referenced windows (or uses the JSONL/transcript extractor) instead of loading the whole transcript into context."]
+  },
+  {
+    "id": "big-csv-slice",
+    "prompt": "This CSV export has millions of rows. Which status codes appear and how often, and pull just the 5xx rows — without loading the whole file.",
+    "expectedSkills": ["data-spelunking"],
+    "forbiddenSkills": [],
+    "expectedReferences": ["skills/data-spelunking/references/tabular-and-json.md"],
+    "rubric": ["Uses a streaming tabular tool (headers/frequency/search) to answer from a projected slice rather than reading the entire file."]
+  },
+  {
+    "id": "bootstrap-mk-skills-guidance",
+    "prompt": "I just installed mk-skills on a new machine. Merge its shipped agent guidance into my AGENTS.md.",
+    "expectedSkills": ["mk-skills-setup"],
+    "forbiddenSkills": [],
+    "expectedReferences": [],
+    "rubric": ["Merges the shipped guidance as an idempotent, marker-delimited managed block, dry-run first and backed up on apply, without touching surrounding content."]
   }
 ]
