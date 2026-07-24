@@ -52,8 +52,9 @@ _zj() {  # run a zellij action against the target session
 }
 
 # Emit each pane object from `list-panes -j` as one JSON line, id normalized to terminal_N.
+# Include tab and state fields so placement can count visible panes in the parent's tab.
 _zj_panes() {
-  _zj list-panes -j 2>/dev/null | python3 -c '
+  _zj list-panes -j -t -s 2>/dev/null | python3 -c '
 import sys, json
 try: data = json.load(sys.stdin)
 except Exception: sys.exit(0)
@@ -113,13 +114,38 @@ sys.exit(1)
 # `list-clients` has no -j; row 1 is a header, each further non-empty row is a client.
 zj_client_count() { _zj list-clients 2>/dev/null | tail -n +2 | grep -c . ; }
 
+# zj_visible_panes_in_parent_tab -> count non-suppressed panes beside ZELLIJ_PANE_ID.
+zj_visible_panes_in_parent_tab() {
+  _zj_panes | python3 -c '
+import json, sys
+parent_id = sys.argv[1]
+items = [json.loads(line) for line in sys.stdin if line.strip()]
+parent = next((item for item in items if item.get("id") == parent_id), None)
+if parent is None:
+    print(0)
+    raise SystemExit
+tab_id = parent.get("tab_id")
+tab_position = parent.get("tab_position")
+def same_tab(item):
+    if tab_id is not None:
+        return item.get("tab_id") == tab_id
+    return tab_position is not None and item.get("tab_position") == tab_position
+print(sum(same_tab(item) and not item.get("is_suppressed", False) for item in items))
+' "$(zj_normalize_pane_id "${ZELLIJ_PANE_ID:-0}")"
+}
+
 # zj_spawn [new-pane args...] -> spawn a pane; echoes new-pane's status line (terminal_N).
 # Attached: place near the current pane (does NOT steal focus) — the production path.
+# If its tab already has at least four visible panes, stack the new pane behind its parent.
 # Headless (tests/background): relative/directional placement silently no-ops with no
 #   client, so strip -d/--direction/--near-current-pane and let zellij pick free space.
 zj_spawn() {
   if [ "$(zj_client_count)" -gt 0 ]; then
-    _zj new-pane --near-current-pane "$@"
+    if [ "$(zj_visible_panes_in_parent_tab)" -ge 4 ]; then
+      _zj new-pane --near-current-pane --stacked "$@"
+    else
+      _zj new-pane --near-current-pane "$@"
+    fi
   else
     # Portable arg-strip (bash AND zsh — SKILL.md tells users to `source` this, and
     # macOS defaults to zsh whose arrays are 1-indexed). Iterate positional params via

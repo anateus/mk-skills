@@ -31,6 +31,56 @@ class FakeClock:
 
 
 class FocusGuardTests(unittest.TestCase):
+    def test_spawn_stacks_behind_parent_when_tab_has_four_visible_panes(self):
+        visible = [
+            {"id": number, "tab_id": 7, "is_suppressed": False}
+            for number in range(1, 5)
+        ]
+        commands = []
+
+        def zellij(_session, args):
+            commands.append(args)
+            if args[0] == "new-pane":
+                return "terminal_10"
+            return ""
+
+        with mock.patch.object(hunk_stream, "clients", return_value=[]), \
+             mock.patch.object(hunk_stream, "panes", return_value=visible), \
+             mock.patch.object(hunk_stream, "pane_exists", return_value=True), \
+             mock.patch.object(hunk_stream, "zellij", side_effect=zellij):
+            spawned = hunk_stream.spawn_hunk({
+                "session": "s", "parent_pane": "terminal_1",
+                "root": "/repo", "base": "base",
+            }, "review")
+
+        self.assertEqual(spawned, "terminal_10")
+        self.assertIn(["stack-panes", "--", "terminal_1", "terminal_10"], commands)
+
+    def test_spawn_does_not_count_suppressed_or_other_tab_panes(self):
+        panes = [
+            {"id": 1, "tab_id": 7},
+            {"id": 2, "tab_id": 7},
+            {"id": 3, "tab_id": 7},
+            {"id": 4, "tab_id": 7, "is_suppressed": True},
+            {"id": 5, "tab_id": 9},
+        ]
+        commands = []
+
+        def zellij(_session, args):
+            commands.append(args)
+            return "terminal_10" if args[0] == "new-pane" else ""
+
+        with mock.patch.object(hunk_stream, "clients", return_value=[]), \
+             mock.patch.object(hunk_stream, "panes", return_value=panes), \
+             mock.patch.object(hunk_stream, "pane_exists", return_value=True), \
+             mock.patch.object(hunk_stream, "zellij", side_effect=zellij):
+            hunk_stream.spawn_hunk({
+                "session": "s", "parent_pane": "terminal_1",
+                "root": "/repo", "base": "base",
+            }, "review")
+
+        self.assertFalse(any(command[0] == "stack-panes" for command in commands))
+
     def test_restores_delayed_watcher_switch_and_keeps_observing(self):
         clock = FakeClock()
         focused = ["terminal_9"]

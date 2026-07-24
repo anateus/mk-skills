@@ -233,7 +233,7 @@ def zellij(session: str, args: list[str]) -> str:
 
 
 def panes(session: str) -> list[dict[str, Any]]:
-    value = json.loads(zellij(session, ["list-panes", "-j", "-g", "-s"]))
+    value = json.loads(zellij(session, ["list-panes", "-j", "-g", "-s", "-t"]))
     if isinstance(value, dict):
         items: list[Any] = []
         for entry in value.values():
@@ -267,6 +267,24 @@ def clients(session: str) -> list[tuple[str, str]]:
 
 def pane_map(session: str) -> dict[str, dict[str, Any]]:
     return {pane_id(item): item for item in panes(session)}
+
+
+def visible_panes_in_parent_tab(items: list[dict[str, Any]], parent_id: str) -> int:
+    parent = next((item for item in items if pane_id(item) == parent_id), None)
+    if parent is None:
+        return 0
+    tab_id = parent.get("tab_id")
+    tab_position = parent.get("tab_position")
+
+    def same_tab(item: dict[str, Any]) -> bool:
+        if tab_id is not None:
+            return item.get("tab_id") == tab_id
+        return tab_position is not None and item.get("tab_position") == tab_position
+
+    return sum(
+        same_tab(item) and not item.get("is_suppressed", False)
+        for item in items
+    )
 
 
 def geometry(pane: dict[str, Any]) -> tuple[int, int, int, int] | None:
@@ -468,6 +486,7 @@ def spawn_hunk(request: dict[str, Any], title: str) -> str:
     parent = request["parent_pane"]
     rows = clients(session)
     old_focus = rows[0][1] if len(rows) == 1 else None
+    stack_behind_parent = visible_panes_in_parent_tab(panes(session), parent) >= 4
     args = ["new-pane",
         "--cwd", request["root"], "--name", title, "--",
         "hunk", "diff", request["base"], "--watch",
@@ -482,11 +501,14 @@ def spawn_hunk(request: dict[str, Any], title: str) -> str:
             raise RuntimeError(f"spawned pane could not be verified: {returned!r}")
         spawned = matches[0]
     zellij(session, ["rename-pane", "-p", spawned, review_title(session, parent)])
+    if stack_behind_parent:
+        zellij(session, ["stack-panes", "--", parent, spawned])
     if old_focus is not None:
         try:
             current = pane_map(session)
             if parent in current and old_focus in current:
-                place_right(session, parent, spawned)
+                if not stack_behind_parent:
+                    place_right(session, parent, spawned)
                 restore_focus(session, old_focus)
                 launch_focus_guard(session, old_focus, spawned)
         except (OSError, ValueError, subprocess.CalledProcessError):

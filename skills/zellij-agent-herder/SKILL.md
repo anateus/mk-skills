@@ -16,7 +16,7 @@ If `$ZELLIJ` is unset, stop: this skill does not apply. If it is set to any valu
 - The hierarchy is session → tabs → panes. Address a pane by `(session, pane_id)`; pane IDs are not stable global identifiers.
 - Target a session with `zellij --session <name> action <command>` or `$ZELLIJ_SESSION_NAME`. Helpers default `ZJ_SESSION` to that name.
 - `--name`/`-n` sets a title, not an address. Resolve a name with `zj_resolve_id`.
-- Spawn only through `zj_spawn`. It places a pane beside the current pane without stealing focus when one human client is attached, and safely falls back to plain `new-pane` when headless. Direct `--near-current-pane`/`-d` can silently no-op without a client.
+- Spawn only through `zj_spawn`. With fewer than four visible panes in the target tab, it places a pane beside the current pane without stealing focus when one human client is attached. At four or more, it stacks the new pane behind its parent. It safely falls back to plain `new-pane` when headless. Direct `--near-current-pane`/`-d` can silently no-op without a client.
 - Before fan-out, capture one fixed branch-point `BASE`. Never substitute advancing `main` or current `HEAD`; doing so produces incomplete or misleading aggregate diffs.
 
 ## Load helpers

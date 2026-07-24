@@ -27,6 +27,7 @@ const checks = [
   ['Hook and skill tests', process.execPath, ['--test', 'tests/hooks/*.test.js', 'tests/skills/*.test.js'], { shell: true }],
   ['Curation tests', 'python3', ['-B', '-m', 'unittest', 'tests.curation.test_review_upstreams', '-v']],
   ['Zellij pane identity', 'python3', ['-B', 'skills/zellij-agent-herder/tests/test-pane-identity.py', '-v']],
+  ['Zellij adaptive spawn', 'bash', ['skills/zellij-agent-herder/tests/test-zj-spawn.sh']],
   ['Zellij Hunk focus guard', 'python3', ['-B', 'skills/zellij-agent-herder/tests/test-hunk-focus-guard.py', '-v']],
   ['Zellij Hunk stream', 'bash', ['skills/zellij-agent-herder/tests/test-hunk-stream.sh']],
   ['Zellij hook installer', 'bash', ['skills/zellij-agent-herder/tests/test-install-hooks.sh']],

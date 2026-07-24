@@ -45,7 +45,8 @@ Verified against **zellij 0.45.0**. Source `scripts/zj.sh` first; every helper b
 
 Placement relative to the focused pane (`--near-current-pane`, `-d/--direction`) **silently no-ops in a headless/no-client session** (zellij exits 0 and prints a fake `terminal_N`, but no pane appears — it needs a connected client for current-pane-relative layout). `zj_spawn` therefore branches on `zj_client_count`:
 
-- **client attached** → `new-pane --near-current-pane <args>` (places beside the current pane, does **not** steal focus).
+- **client attached, fewer than four visible panes in the target tab** → `new-pane --near-current-pane <args>` (places beside the current pane, does **not** steal focus).
+- **client attached, four or more visible panes in the target tab** → adds `--stacked`, placing the new pane behind its parent instead of shrinking the visible layout again. Suppressed panes already in stacks and panes in other tabs are not counted.
 - **headless** → strips `-d`/`--direction`/`--near-current-pane` and calls plain `new-pane` (zellij picks the biggest free space).
 
 Never call `new-pane --near-current-pane`/`-d` directly — go through `zj_spawn`. Don't trust `new-pane`'s printed `terminal_N` as authoritative (it prints even on the no-op); recover the real id from `list-panes -j`.
