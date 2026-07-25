@@ -144,6 +144,15 @@ elif command == "rename-pane":
         if pane["id"] == pane_id:
             pane["title"] = title
     save("panes", panes)
+elif command == "toggle-pane-embed-or-floating":
+    pane_id = rest[rest.index("-p") + 1]
+    panes = load("panes")
+    for pane in panes:
+        if pane["id"] == pane_id:
+            pane["is_floating"] = not pane.get("is_floating", False)
+    save("panes", panes)
+elif command == "change-floating-pane-coordinates":
+    pass
 else:
     raise SystemExit("unsupported fake zellij command: " + repr(args))
 PY
@@ -322,7 +331,7 @@ before="$(grep -c 'new-pane' "$ZELLIJ_LOG")"
 printf '%s\n' '{"hook_event_name":"PostToolUse","session_id":"codex-session","model":"gpt-5","turn_id":"turn-read","cwd":"'$T'/repo","tool_name":"Read","tool_input":{"file_path":"'$T'/repo/a.txt"}}' | bash "$AUTODIFF"
 [ "$(grep -c 'new-pane' "$ZELLIJ_LOG")" = "$before" ]
 
-# Claude mappings stay intact; Codex adds PermissionRequest and clears stale status on SessionStart.
+# Claude mappings stay intact; Codex adds PermissionRequest and clears status on exit.
 export ZELLIJ_SESSION_NAME=status-s
 ZELLIJ_PANE_ID=1 bash "$STATUS" <<'EOF'
 {"hook_event_name":"UserPromptSubmit","session_id":"codex-session","model":"gpt-5","turn_id":"turn-status"}
@@ -351,6 +360,17 @@ import json, sys
 pane = next(p for p in json.load(open(sys.argv[1])) if p["id"] == "terminal_1")
 assert pane["title"] == "parent · idle", pane
 PY
+ZELLIJ_PANE_ID=1 bash "$STATUS" <<'EOF'
+{"hook_event_name":"SessionEnd","session_id":"codex-session","model":"gpt-5","turn_id":"turn-status","reason":"other"}
+EOF
+python3 - "$ZELLIJ_DATA/panes.json" <<'PY'
+import json, sys
+pane = next(p for p in json.load(open(sys.argv[1])) if p["id"] == "terminal_1")
+assert pane["title"] == "parent", pane
+PY
+ZELLIJ_PANE_ID=1 bash "$STATUS" <<'EOF'
+{"hook_event_name":"UserPromptSubmit","session_id":"codex-next","model":"gpt-5","turn_id":"turn-next"}
+EOF
 ZELLIJ_PANE_ID=1 bash "$STATUS" <<'EOF'
 {"hook_event_name":"SessionStart","session_id":"codex-next","model":"gpt-5","turn_id":"turn-next"}
 EOF

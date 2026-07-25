@@ -47,6 +47,28 @@ class FocusGuardTests(unittest.TestCase):
         with mock.patch.object(hunk_stream, "clients", return_value=[]), \
              mock.patch.object(hunk_stream, "panes", return_value=visible), \
              mock.patch.object(hunk_stream, "pane_exists", return_value=True), \
+             mock.patch.object(hunk_stream, "pane_map", side_effect=[
+                 {
+                     "terminal_1": {
+                         "id": 1, "pane_x": 0, "pane_y": 0,
+                         "pane_columns": 40, "pane_rows": 1,
+                     },
+                     "terminal_10": {
+                         "id": 10, "pane_x": 0, "pane_y": 1,
+                         "pane_columns": 40, "pane_rows": 23,
+                     },
+                 },
+                 {
+                     "terminal_1": {
+                         "id": 1, "pane_x": 0, "pane_y": 0,
+                         "pane_columns": 40, "pane_rows": 23,
+                     },
+                     "terminal_10": {
+                         "id": 10, "pane_x": 0, "pane_y": 23,
+                         "pane_columns": 40, "pane_rows": 1,
+                     },
+                 },
+             ]), \
              mock.patch.object(hunk_stream, "zellij", side_effect=zellij):
             spawned = hunk_stream.spawn_hunk({
                 "session": "s", "parent_pane": "terminal_1",
@@ -54,7 +76,90 @@ class FocusGuardTests(unittest.TestCase):
             }, "review")
 
         self.assertEqual(spawned, "terminal_10")
+        new_pane = next(command for command in commands if command[0] == "new-pane")
+        self.assertIn("--floating", new_pane)
         self.assertIn(["stack-panes", "--", "terminal_1", "terminal_10"], commands)
+        stack_index = commands.index(
+            ["stack-panes", "--", "terminal_1", "terminal_10"],
+        )
+        self.assertEqual(
+            commands[stack_index + 1],
+            ["focus-pane-id", "terminal_1"],
+        )
+
+    def test_failed_stack_falls_back_to_floating_review(self):
+        visible = [{"id": number, "tab_id": 7} for number in range(1, 5)]
+        commands = []
+
+        def zellij(_session, args):
+            commands.append(args)
+            return "terminal_10" if args[0] == "new-pane" else ""
+
+        with mock.patch.object(hunk_stream, "clients", return_value=[]), \
+             mock.patch.object(hunk_stream, "panes", return_value=visible), \
+             mock.patch.object(hunk_stream, "pane_exists", return_value=True), \
+             mock.patch.object(hunk_stream, "pane_map", return_value={
+                 "terminal_1": {"id": 1},
+                 "terminal_10": {"id": 10, "is_floating": True},
+             }), \
+             mock.patch.object(hunk_stream.time, "sleep"), \
+             mock.patch.object(hunk_stream, "zellij", side_effect=zellij):
+            hunk_stream.spawn_hunk({
+                "session": "s", "parent_pane": "terminal_1",
+                "root": "/repo", "base": "base",
+            }, "review")
+
+        new_pane = next(command for command in commands if command[0] == "new-pane")
+        self.assertIn("--floating", new_pane)
+        self.assertFalse(any(
+            command[0] == "toggle-pane-embed-or-floating"
+            for command in commands
+        ))
+
+    def test_diagonal_focus_routes_toward_target(self):
+        current = {
+            "pane_x": 0, "pane_y": 0,
+            "pane_columns": 40, "pane_rows": 20,
+        }
+        wanted = {
+            "pane_x": 80, "pane_y": 40,
+            "pane_columns": 40, "pane_rows": 20,
+        }
+        self.assertEqual(hunk_stream.focus_direction(current, wanted), "right")
+
+    def test_restore_focus_recalculates_after_intermediate_pane(self):
+        focused = iter([
+            [("1", "terminal_0")],
+            [("1", "terminal_14")],
+            [("1", "terminal_14")],
+            [("1", "terminal_17")],
+        ])
+        panes = {
+            "terminal_0": {
+                "pane_x": 0, "pane_y": 0,
+                "pane_columns": 40, "pane_rows": 20,
+            },
+            "terminal_14": {
+                "pane_x": 40, "pane_y": 20,
+                "pane_columns": 40, "pane_rows": 20,
+            },
+            "terminal_17": {
+                "pane_x": 40, "pane_y": 40,
+                "pane_columns": 40, "pane_rows": 20,
+            },
+        }
+        move = mock.Mock()
+        with mock.patch.object(
+            hunk_stream, "clients", side_effect=lambda _s: next(focused)
+        ), mock.patch.object(
+            hunk_stream, "pane_map", return_value=panes
+        ), mock.patch.object(
+            hunk_stream, "zellij", move
+        ):
+            restored = hunk_stream.restore_focus("s", "terminal_17")
+
+        self.assertTrue(restored)
+        self.assertEqual(move.call_count, 2)
 
     def test_spawn_does_not_count_suppressed_or_other_tab_panes(self):
         panes = [
@@ -80,6 +185,129 @@ class FocusGuardTests(unittest.TestCase):
             }, "review")
 
         self.assertFalse(any(command[0] == "stack-panes" for command in commands))
+
+    def test_spawn_targets_parent_tab_and_floats_when_adjacency_fails(self):
+        panes = [
+            {"id": 1, "tab_id": 7},
+            {"id": 2, "tab_id": 7},
+            {"id": 8, "tab_id": 9},
+        ]
+        commands = []
+
+        def zellij(_session, args):
+            commands.append(args)
+            return "terminal_10" if args[0] == "new-pane" else ""
+
+        with mock.patch.object(
+            hunk_stream, "clients", return_value=[("1", "terminal_8")]
+        ), mock.patch.object(
+            hunk_stream, "panes", return_value=panes
+        ), mock.patch.object(
+            hunk_stream, "pane_exists", return_value=True
+        ), mock.patch.object(
+            hunk_stream, "pane_map", return_value={
+                "terminal_1": panes[0],
+                "terminal_8": panes[2],
+                "terminal_10": {"id": 10, "tab_id": 7},
+            }
+        ), mock.patch.object(
+            hunk_stream, "place_right", return_value=False
+        ), mock.patch.object(
+            hunk_stream, "restore_focus"
+        ), mock.patch.object(
+            hunk_stream, "launch_focus_guard"
+        ), mock.patch.object(
+            hunk_stream, "zellij", side_effect=zellij
+        ):
+            hunk_stream.spawn_hunk({
+                "session": "s", "parent_pane": "terminal_1",
+                "root": "/repo", "base": "base",
+            }, "review")
+
+        new_pane = next(command for command in commands if command[0] == "new-pane")
+        self.assertEqual(new_pane[1:3], ["--tab-id", "7"])
+        self.assertIn(
+            ["toggle-pane-embed-or-floating", "-p", "terminal_10"], commands,
+        )
+        self.assertIn([
+            "change-floating-pane-coordinates", "-p", "terminal_10",
+            "--width", "45%", "--height", "70%", "--x", "52%", "--y", "15%",
+        ], commands)
+
+    def test_moves_review_into_reserved_geometry(self):
+        pane_maps = iter([
+            {
+                "terminal_10": {
+                    "pane_x": 0, "pane_y": 30,
+                    "pane_columns": 40, "pane_rows": 20,
+                },
+            },
+            {
+                "terminal_10": {
+                    "pane_x": 40, "pane_y": 0,
+                    "pane_columns": 40, "pane_rows": 30,
+                },
+            },
+        ])
+        move = mock.Mock()
+        with mock.patch.object(
+            hunk_stream, "pane_map", side_effect=lambda _s: next(pane_maps)
+        ), mock.patch.object(hunk_stream, "zellij", move):
+            placed = hunk_stream.move_to_reserved_slot(
+                "s", "terminal_10", (40, 0, 40, 30),
+            )
+
+        self.assertTrue(placed)
+        move.assert_called_once_with(
+            "s", ["move-pane", "-p", "terminal_10", "up"],
+        )
+
+    def test_reserved_split_is_closed_after_review_takes_its_geometry(self):
+        parent = {
+            "pane_x": 0, "pane_y": 0,
+            "pane_columns": 40, "pane_rows": 30,
+        }
+        slot = {
+            "pane_x": 40, "pane_y": 0,
+            "pane_columns": 40, "pane_rows": 30,
+        }
+        pane_maps = iter([
+            {"terminal_1": parent, "terminal_20": slot},
+            {"terminal_1": parent, "terminal_10": slot},
+        ])
+        commands = []
+
+        def zellij(_session, args):
+            commands.append(args)
+            return "terminal_20" if args[0] == "new-pane" else ""
+
+        with mock.patch.object(
+            hunk_stream, "clients",
+            side_effect=[
+                [("1", "terminal_8")],
+                [("1", "terminal_1")],
+            ],
+        ), mock.patch.object(
+            hunk_stream, "restore_focus"
+        ) as focus, mock.patch.object(
+            hunk_stream, "pane_exists", return_value=True
+        ), mock.patch.object(
+            hunk_stream, "pane_map", side_effect=lambda _s: next(pane_maps)
+        ), mock.patch.object(
+            hunk_stream, "move_to_reserved_slot", return_value=True
+        ) as move, mock.patch.object(
+            hunk_stream, "zellij", side_effect=zellij
+        ):
+            placed = hunk_stream.place_via_reserved_split(
+                "s", "terminal_1", "terminal_10", 7,
+            )
+
+        self.assertTrue(placed)
+        focus.assert_called_once_with("s", "terminal_1")
+        move.assert_called_once_with(
+            "s", "terminal_10", (40, 0, 40, 30),
+        )
+        self.assertIn(["close-pane", "-p", "terminal_20"], commands)
 
     def test_restores_delayed_watcher_switch_and_keeps_observing(self):
         clock = FakeClock()

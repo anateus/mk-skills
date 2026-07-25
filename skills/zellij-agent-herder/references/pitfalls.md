@@ -35,7 +35,7 @@ Sharp edges of driving zellij headlessly, and how each surfaces.
 ## Status not updating
 
 - Confirm `install-hooks.sh` ran for the active host. Claude Code definitions live in `~/.claude/settings.json`; Codex definitions live in `~/.codex/hooks.json`.
-- Check the host's supported status events. Claude uses `UserPromptSubmit` → `working`, permission-prompt `Notification` → `blocked`, `Stop` → `idle`, and `SessionEnd` → clear. Codex uses `SessionStart` → clear stale status, `UserPromptSubmit` → `working`, `PermissionRequest` → `blocked`, and `Stop` → `idle`.
+- Check the host's supported status events. Claude uses `UserPromptSubmit` → `working`, permission-prompt `Notification` → `blocked`, `Stop` → `idle`, and `SessionEnd` → clear. Codex uses `SessionStart` → clear stale status, `UserPromptSubmit` → `working`, `PermissionRequest` → `blocked`, `Stop` → `idle`, and `SessionEnd` → clear.
 - For Codex, use `/hooks` in a new interactive session to trust new or changed definitions; valid `~/.codex/hooks.json` entries do not become trusted automatically.
 - Status updates only when a supported Claude Code or Codex lifecycle event fires; a plain shell pane never gets a status token.
 - Subagents are intentionally skipped (`agent_id` guard) — a subagent won't stamp its parent's pane.

@@ -54,6 +54,12 @@ test -x "$CODEX/hooks/zellij-origin.sh"
 test -x "$CODEX/hooks/pane-identity.py"
 test -x "$CODEX/hooks/hunk-stream.py"
 test -r "$CODEX/hooks/hunk-stream.py"
+for script in zellij-agent-status.sh hunk-autodiff.sh zellij-origin.sh pane-identity.py hunk-stream.py; do
+  test -L "$CLAUDE/hooks/$script"
+  test -L "$CODEX/hooks/$script"
+  test "$(readlink "$CLAUDE/hooks/$script")" = "$ROOT/scripts/$script"
+  test "$(readlink "$CODEX/hooks/$script")" = "$ROOT/scripts/$script"
+done
 cmp "$ROOT/scripts/hunk-stream.py" "$CLAUDE/hooks/hunk-stream.py"
 cmp "$ROOT/scripts/hunk-stream.py" "$CODEX/hooks/hunk-stream.py"
 cp "$CLAUDE/hooks/hunk-stream.py" "$TMP/claude-hunk-stream.first"
@@ -80,10 +86,14 @@ assert all("async" not in h for g in x["hooks"]["PostToolUse"] for h in g["hooks
 assert any("unrelated" in h.get("command", "") for g in x["hooks"]["Stop"] for h in g["hooks"])
 assert any(g.get("matcher") == "apply_patch|Edit|Write" and any("hunk-autodiff.sh" in h.get("command", "") for h in g["hooks"]) for g in x["hooks"]["PostToolUse"])
 assert {"UserPromptSubmit", "Stop", "Notification", "SessionEnd", "SessionStart", "PostToolUse"} <= set(c["hooks"])
-assert {"UserPromptSubmit", "PermissionRequest", "Stop", "SessionStart", "PostToolUse"} <= set(x["hooks"])
+assert {"UserPromptSubmit", "PermissionRequest", "Stop", "SessionEnd", "SessionStart", "PostToolUse"} <= set(x["hooks"])
 session_start = [h.get("command", "") for g in x["hooks"]["SessionStart"] for h in g["hooks"]]
 assert sum("zellij-origin.sh" in command for command in session_start) == 1
 assert sum("zellij-agent-status.sh" in command for command in session_start) == 1
+for cfg in (c, x):
+    session_end = [h for g in cfg["hooks"]["SessionEnd"] for h in g["hooks"] if "zellij-agent-status.sh" in h.get("command", "")]
+    assert len(session_end) == 1
+    assert session_end[0]["timeout"] <= 3
 assert all("ZAH_IDENTITY_SCRIPT=" in h.get("command", "") for groups in x["hooks"].values() for g in groups for h in g.get("hooks", []) if "zellij-agent-status.sh" in h.get("command", ""))
 PY
 echo "Claude install: PASS"

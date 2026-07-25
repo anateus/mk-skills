@@ -343,44 +343,211 @@ def focus_direction(current: dict[str, Any], wanted: dict[str, Any]) -> str | No
             return "up"
         if cy + ch <= wy:
             return "down"
+    current_center_x = cx + cw / 2
+    wanted_center_x = wx + ww / 2
+    if wanted_center_x != current_center_x:
+        return "right" if wanted_center_x > current_center_x else "left"
+    current_center_y = cy + ch / 2
+    wanted_center_y = wy + wh / 2
+    if wanted_center_y != current_center_y:
+        return "down" if wanted_center_y > current_center_y else "up"
     return None
 
 
-def place_right(session: str, parent_id: str, watcher_id: str, limit: int = 8) -> None:
+def place_right(session: str, parent_id: str, watcher_id: str, limit: int = 8) -> bool:
     for attempt in range(limit + 1):
         current = pane_map(session)
         parent = current.get(parent_id)
         watcher = current.get(watcher_id)
-        if parent is None or watcher is None or immediately_right(parent, watcher):
-            return
+        if parent is None or watcher is None:
+            return False
+        if immediately_right(parent, watcher):
+            return True
         direction = placement_direction(parent, watcher)
         if direction is None or attempt == limit:
-            return
+            return False
         zellij(session, ["move-pane", "-p", watcher_id, direction])
+    return False
 
 
-def restore_focus(session: str, wanted_id: str, limit: int = 8) -> None:
+def move_to_reserved_slot(
+    session: str, watcher_id: str, target: tuple[int, int, int, int],
+    limit: int = 8,
+) -> bool:
+    tx, ty, _, _ = target
+    for attempt in range(limit + 1):
+        watcher = pane_map(session).get(watcher_id)
+        watcher_rect = geometry(watcher) if watcher is not None else None
+        if watcher_rect is None:
+            return False
+        if watcher_rect == target:
+            return True
+        if attempt == limit:
+            return False
+        wx, wy, ww, wh = watcher_rect
+        if not overlaps(wy, wh, ty, target[3]):
+            direction = "up" if wy > ty else "down"
+        elif not overlaps(wx, ww, tx, target[2]):
+            direction = "left" if wx > tx else "right"
+        else:
+            direction = "left" if wx > tx else "right"
+        zellij(session, ["move-pane", "-p", watcher_id, direction])
+    return False
+
+
+def place_via_reserved_split(
+    session: str, parent_id: str, watcher_id: str, tab_id: int,
+) -> bool:
+    rows = clients(session)
+    if len(rows) != 1:
+        return False
+    restore_focus(session, parent_id)
+    if clients(session) != [(rows[0][0], parent_id)]:
+        return False
+
+    title = f"zah-slot:{uuid.uuid4().hex}"
+    output = zellij(session, [
+        "new-pane", "--tab-id", str(tab_id), "--direction", "right",
+        "--close-on-exit", "--name", title, "--", "sleep", "30",
+    ]).splitlines()
+    returned = output[-1] if output else ""
+    if pane_exists(session, returned):
+        reservation = returned
+    else:
+        matches = [
+            pane_id(item) for item in panes(session) if item.get("title") == title
+        ]
+        if len(matches) != 1:
+            return False
+        reservation = matches[0]
+
+    try:
+        current = pane_map(session)
+        parent = current.get(parent_id)
+        slot = current.get(reservation)
+        target = geometry(slot) if slot is not None else None
+        if (
+            parent is None
+            or slot is None
+            or target is None
+            or not immediately_right(parent, slot)
+        ):
+            return False
+        if not move_to_reserved_slot(session, watcher_id, target):
+            return False
+    finally:
+        if pane_exists(session, reservation):
+            zellij(session, ["close-pane", "-p", reservation])
+
+    current = pane_map(session)
+    parent = current.get(parent_id)
+    watcher = current.get(watcher_id)
+    return (
+        parent is not None
+        and watcher is not None
+        and immediately_right(parent, watcher)
+    )
+
+
+def float_review(session: str, watcher_id: str) -> None:
+    zellij(session, ["toggle-pane-embed-or-floating", "-p", watcher_id])
+    zellij(session, [
+        "change-floating-pane-coordinates", "-p", watcher_id,
+        "--width", "45%", "--height", "70%", "--x", "52%", "--y", "15%",
+    ])
+
+
+def review_is_stacked_behind(
+    parent: dict[str, Any], watcher: dict[str, Any],
+) -> bool:
+    parent_rect = geometry(parent)
+    watcher_rect = geometry(watcher)
+    if parent_rect is None or watcher_rect is None:
+        return False
+    px, _, pw, ph = parent_rect
+    wx, _, ww, wh = watcher_rect
+    return px == wx and pw == ww and ph > 1 and wh == 1
+
+
+def review_is_in_parent_stack(
+    parent: dict[str, Any], watcher: dict[str, Any],
+) -> bool:
+    parent_rect = geometry(parent)
+    watcher_rect = geometry(watcher)
+    if parent_rect is None or watcher_rect is None:
+        return False
+    px, _, pw, ph = parent_rect
+    wx, _, ww, wh = watcher_rect
+    return px == wx and pw == ww and sorted((ph, wh))[0] == 1
+
+
+def stack_review_behind_parent(
+    session: str, parent_id: str, watcher_id: str, attempts: int = 10,
+) -> bool:
+    zellij(session, ["stack-panes", "--", parent_id, watcher_id])
+    for attempt in range(attempts):
+        current = pane_map(session)
+        parent = current.get(parent_id)
+        watcher = current.get(watcher_id)
+        if (
+            parent is not None
+            and watcher is not None
+            and review_is_in_parent_stack(parent, watcher)
+        ):
+            break
+        if attempt + 1 < attempts:
+            time.sleep(0.01)
+    else:
+        return False
+
+    # stack-panes always expands its final argument. Wait for the stack action
+    # before re-expanding the recorded parent; separate CLI actions can be
+    # processed out of order if issued back-to-back.
+    zellij(session, ["focus-pane-id", parent_id])
+    for attempt in range(attempts):
+        current = pane_map(session)
+        parent = current.get(parent_id)
+        watcher = current.get(watcher_id)
+        if (
+            parent is not None
+            and watcher is not None
+            and review_is_stacked_behind(parent, watcher)
+        ):
+            return True
+        if attempt + 1 < attempts:
+            time.sleep(0.01)
+    return False
+
+
+def restore_focus(session: str, wanted_id: str, limit: int = 16) -> bool:
     for attempt in range(limit + 1):
         rows = clients(session)
         if len(rows) != 1:
-            return
+            return False
         current_id = rows[0][1]
         if current_id == wanted_id:
-            return
+            return True
         current = pane_map(session)
         focused = current.get(current_id)
         wanted = current.get(wanted_id)
         if focused is None or wanted is None:
-            return
+            return False
         direction = focus_direction(focused, wanted)
         if direction is None or attempt == limit:
-            return
+            return False
         zellij(session, ["move-focus", direction])
         for _ in range(10):
             rows = clients(session)
-            if len(rows) != 1 or rows[0][1] == wanted_id:
-                return
+            if len(rows) != 1:
+                return False
+            if rows[0][1] == wanted_id:
+                return True
+            if rows[0][1] != current_id:
+                break
             time.sleep(0.01)
+        else:
+            return False
+    return False
 
 
 def restore_guard_focus(
@@ -486,11 +653,24 @@ def spawn_hunk(request: dict[str, Any], title: str) -> str:
     parent = request["parent_pane"]
     rows = clients(session)
     old_focus = rows[0][1] if len(rows) == 1 else None
-    stack_behind_parent = visible_panes_in_parent_tab(panes(session), parent) >= 4
-    args = ["new-pane",
+    initial_panes = panes(session)
+    parent_pane = next(
+        (item for item in initial_panes if pane_id(item) == parent), None,
+    )
+    tab_id = parent_pane.get("tab_id") if parent_pane is not None else None
+    stack_behind_parent = visible_panes_in_parent_tab(initial_panes, parent) >= 4
+    args = ["new-pane"]
+    if isinstance(tab_id, int):
+        args.extend(["--tab-id", str(tab_id)])
+    if stack_behind_parent:
+        args.extend([
+            "--floating", "--width", "45%", "--height", "70%",
+            "--x", "52%", "--y", "15%",
+        ])
+    args.extend([
         "--cwd", request["root"], "--name", title, "--",
         "hunk", "diff", request["base"], "--watch",
-    ]
+    ])
     output = zellij(session, args).splitlines()
     returned = output[-1] if output else ""
     if pane_exists(session, returned):
@@ -502,14 +682,29 @@ def spawn_hunk(request: dict[str, Any], title: str) -> str:
         spawned = matches[0]
     zellij(session, ["rename-pane", "-p", spawned, review_title(session, parent)])
     if stack_behind_parent:
-        zellij(session, ["stack-panes", "--", parent, spawned])
+        if not stack_review_behind_parent(session, parent, spawned):
+            watcher = pane_map(session).get(spawned)
+            if watcher is not None and not watcher.get("is_floating", False):
+                float_review(session, spawned)
     if old_focus is not None:
         try:
             current = pane_map(session)
             if parent in current and old_focus in current:
                 if not stack_behind_parent:
-                    place_right(session, parent, spawned)
-                restore_focus(session, old_focus)
+                    placed = place_right(session, parent, spawned)
+                    if (
+                        not placed
+                        and isinstance(tab_id, int)
+                        and place_via_reserved_split(
+                            session, parent, spawned, tab_id,
+                        )
+                    ):
+                        placed = True
+                    if not placed:
+                        float_review(session, spawned)
+                if not restore_focus(session, old_focus):
+                    time.sleep(0.05)
+                    restore_focus(session, old_focus)
                 launch_focus_guard(session, old_focus, spawned)
         except (OSError, ValueError, subprocess.CalledProcessError):
             pass

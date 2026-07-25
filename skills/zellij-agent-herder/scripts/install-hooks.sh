@@ -35,7 +35,7 @@ configure_host() {
     config="$root/hooks.json"
     async=false
     matcher='apply_patch|Edit|Write'
-    events='UserPromptSubmit,PermissionRequest,Stop'
+    events='UserPromptSubmit,PermissionRequest,Stop,SessionEnd'
     origin_status=true
   fi
 
@@ -43,8 +43,7 @@ configure_host() {
   if [ "$ACTION" = install ]; then
     mkdir -p "$hooks_dir"
     for script in zellij-agent-status.sh hunk-autodiff.sh zellij-origin.sh pane-identity.py hunk-stream.py; do
-      cp "$SRC/$script" "$hooks_dir/$script"
-      chmod +x "$hooks_dir/$script"
+      ln -sfn "$SRC/$script" "$hooks_dir/$script"
     done
   else
     for script in zellij-agent-status.sh hunk-autodiff.sh zellij-origin.sh pane-identity.py hunk-stream.py; do
@@ -136,7 +135,7 @@ def remove_owned():
 removed = remove_owned()
 if action == "install":
     def add(event, name, matcher=None, asynchronous=False):
-        entry = {"type": "command", "command": commands[name], "timeout": 10}
+        entry = {"type": "command", "command": commands[name], "timeout": 3 if event == "SessionEnd" else 10}
         if asynchronous:
             entry["async"] = True
         group = {"hooks": [entry]}

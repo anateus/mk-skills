@@ -23,10 +23,10 @@ if evt == "Notification" and host == "claude":
     status = "blocked"
 elif evt == "PermissionRequest" and host == "codex":
     status = "blocked"
-elif evt == "SessionEnd" and host == "claude":
+elif evt == "SessionEnd":
     status = None                                  # clear the suffix, don't stamp one
 elif evt == "SessionStart" and host == "codex":
-    status = None                                  # Codex has no SessionEnd cleanup
+    status = None                                  # also clear stale suffixes after abnormal exits
 elif evt not in ("UserPromptSubmit", "Stop"):
     sys.exit(0)
 else:

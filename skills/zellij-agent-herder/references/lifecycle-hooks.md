@@ -11,18 +11,19 @@ bash "<skill-base-dir>/scripts/install-hooks.sh" --all
 bash "<skill-base-dir>/scripts/install-hooks.sh" --uninstall --all
 ```
 
-Host-specific flags are available in the installer help. Installation is idempotent, backs up changed settings, and preserves unrelated hooks. Uninstall is ownership-scoped to entries installed by this skill.
+Host-specific flags are available in the installer help. Installation is idempotent, backs up changed settings, and preserves unrelated hooks. Installed hook files are symlinks to the skill's scripts so skill updates cannot leave stale controller copies behind. Uninstall is ownership-scoped to entries installed by this skill.
 
 ## Behavior
 
-Claude registers status for `UserPromptSubmit`, `Stop`, `Notification`, and `SessionEnd`; origin for `SessionStart`; and asynchronous autodiff for `PostToolUse` matching `Edit|Write|MultiEdit|NotebookEdit`. Codex registers status for `SessionStart`, `UserPromptSubmit`, `PermissionRequest`, and `Stop`; origin for `SessionStart`; and synchronous autodiff for `PostToolUse` matching `apply_patch|Edit|Write`.
+Claude registers status for `UserPromptSubmit`, `Stop`, `Notification`, and `SessionEnd`; origin for `SessionStart`; and asynchronous autodiff for `PostToolUse` matching `Edit|Write|MultiEdit|NotebookEdit`. Codex registers status for `SessionStart`, `UserPromptSubmit`, `PermissionRequest`, `Stop`, and `SessionEnd`; origin for `SessionStart`; and synchronous autodiff for `PostToolUse` matching `apply_patch|Edit|Write`.
 
 | Event | Status effect |
 |---|---|
-| `SessionStart` (Codex) or `UserPromptSubmit` | `working` |
+| `SessionStart` (Codex) | clear a stale status suffix |
+| `UserPromptSubmit` | `working` |
 | `PermissionRequest`, or Claude `Notification` with `notification_type: permission_prompt` | `blocked` |
 | `Stop` | `idle` |
-| `SessionEnd` (Claude) | clear only the status suffix |
+| `SessionEnd` | clear only the status suffix |
 
 Other Claude notification types, including idle prompts and agent-completed notices, are ignored rather than mislabeled as blocked. Status and origin hooks also ignore subagent payloads; subagents do not create independent origin or status records.
 
