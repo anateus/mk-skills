@@ -8,9 +8,8 @@
 # (or a project's ./.claude/skills/<name>/) — it never touches ~/.claude/hooks/,
 # so a fix to hunk-autodiff.sh or zellij-agent-status.sh can land in the skill
 # source while the *installed* copy Claude Code actually runs keeps executing the
-# old, buggy version indefinitely with no signal it drifted (this is exactly how
-# a --near-current-pane focus-mismatch bug in hunk-autodiff.sh resurfaced after
-# already being fixed once — see references/pitfalls.md). Since this hook already
+# old, buggy version indefinitely with no signal it drifted (this previously
+# resurfaced a legacy pane-placement bug after its source fix). Since this hook already
 # fires every session, use it to keep those two ALREADY-installed copies in sync
 # with whichever skill dir is active (project dir wins over global — same
 # precedence the `skills` CLI itself uses). Only syncs files that already exist

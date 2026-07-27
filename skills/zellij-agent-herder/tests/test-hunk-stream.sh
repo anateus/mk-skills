@@ -80,6 +80,7 @@ elif command == "new-pane":
     pane_id = "terminal_" + str(number)
     panes = load("panes")
     clients = load("clients")
+    no_focus = "--no-focus" in rest
     focused_id = clients[0]["focused_pane"] if len(clients) == 1 else None
     focused = next((pane for pane in panes if pane["id"] == focused_id), None)
     if focused is None:
@@ -88,13 +89,14 @@ elif command == "new-pane":
     else:
         width = max(1, focused["pane_columns"] // 2)
         focused["pane_columns"] -= width
-        pane = {"id": pane_id, "title": title, "is_focused": True,
+        pane = {"id": pane_id, "title": title, "is_focused": not no_focus,
                 "pane_x": focused["pane_x"] + focused["pane_columns"],
                 "pane_y": focused["pane_y"], "pane_columns": width,
                 "pane_rows": focused["pane_rows"]}
-        for item in panes:
-            item["is_focused"] = False
-        clients[0]["focused_pane"] = pane_id
+        if not no_focus:
+            for item in panes:
+                item["is_focused"] = False
+            clients[0]["focused_pane"] = pane_id
     panes.append(pane)
     save("panes", panes); save("clients", clients)
     print("terminal_999" if os.environ.get("ZELLIJ_FAKE_BAD_ID") else pane_id)
@@ -161,7 +163,6 @@ printf '#!/usr/bin/env bash\nexit 0\n' > "$T/bin/hunk"
 chmod +x "$T/bin/hunk"
 ORIGINAL_PATH="$PATH"
 export PATH="$T/bin:$PATH"
-export ZAH_FOCUS_GUARD_WINDOW=0
 
 mkdir -p "$XDG_CACHE_HOME/zellij-agent-herder/panes/s"
 printf '%s\n' '{"emoji":"🌿","name":"child","short":"c","ancestors":[{"emoji":"🦀","name":"root","short":"r"}],"label":"child"}' > "$XDG_CACHE_HOME/zellij-agent-herder/panes/s/terminal_1.json"
@@ -172,9 +173,9 @@ P2="$(python3 "$CTL" ensure --session s --parent terminal_1 --root "$T/repo" --b
 [ "$P1" = "$P2" ]
 [ "$(grep -c 'new-pane' "$ZELLIJ_LOG")" = 1 ]
 ! grep -q 'focus-pane-id' "$ZELLIJ_LOG"
-grep -q 'new-pane --cwd' "$ZELLIJ_LOG"
+grep -q 'new-pane --no-focus --cwd' "$ZELLIJ_LOG"
 grep -q "move-pane -p $P1 left" "$ZELLIJ_LOG"
-grep -q 'move-focus right' "$ZELLIJ_LOG"
+! grep -q 'move-focus' "$ZELLIJ_LOG"
 python3 - "$ZELLIJ_DATA/panes.json" "$ZELLIJ_DATA/clients.json" "$P1" <<'PY'
 import json, sys
 panes = {pane["id"]: pane for pane in json.load(open(sys.argv[1]))}
@@ -213,7 +214,7 @@ P6="$(python3 "$CTL" ensure --session s --parent terminal_1 --root "$T/repo" --b
 printf '[]\n' > "$ZELLIJ_DATA/clients.json"
 before="$(wc -l < "$ZELLIJ_LOG")"
 P7="$(python3 "$CTL" ensure --session s --parent terminal_2 --root "$T/repo" --base "$BASE" --kind worktree --label fallback --explicit)"
-tail -n "+$((before + 1))" "$ZELLIJ_LOG" | grep -q 'new-pane --cwd'
+tail -n "+$((before + 1))" "$ZELLIJ_LOG" | grep -q 'new-pane --no-focus --cwd'
 ! tail -n "+$((before + 1))" "$ZELLIJ_LOG" | grep -q -- '--direction'
 
 # A bad returned ID is recovered via the unique generated pane title.
@@ -382,7 +383,6 @@ PY
 echo 'origin/hooks/status normalization: PASS'
 
 if [ "${LIVE_ZELLIJ:-0}" = 1 ]; then
-  unset ZAH_FOCUS_GUARD_WINDOW
   REAL_ZELLIJ="$(PATH="$ORIGINAL_PATH"; command -v zellij)"
   session="zt8-$PPID-$RANDOM"
   feeder_pid=""
@@ -413,7 +413,7 @@ if [ "${LIVE_ZELLIJ:-0}" = 1 ]; then
   parent="$("$REAL_ZELLIJ" --session "$session" action list-panes -j | python3 -c 'import json,sys; p=next(p for p in json.load(sys.stdin) if not p.get("is_plugin")); print("terminal_" + str(p["id"]))')"
   "$REAL_ZELLIJ" --session "$session" action rename-pane -p "$parent" agent-parent
   old="$("$REAL_ZELLIJ" --session "$session" action new-pane --direction right --name observer -- sleep 60)"
-  live_sid="focus-guard-$RANDOM"
+  live_sid="no-focus-$RANDOM"
   printf '%s\n' "{\"hook_event_name\":\"SessionStart\",\"session_id\":\"$live_sid\",\"model\":\"gpt-5\",\"turn_id\":\"origin\",\"cwd\":\"$T/repo\"}" > "$T/live-origin.json"
   printf '%s\n' "{\"hook_event_name\":\"PostToolUse\",\"session_id\":\"$live_sid\",\"model\":\"gpt-5\",\"turn_id\":\"edit\",\"cwd\":\"$T/repo\",\"tool_name\":\"apply_patch\",\"tool_input\":{\"file_path\":\"$T/repo/a.txt\"}}" > "$T/live-autodiff.json"
   printf -v hook_command 'PATH=%q ZAH_HOST=codex bash %q < %q && PATH=%q ZAH_HOST=codex bash %q < %q > %q && printf done > %q' \
@@ -444,14 +444,6 @@ assert watcher["pane_x"] == parent["pane_x"] + parent["pane_columns"], (parent, 
 assert old["is_focused"], old
 PY
   python3 - "$T/live-clients.txt" "$old" <<'PY'
-import sys
-rows = [line.split() for line in open(sys.argv[1]).read().splitlines()[1:]]
-assert len(rows) == 1 and sys.argv[2] in rows[0], (rows, sys.argv[2])
-PY
-  sleep 1.2
-  ! pgrep -f "[h]unk-stream.py focus-guard --session $session" >/dev/null
-  "$REAL_ZELLIJ" --session "$session" action list-clients > "$T/live-clients-final.txt"
-  python3 - "$T/live-clients-final.txt" "$old" <<'PY'
 import sys
 rows = [line.split() for line in open(sys.argv[1]).read().splitlines()[1:]]
 assert len(rows) == 1 and sys.argv[2] in rows[0], (rows, sys.argv[2])

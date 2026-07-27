@@ -108,6 +108,65 @@ class PaneIdentityTests(unittest.TestCase):
         self.assertEqual(first, second)
         self.assertEqual(first, json.loads(self.cache_file("alpha", "terminal_1").read_text()))
 
+    def test_new_identity_avoids_emojis_in_other_open_pane_titles(self):
+        first = self.assign(pane="terminal_1", native_name="schema-review")
+        reserved = next(
+            emoji for emoji in self.load_module().EMOJIS
+            if emoji != first["emoji"]
+        )
+        self.env["ZJ_FAKE_PANES"] = json.dumps([
+            {
+                "id": 1,
+                "title": f"{first['emoji']} schema-review · working",
+                "is_plugin": False,
+            },
+            {
+                "id": 8,
+                "title": f"{reserved} review",
+                "is_plugin": False,
+            },
+        ])
+
+        second = self.assign(pane="terminal_2", native_name="api-review")
+
+        self.assertNotEqual(first["emoji"], second["emoji"])
+        self.assertNotEqual(reserved, second["emoji"])
+
+    def test_cached_identity_reallocates_when_an_open_pane_claims_its_emoji(self):
+        first = self.assign(pane="terminal_1", native_name="schema-review")
+        self.env["ZJ_FAKE_PANES"] = json.dumps([
+            {
+                "id": 2,
+                "title": f"{first['emoji']} api-review",
+                "is_plugin": False,
+            },
+        ])
+
+        reassigned = self.assign(
+            pane="terminal_1", native_name="different-name",
+        )
+
+        self.assertNotEqual(first["emoji"], reassigned["emoji"])
+        self.assertEqual(first["name"], reassigned["name"])
+        self.assertEqual(
+            reassigned,
+            json.loads(self.cache_file("alpha", "terminal_1").read_text()),
+        )
+
+    def test_review_title_does_not_claim_its_parent_identity_emoji(self):
+        first = self.assign(pane="terminal_1", native_name="schema-review")
+        self.env["ZJ_FAKE_PANES"] = json.dumps([
+            {
+                "id": 8,
+                "title": f"{first['emoji']} ▸ 🔍",
+                "is_plugin": False,
+            },
+        ])
+
+        unchanged = self.assign(pane="terminal_1", native_name="schema-review")
+
+        self.assertEqual(first, unchanged)
+
     def test_malformed_cached_identity_is_replaced(self):
         cache = self.cache_file("alpha", "terminal_1")
         cache.parent.mkdir(parents=True)

@@ -1,6 +1,6 @@
 # Command reference — herdr → zellij
 
-Verified against **zellij 0.45.0**. Source `scripts/zj.sh` first; every helper below lives there.
+Verified against a recent **zellij 0.45.0 development build containing [zellij-org/zellij#5346](https://github.com/zellij-org/zellij/pull/5346)**. The release string alone is not sufficient; `zellij action new-pane --help` must include `--no-focus`. Source `scripts/zj.sh` first; every helper below lives there.
 
 ## Addressing model
 
@@ -19,7 +19,6 @@ Verified against **zellij 0.45.0**. Source `scripts/zj.sh` first; every helper b
 | `_zj_panes` | emits each pane object from `list-panes -j` as one JSON line, `id` normalized to `terminal_<n>`/`plugin_<n>` per `is_plugin` (handles both flat-list and dict-by-tab shapes). |
 | `zj_resolve_id` | `<name>` → prints `terminal_<n>` (exit 1 not found, 2 ambiguous). |
 | `zj_pane_exists` | `<pane_id>` → exit 0 if present, else 1. |
-| `zj_client_count` | → number of attached clients (0 == headless). |
 | `zj_spawn` | `[new-pane args...]` → spawn a pane, echo its id. **Adaptive** (see below). |
 | `zj_wait_output` | `<pane_id> <match> <timeout_s> [interval_s] [--regex]` → 0 match / 1 timeout / 3 missing. `[interval_s]` and `[--regex]` are each independently optional, any order. |
 | `zj_wait_exit` | `<pane_id> <timeout_s> [interval_s]` → prints exit_status; 0 exited / 1 timeout / 3 missing. |
@@ -43,13 +42,12 @@ Verified against **zellij 0.45.0**. Source `scripts/zj.sh` first; every helper b
 
 ## Adaptive spawn (`zj_spawn`)
 
-Placement relative to the focused pane (`--near-current-pane`, `-d/--direction`) **silently no-ops in a headless/no-client session** (zellij exits 0 and prints a fake `terminal_N`, but no pane appears — it needs a connected client for current-pane-relative layout). `zj_spawn` therefore branches on `zj_client_count`:
+`zj_spawn` always uses native `new-pane --no-focus`, which places relative to the pane issuing the command without changing any client's focus and preserves directional placement in headless sessions:
 
-- **client attached, fewer than four visible panes in the target tab** → `new-pane --near-current-pane <args>` (places beside the current pane, does **not** steal focus).
-- **client attached, four or more visible panes in the target tab** → adds `--stacked`, placing the new pane behind its parent instead of shrinking the visible layout again. Suppressed panes already in stacks and panes in other tabs are not counted.
-- **headless** → strips `-d`/`--direction`/`--near-current-pane` and calls plain `new-pane` (zellij picks the biggest free space).
+- **fewer than four visible panes in the issuing pane's tab** → `new-pane --no-focus <args>`;
+- **four or more visible panes in that tab** → adds `--stacked`, placing the new pane behind its parent instead of shrinking the visible layout again. Suppressed panes already in stacks and panes in other tabs are not counted.
 
-Never call `new-pane --near-current-pane`/`-d` directly — go through `zj_spawn`. Don't trust `new-pane`'s printed `terminal_N` as authoritative (it prints even on the no-op); recover the real id from `list-panes -j`.
+Go through `zj_spawn` so background automation consistently preserves client focus and applies the crowded-tab policy.
 
 ## Native blocking waits (zellij ≥ 0.44)
 

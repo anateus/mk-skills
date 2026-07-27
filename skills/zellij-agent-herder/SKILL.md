@@ -1,6 +1,6 @@
 ---
 name: zellij-agent-herder
-description: "Control Zellij panes, sessions, peer agents, waits, and live Hunk review streams using the bundled helpers. Use when running inside Zellij (`ZELLIJ` is set, including `0`) and the task requires pane orchestration, peer coordination, status waiting, or live diff watching. Requires Zellij 0.44 or newer."
+description: "Control Zellij panes, sessions, peer agents, waits, and live Hunk review streams using the bundled helpers. Use when running inside Zellij (`ZELLIJ` is set, including `0`) and the task requires pane orchestration, peer coordination, status waiting, or live diff watching. Requires a recent Zellij build with `new-pane --no-focus` (zellij-org/zellij#5346)."
 ---
 
 # zellij-agent-herder
@@ -9,14 +9,14 @@ Control Zellij panes and sessions from inside a Zellij pane.
 
 ## Guard
 
-If `$ZELLIJ` is unset, stop: this skill does not apply. If it is set to any value, proceed. Zellij stores a client index there, so `ZELLIJ=0` means inside; check presence, not truthiness. Requires Zellij 0.44 or newer.
+If `$ZELLIJ` is unset, stop: this skill does not apply. If it is set to any value, proceed. Zellij stores a client index there, so `ZELLIJ=0` means inside; check presence, not truthiness. Requires a recent Zellij build containing [zellij-org/zellij#5346](https://github.com/zellij-org/zellij/pull/5346); check that `zellij action new-pane --help` includes `--no-focus`.
 
 ## Addressing and safety
 
 - The hierarchy is session → tabs → panes. Address a pane by `(session, pane_id)`; pane IDs are not stable global identifiers.
 - Target a session with `zellij --session <name> action <command>` or `$ZELLIJ_SESSION_NAME`. Helpers default `ZJ_SESSION` to that name.
 - `--name`/`-n` sets a title, not an address. Resolve a name with `zj_resolve_id`.
-- Spawn only through `zj_spawn`. With fewer than four visible panes in the target tab, it places a pane beside the current pane without stealing focus when one human client is attached. At four or more, it stacks the new pane behind its parent without replacing the visible parent. Hunk review streams target their parent's tab, may use a short-lived sacrificial split to reserve clean adjacent geometry, keep the parent expanded when stacking, and become a consistently sized floating pane when stacking or tiled adjacency still cannot be achieved. It safely falls back to plain `new-pane` when headless. Direct `--near-current-pane`/`-d` can silently no-op without a client.
+- Spawn only through `zj_spawn`. It uses native `--no-focus`, preserves directional placement in attached and headless sessions, and stacks a new pane behind its parent when the target tab already has four visible panes. Hunk review streams target their parent's tab, use bounded pane moves toward the recorded origin, keep the parent expanded when stacking, and retain a verified tiled fallback when exact adjacency cannot be achieved.
 - Before fan-out, capture one fixed branch-point `BASE`. Never substitute advancing `main` or current `HEAD`; doing so produces incomplete or misleading aggregate diffs.
 
 ## Load helpers

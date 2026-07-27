@@ -19,7 +19,7 @@ const descriptions = {
   'handing-off-work': 'Create a concise, redacted, resumable transfer that references durable artifacts and distinguishes verified facts from remaining work. Use when work must move to another session, agent, or collaborator, whether unfinished or complete.',
   'strict-mode': 'Apply the active strict operating profile through explicit skill selection, ordered execution, checkpoints, and fresh verification without expanding authority. Use when injected context says strict mode is active or the user explicitly requests strict execution.',
   'curating-skills': 'Compare configured upstream skill changes against recorded revisions and local behavior, record accept or reject decisions, and update provenance only after validation. Use only when maintaining the mk-skills source repository and deliberately reviewing its configured upstream skill repositories.',
-  'zellij-agent-herder': 'Control Zellij panes, sessions, peer agents, waits, and live Hunk review streams using the bundled helpers. Use when running inside Zellij (`ZELLIJ` is set, including `0`) and the task requires pane orchestration, peer coordination, status waiting, or live diff watching. Requires Zellij 0.44 or newer.',
+  'zellij-agent-herder': 'Control Zellij panes, sessions, peer agents, waits, and live Hunk review streams using the bundled helpers. Use when running inside Zellij (`ZELLIJ` is set, including `0`) and the task requires pane orchestration, peer coordination, status waiting, or live diff watching. Requires a recent Zellij build with `new-pane --no-focus` (zellij-org/zellij#5346).',
 };
 
 test('skill descriptions match approved capability and trigger contracts', () => {

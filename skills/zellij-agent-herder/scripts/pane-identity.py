@@ -7,6 +7,7 @@ import json
 import os
 from pathlib import Path
 import re
+import subprocess
 import tempfile
 
 
@@ -119,11 +120,62 @@ def initials(name):
     return "-".join(part[0] for part in name.split("-") if part)
 
 
-def fallback(session, pane):
+def pane_id(value):
+    raw = value.get("id")
+    if isinstance(raw, int):
+        return f"{'plugin' if value.get('is_plugin') else 'terminal'}_{raw}"
+    raw = str(raw)
+    if raw.startswith(("terminal_", "plugin_")):
+        return raw
+    return f"{'plugin' if value.get('is_plugin') else 'terminal'}_{raw}"
+
+
+def open_pane_emojis(session, excluded_pane):
+    try:
+        result = subprocess.run(
+            ["zellij", "--session", session, "action", "list-panes", "-j"],
+            check=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.DEVNULL,
+            text=True,
+            timeout=2,
+        )
+        value = json.loads(result.stdout)
+    except (OSError, ValueError, subprocess.SubprocessError):
+        return set()
+    if isinstance(value, dict):
+        panes = []
+        for entry in value.values():
+            panes.extend(entry if isinstance(entry, list) else [entry])
+    else:
+        panes = value
+    used = set()
+    for open_pane in panes:
+        if not isinstance(open_pane, dict) or pane_id(open_pane) == excluded_pane:
+            continue
+        title = str(open_pane.get("title", ""))
+        identity = read_identity(session, pane_id(open_pane))
+        if identity:
+            used.add(identity["emoji"])
+        elif not title.endswith("🔍"):
+            used.update(emoji for emoji in EMOJIS if emoji in title)
+    return used
+
+
+def fallback(session, pane, used_emojis=None):
     digest = hashlib.sha256(f"{session}\0{pane}".encode()).digest()
     adjective = ADJECTIVES[int.from_bytes(digest[0:2], "big") % len(ADJECTIVES)]
     noun = NOUNS[int.from_bytes(digest[2:4], "big") % len(NOUNS)]
-    emoji = EMOJIS[int.from_bytes(digest[4:6], "big") % len(EMOJIS)]
+    start = int.from_bytes(digest[4:6], "big") % len(EMOJIS)
+    used_emojis = set(used_emojis or ())
+    emoji = next(
+        (
+            EMOJIS[(start + offset) % len(EMOJIS)]
+            for offset in range(len(EMOJIS))
+            if EMOJIS[(start + offset) % len(EMOJIS)] not in used_emojis
+        ),
+        EMOJIS[start],
+    )
     return emoji, f"{adjective}-{noun}"
 
 
@@ -135,11 +187,18 @@ def assign(
     session, pane, native_name=None, display_label=None, cwd=None, repo_name=None,
     ancestors=None,
 ):
+    used_emojis = open_pane_emojis(session, pane)
     existing = read_identity(session, pane)
     if existing:
+        if existing["emoji"] in used_emojis:
+            existing = dict(existing)
+            existing["emoji"] = fallback(
+                session, pane, used_emojis,
+            )[0]
+            atomic_write(identity_path(session, pane), existing)
         return existing
     name = useful_native_name(native_name, cwd, repo_name)
-    emoji, fallback_name = fallback(session, pane)
+    emoji, fallback_name = fallback(session, pane, used_emojis)
     name = name or fallback_name
     identity = {
         "emoji": emoji,

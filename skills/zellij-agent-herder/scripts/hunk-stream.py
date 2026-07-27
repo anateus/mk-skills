@@ -254,17 +254,6 @@ def pane_exists(session: str, wanted: str | None) -> bool:
     return bool(wanted) and any(pane_id(item) == wanted for item in panes(session))
 
 
-def clients(session: str) -> list[tuple[str, str]]:
-    lines = zellij(session, ["list-clients"]).splitlines()
-    rows: list[tuple[str, str]] = []
-    for line in lines[1:]:
-        fields = line.split()
-        focused = next((field for field in fields if field.startswith(("terminal_", "plugin_"))), None)
-        if focused:
-            rows.append((fields[0], focused))
-    return rows
-
-
 def pane_map(session: str) -> dict[str, dict[str, Any]]:
     return {pane_id(item): item for item in panes(session)}
 
@@ -326,34 +315,6 @@ def placement_direction(parent: dict[str, Any], watcher: dict[str, Any]) -> str 
     return None
 
 
-def focus_direction(current: dict[str, Any], wanted: dict[str, Any]) -> str | None:
-    current_rect = geometry(current)
-    wanted_rect = geometry(wanted)
-    if current_rect is None or wanted_rect is None:
-        return None
-    cx, cy, cw, ch = current_rect
-    wx, wy, ww, wh = wanted_rect
-    if overlaps(cy, ch, wy, wh):
-        if wx + ww <= cx:
-            return "left"
-        if cx + cw <= wx:
-            return "right"
-    if overlaps(cx, cw, wx, ww):
-        if wy + wh <= cy:
-            return "up"
-        if cy + ch <= wy:
-            return "down"
-    current_center_x = cx + cw / 2
-    wanted_center_x = wx + ww / 2
-    if wanted_center_x != current_center_x:
-        return "right" if wanted_center_x > current_center_x else "left"
-    current_center_y = cy + ch / 2
-    wanted_center_y = wy + wh / 2
-    if wanted_center_y != current_center_y:
-        return "down" if wanted_center_y > current_center_y else "up"
-    return None
-
-
 def place_right(session: str, parent_id: str, watcher_id: str, limit: int = 8) -> bool:
     for attempt in range(limit + 1):
         current = pane_map(session)
@@ -368,85 +329,6 @@ def place_right(session: str, parent_id: str, watcher_id: str, limit: int = 8) -
             return False
         zellij(session, ["move-pane", "-p", watcher_id, direction])
     return False
-
-
-def move_to_reserved_slot(
-    session: str, watcher_id: str, target: tuple[int, int, int, int],
-    limit: int = 8,
-) -> bool:
-    tx, ty, _, _ = target
-    for attempt in range(limit + 1):
-        watcher = pane_map(session).get(watcher_id)
-        watcher_rect = geometry(watcher) if watcher is not None else None
-        if watcher_rect is None:
-            return False
-        if watcher_rect == target:
-            return True
-        if attempt == limit:
-            return False
-        wx, wy, ww, wh = watcher_rect
-        if not overlaps(wy, wh, ty, target[3]):
-            direction = "up" if wy > ty else "down"
-        elif not overlaps(wx, ww, tx, target[2]):
-            direction = "left" if wx > tx else "right"
-        else:
-            direction = "left" if wx > tx else "right"
-        zellij(session, ["move-pane", "-p", watcher_id, direction])
-    return False
-
-
-def place_via_reserved_split(
-    session: str, parent_id: str, watcher_id: str, tab_id: int,
-) -> bool:
-    rows = clients(session)
-    if len(rows) != 1:
-        return False
-    restore_focus(session, parent_id)
-    if clients(session) != [(rows[0][0], parent_id)]:
-        return False
-
-    title = f"zah-slot:{uuid.uuid4().hex}"
-    output = zellij(session, [
-        "new-pane", "--tab-id", str(tab_id), "--direction", "right",
-        "--close-on-exit", "--name", title, "--", "sleep", "30",
-    ]).splitlines()
-    returned = output[-1] if output else ""
-    if pane_exists(session, returned):
-        reservation = returned
-    else:
-        matches = [
-            pane_id(item) for item in panes(session) if item.get("title") == title
-        ]
-        if len(matches) != 1:
-            return False
-        reservation = matches[0]
-
-    try:
-        current = pane_map(session)
-        parent = current.get(parent_id)
-        slot = current.get(reservation)
-        target = geometry(slot) if slot is not None else None
-        if (
-            parent is None
-            or slot is None
-            or target is None
-            or not immediately_right(parent, slot)
-        ):
-            return False
-        if not move_to_reserved_slot(session, watcher_id, target):
-            return False
-    finally:
-        if pane_exists(session, reservation):
-            zellij(session, ["close-pane", "-p", reservation])
-
-    current = pane_map(session)
-    parent = current.get(parent_id)
-    watcher = current.get(watcher_id)
-    return (
-        parent is not None
-        and watcher is not None
-        and immediately_right(parent, watcher)
-    )
 
 
 def float_review(session: str, watcher_id: str) -> None:
@@ -519,130 +401,6 @@ def stack_review_behind_parent(
     return False
 
 
-def restore_focus(session: str, wanted_id: str, limit: int = 16) -> bool:
-    for attempt in range(limit + 1):
-        rows = clients(session)
-        if len(rows) != 1:
-            return False
-        current_id = rows[0][1]
-        if current_id == wanted_id:
-            return True
-        current = pane_map(session)
-        focused = current.get(current_id)
-        wanted = current.get(wanted_id)
-        if focused is None or wanted is None:
-            return False
-        direction = focus_direction(focused, wanted)
-        if direction is None or attempt == limit:
-            return False
-        zellij(session, ["move-focus", direction])
-        for _ in range(10):
-            rows = clients(session)
-            if len(rows) != 1:
-                return False
-            if rows[0][1] == wanted_id:
-                return True
-            if rows[0][1] != current_id:
-                break
-            time.sleep(0.01)
-        else:
-            return False
-    return False
-
-
-def restore_guard_focus(
-    session: str, original_id: str, watcher_id: str, limit: int = 8,
-    deadline: float | None = None,
-) -> bool:
-    for attempt in range(limit + 1):
-        if deadline is not None and time.monotonic() >= deadline:
-            return False
-        rows = clients(session)
-        if len(rows) != 1:
-            return False
-        focused_id = rows[0][1]
-        if focused_id == original_id:
-            return True
-        if focused_id != watcher_id:
-            return False
-        current = pane_map(session)
-        focused = current.get(watcher_id)
-        original = current.get(original_id)
-        if focused is None or original is None:
-            return False
-        direction = focus_direction(focused, original)
-        if direction is None or attempt == limit:
-            return False
-        if deadline is not None and time.monotonic() >= deadline:
-            return False
-        rows = clients(session)
-        if len(rows) != 1:
-            return False
-        observed = rows[0][1]
-        if observed == original_id:
-            return True
-        if observed != watcher_id:
-            return False
-        zellij(session, ["move-focus", direction])
-        for _ in range(10):
-            if deadline is not None and time.monotonic() >= deadline:
-                return False
-            rows = clients(session)
-            if len(rows) != 1:
-                return False
-            observed = rows[0][1]
-            if observed == original_id:
-                return True
-            if observed != watcher_id:
-                return False
-            delay = 0.01 if deadline is None else min(0.01, max(0.0, deadline - time.monotonic()))
-            time.sleep(delay)
-    return False
-
-
-def focus_guard(
-    session: str, original_id: str, watcher_id: str,
-    window: float = 1.0, interval: float = 0.02,
-) -> None:
-    deadline = time.monotonic() + max(0.0, window)
-    while time.monotonic() < deadline:
-        try:
-            rows = clients(session)
-            current = pane_map(session)
-        except (OSError, ValueError, subprocess.CalledProcessError):
-            return
-        if len(rows) != 1 or original_id not in current or watcher_id not in current:
-            return
-        focused = rows[0][1]
-        if focused == watcher_id:
-            try:
-                if not restore_guard_focus(
-                    session, original_id, watcher_id, deadline=deadline,
-                ):
-                    return
-            except (OSError, ValueError, subprocess.CalledProcessError):
-                return
-        elif focused != original_id:
-            return
-        remaining = max(0.0, deadline - time.monotonic())
-        time.sleep(min(max(0.0, interval), remaining))
-
-
-def launch_focus_guard(session: str, original_id: str, watcher_id: str) -> None:
-    subprocess.Popen(
-        [
-            sys.executable, os.path.abspath(__file__), "focus-guard",
-            "--session", session, "--original", original_id,
-            "--watcher", watcher_id,
-        ],
-        stdin=subprocess.DEVNULL,
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL,
-        start_new_session=True,
-        close_fds=True,
-    )
-
-
 def request_matches(state: dict[str, Any], request: dict[str, Any]) -> bool:
     fields = ("session", "parent_pane", "root", "common_dir", "base", "kind", "label")
     return all(state.get(field) == request[field] for field in fields)
@@ -651,8 +409,6 @@ def request_matches(state: dict[str, Any], request: dict[str, Any]) -> bool:
 def spawn_hunk(request: dict[str, Any], title: str) -> str:
     session = request["session"]
     parent = request["parent_pane"]
-    rows = clients(session)
-    old_focus = rows[0][1] if len(rows) == 1 else None
     initial_panes = panes(session)
     parent_pane = next(
         (item for item in initial_panes if pane_id(item) == parent), None,
@@ -662,6 +418,14 @@ def spawn_hunk(request: dict[str, Any], title: str) -> str:
     args = ["new-pane"]
     if isinstance(tab_id, int):
         args.extend(["--tab-id", str(tab_id)])
+    args.append("--no-focus")
+    issuing_pane = os.environ.get("ZELLIJ_PANE_ID")
+    if (
+        not stack_behind_parent
+        and issuing_pane
+        and normalize_parent(issuing_pane) == parent
+    ):
+        args.extend(["--direction", "right"])
     if stack_behind_parent:
         args.extend([
             "--floating", "--width", "45%", "--height", "70%",
@@ -686,26 +450,11 @@ def spawn_hunk(request: dict[str, Any], title: str) -> str:
             watcher = pane_map(session).get(spawned)
             if watcher is not None and not watcher.get("is_floating", False):
                 float_review(session, spawned)
-    if old_focus is not None:
+    if not stack_behind_parent:
         try:
             current = pane_map(session)
-            if parent in current and old_focus in current:
-                if not stack_behind_parent:
-                    placed = place_right(session, parent, spawned)
-                    if (
-                        not placed
-                        and isinstance(tab_id, int)
-                        and place_via_reserved_split(
-                            session, parent, spawned, tab_id,
-                        )
-                    ):
-                        placed = True
-                    if not placed:
-                        float_review(session, spawned)
-                if not restore_focus(session, old_focus):
-                    time.sleep(0.05)
-                    restore_focus(session, old_focus)
-                launch_focus_guard(session, old_focus, spawned)
+            if parent in current:
+                place_right(session, parent, spawned)
         except (OSError, ValueError, subprocess.CalledProcessError):
             pass
     return spawned
@@ -810,10 +559,6 @@ def main() -> None:
     rollup.add_argument("--base", required=True)
     rollup.add_argument("--label", required=True)
     rollup.add_argument("--child-pane", action="append", default=[])
-    guard = commands.add_parser("focus-guard")
-    guard.add_argument("--session", required=True)
-    guard.add_argument("--original", required=True)
-    guard.add_argument("--watcher", required=True)
     commands.add_parser("edit")
     args = parser.parse_args()
     if args.command == "signature":
@@ -834,15 +579,6 @@ def main() -> None:
             args.session, args.parent, args.root, args.base, args.label,
             args.child_pane,
         ))
-    elif args.command == "focus-guard":
-        try:
-            focus_guard(
-                args.session, args.original, args.watcher,
-                float(os.environ.get("ZAH_FOCUS_GUARD_WINDOW", "1.0")),
-                float(os.environ.get("ZAH_FOCUS_GUARD_INTERVAL", "0.02")),
-            )
-        except (OSError, ValueError, subprocess.CalledProcessError):
-            pass
     else:
         try:
             payload = json.load(sys.stdin)

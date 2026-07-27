@@ -23,7 +23,7 @@ mk-skills (🦀 funky-crab) · working
 🦀 f-c > 🌿 s-r > 🍎 test-runner · idle
 ```
 
-Useful `<name>` values become the stable leaf name. A root persists a useful existing pane base as its display label, otherwise the repository/cwd name, and wraps its emoji identity in parentheses. Generic names (`agent`, `claude`, `codex`, `yolo` and their prefixed/spinner variants) or identity names equal to the cwd/repository fall back to a stable adjective-noun plus a concrete emoji. Metadata is session-scoped at `${XDG_CACHE_HOME:-$HOME/.cache}/zellij-agent-herder/panes/<session>/<pane>.json`, so grandchildren inherit ancestry without parsing titles.
+Useful `<name>` values become the stable leaf name. A root persists a useful existing pane base as its display label, otherwise the repository/cwd name, and wraps its emoji identity in parentheses. Generic names (`agent`, `claude`, `codex`, `yolo` and their prefixed/spinner variants) or identity names equal to the cwd/repository fall back to a stable adjective-noun plus a concrete emoji. Allocation excludes emojis claimed by other open pane identities in the session; a cached identity is reallocated if another open pane claims its emoji, keeping compact titles distinguishable. Derived review breadcrumbs do not claim their parent's emoji. Metadata is session-scoped at `${XDG_CACHE_HOME:-$HOME/.cache}/zellij-agent-herder/panes/<session>/<pane>.json`, so grandchildren inherit ancestry without parsing titles.
 
 Later commands may address the explicit pane ID, current rendered base, or stable leaf name. `close` removes that pane's cache record. Panes created outside the peer wrapper remain unchanged unless the lifecycle status hook observes them.
 

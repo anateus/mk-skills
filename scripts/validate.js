@@ -28,7 +28,7 @@ const checks = [
   ['Curation tests', 'python3', ['-B', '-m', 'unittest', 'tests.curation.test_review_upstreams', '-v']],
   ['Zellij pane identity', 'python3', ['-B', 'skills/zellij-agent-herder/tests/test-pane-identity.py', '-v']],
   ['Zellij adaptive spawn', 'bash', ['skills/zellij-agent-herder/tests/test-zj-spawn.sh']],
-  ['Zellij Hunk focus guard', 'python3', ['-B', 'skills/zellij-agent-herder/tests/test-hunk-focus-guard.py', '-v']],
+  ['Zellij Hunk placement', 'python3', ['-B', 'skills/zellij-agent-herder/tests/test-hunk-placement.py', '-v']],
   ['Zellij Hunk stream', 'bash', ['skills/zellij-agent-herder/tests/test-hunk-stream.sh']],
   ['Zellij hook installer', 'bash', ['skills/zellij-agent-herder/tests/test-install-hooks.sh']],
   ['Zellij shared agent config', 'bash', ['skills/zellij-agent-herder/tests/test-shared-agent-config.sh']],

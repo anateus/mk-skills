@@ -8,7 +8,6 @@ run_spawn() {
   local panes="$1"
   ZELLIJ_PANE_ID=1 PANES="$panes" bash -c '
     source "$1"
-    zj_client_count() { echo 1; }
     _zj_panes() { printf "%s\n" "$PANES"; }
     _zj() { printf "%s\n" "$*"; }
     zj_spawn -d right -n worker -- bash
@@ -28,10 +27,14 @@ below_threshold="$(run_spawn "$three_in_parent_tab")"
 case "$below_threshold" in
   *--stacked*) echo "three visible panes unexpectedly stacked" >&2; exit 1 ;;
 esac
+case "$below_threshold" in
+  *"new-pane --no-focus -d right "*) ;;
+  *) echo "spawn did not use native no-focus: $below_threshold" >&2; exit 1 ;;
+esac
 
 at_threshold="$(run_spawn "$four_in_parent_tab")"
 case "$at_threshold" in
-  *"new-pane --near-current-pane --stacked "*) ;;
+  *"new-pane --no-focus --stacked "*) ;;
   *) echo "four visible panes were not stacked: $at_threshold" >&2; exit 1 ;;
 esac
 

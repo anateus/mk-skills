@@ -15,7 +15,7 @@ Open one passive `hunk diff --watch` pane per headless worktree. Keep the agents
 
 ## Identity, placement, and reopening
 
-A stream is keyed by Zellij session, originating pane, and Git identity (common directory plus worktree root/kind). Review panes always target the recorded origin's tab. With exactly one attached client, placement first moves the review toward the origin's right edge. If the layout prevents that, the controller splits a short-lived reservation beside the origin, moves the review into the reserved geometry, and closes the reservation. Crowded tabs keep the origin expanded and put the review behind it; a review that still cannot be stacked or placed cleanly becomes a consistently sized floating pane. Headless placement remains tiled. Titles preserve compact lineage and append a review leaf.
+A stream is keyed by Zellij session, originating pane, and Git identity (common directory plus worktree root/kind). Review panes always target the recorded origin's tab and are created with native `--no-focus`. When the issuing pane is the recorded origin, creation splits directly to its right; otherwise placement uses bounded moves toward the origin's right edge without changing any client's focus. Crowded tabs keep the origin expanded and put the review behind it; a review that cannot be placed exactly remains in its verified tiled fallback. Titles preserve compact lineage and append a review leaf.
 
 At completion, run:
 

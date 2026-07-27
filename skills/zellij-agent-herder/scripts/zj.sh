@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Helper library for the zellij-agent-herder skill.
-# Source this file, then call zj_* functions. Requires zellij >= 0.44 and python3.
+# Source this file, then call zj_* functions. Requires a zellij build with
+# `new-pane --no-focus` (zellij-org/zellij#5346) and python3.
 # Target session: set ZJ_SESSION, else falls back to $ZELLIJ_SESSION_NAME.
 
 ZJ_SESSION="${ZJ_SESSION:-${ZELLIJ_SESSION_NAME:-}}"
@@ -110,10 +111,6 @@ sys.exit(1)
 ' "$1"
 }
 
-# zj_client_count -> number of attached clients on the target session (0 == headless).
-# `list-clients` has no -j; row 1 is a header, each further non-empty row is a client.
-zj_client_count() { _zj list-clients 2>/dev/null | tail -n +2 | grep -c . ; }
-
 # zj_visible_panes_in_parent_tab -> count non-suppressed panes beside ZELLIJ_PANE_ID.
 zj_visible_panes_in_parent_tab() {
   _zj_panes | python3 -c '
@@ -135,30 +132,13 @@ print(sum(same_tab(item) and not item.get("is_suppressed", False) for item in it
 }
 
 # zj_spawn [new-pane args...] -> spawn a pane; echoes new-pane's status line (terminal_N).
-# Attached: place near the current pane (does NOT steal focus) — the production path.
+# Native --no-focus places relative to the issuing pane without disturbing clients.
 # If its tab already has at least four visible panes, stack the new pane behind its parent.
-# Headless (tests/background): relative/directional placement silently no-ops with no
-#   client, so strip -d/--direction/--near-current-pane and let zellij pick free space.
 zj_spawn() {
-  if [ "$(zj_client_count)" -gt 0 ]; then
-    if [ "$(zj_visible_panes_in_parent_tab)" -ge 4 ]; then
-      _zj new-pane --near-current-pane --stacked "$@"
-    else
-      _zj new-pane --near-current-pane "$@"
-    fi
+  if [ "$(zj_visible_panes_in_parent_tab)" -ge 4 ]; then
+    _zj new-pane --no-focus --stacked "$@"
   else
-    # Portable arg-strip (bash AND zsh — SKILL.md tells users to `source` this, and
-    # macOS defaults to zsh whose arrays are 1-indexed). Iterate positional params via
-    # shift; no indexed-array access. Drop -d/--direction (+value) and --near-current-pane.
-    local a=()
-    while [ "$#" -gt 0 ]; do
-      case "$1" in
-        -d|--direction)      shift; if [ "$#" -gt 0 ]; then shift; fi ;;
-        --near-current-pane) shift ;;
-        *)                   a+=("$1"); shift ;;
-      esac
-    done
-    _zj new-pane "${a[@]}"
+    _zj new-pane --no-focus "$@"
   fi
 }
 
