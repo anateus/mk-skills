@@ -13,9 +13,9 @@ zj_watch_session <parent_repo_root> "$BASE" session <watcher_id>...
 
 Open one passive `hunk diff --watch` pane per headless worktree. Keep the agents headless; the panes are human-facing review surfaces. After merges and worktree removal, `zj_watch_session` closes the obsolete watchers and opens one aggregate parent-tree stream against the same `BASE`, covering merged commits and uncommitted changes.
 
-## Identity, placement, and reopening
+## Identity, tabs, and reopening
 
-A stream is keyed by Zellij session, originating pane, and Git identity (common directory plus worktree root/kind). Review panes always target the recorded origin's tab and are created with native `--no-focus`. When the issuing pane is the recorded origin, creation splits directly to its right; otherwise placement uses bounded moves toward the origin's right edge without changing any client's focus. Crowded tabs keep the origin expanded and put the review behind it; a review that cannot be placed exactly remains in its verified tiled fallback. Titles preserve compact lineage and append a review leaf.
+A stream is keyed by Zellij session, originating pane, and Git identity (common directory plus worktree root/kind). Each review opens as the only pane in a dedicated tab named `🔍 <label>`. Native `new-tab --no-focus` keeps every attached client on its current tab. Existing streams created in an agent tab move to a background tab when the controller next reconciles them. Pane titles preserve compact lineage and append a review leaf.
 
 At completion, run:
 

@@ -29,7 +29,7 @@ echo 'identity/signature: PASS'
 mkdir -p "$T/bin"
 export ZELLIJ_LOG="$T/zellij.log" ZELLIJ_DATA="$T/zellij-data"
 mkdir -p "$ZELLIJ_DATA"
-printf '%s\n' '[{"id":"terminal_1","title":"parent","is_focused":false,"pane_x":0,"pane_y":0,"pane_columns":40,"pane_rows":24},{"id":"terminal_9","title":"old","is_focused":true,"pane_x":40,"pane_y":0,"pane_columns":40,"pane_rows":24}]' > "$ZELLIJ_DATA/panes.json"
+printf '%s\n' '[{"id":"terminal_1","title":"parent","tab_id":7,"tab_name":"Agent","is_focused":false,"pane_x":0,"pane_y":0,"pane_columns":40,"pane_rows":24},{"id":"terminal_9","title":"old","tab_id":7,"tab_name":"Agent","is_focused":true,"pane_x":40,"pane_y":0,"pane_columns":40,"pane_rows":24}]' > "$ZELLIJ_DATA/panes.json"
 printf '%s\n' '[{"client_id":1,"focused_pane":"terminal_9"}]' > "$ZELLIJ_DATA/clients.json"
 printf '9\n' > "$ZELLIJ_DATA/next"
 touch "$ZELLIJ_LOG"
@@ -72,6 +72,19 @@ elif command == "focus-pane-id":
     # Zellij 0.45 accepts this external action without changing the attached
     # client's focus. Relative creation still follows the client-focused pane.
     pass
+elif command == "new-tab":
+    with open(os.path.join(data, "next"), "r+") as counter:
+        number = int(counter.read()) + 1
+        counter.seek(0); counter.write(str(number)); counter.truncate()
+    pane_id = "terminal_" + str(number)
+    panes = load("panes")
+    panes.append({
+        "id": pane_id, "title": "hunk", "tab_id": number,
+        "tab_name": rest[rest.index("--name") + 1], "is_focused": False,
+        "pane_x": 0, "pane_y": 0, "pane_columns": 80, "pane_rows": 24,
+    })
+    save("panes", panes)
+    print("not-a-tab" if os.environ.get("ZELLIJ_FAKE_BAD_ID") else number)
 elif command == "new-pane":
     with open(os.path.join(data, "next"), "r+") as counter:
         number = int(counter.read()) + 1
@@ -171,17 +184,18 @@ P1="$(python3 "$CTL" ensure --session s --parent terminal_1 --root "$T/repo" --b
 zellij --session s action rename-pane -p "$P1" 'diff:legacy-title'
 P2="$(python3 "$CTL" ensure --session s --parent terminal_1 --root "$T/repo" --base "$BASE" --kind worktree --label repo)"
 [ "$P1" = "$P2" ]
-[ "$(grep -c 'new-pane' "$ZELLIJ_LOG")" = 1 ]
+[ "$(grep -c 'new-tab' "$ZELLIJ_LOG")" = 1 ]
 ! grep -q 'focus-pane-id' "$ZELLIJ_LOG"
-grep -q 'new-pane --no-focus --cwd' "$ZELLIJ_LOG"
-grep -q "move-pane -p $P1 left" "$ZELLIJ_LOG"
+grep -q 'new-tab --no-focus --cwd' "$ZELLIJ_LOG"
+! grep -q 'move-pane' "$ZELLIJ_LOG"
 ! grep -q 'move-focus' "$ZELLIJ_LOG"
 python3 - "$ZELLIJ_DATA/panes.json" "$ZELLIJ_DATA/clients.json" "$P1" <<'PY'
 import json, sys
 panes = {pane["id"]: pane for pane in json.load(open(sys.argv[1]))}
 clients = json.load(open(sys.argv[2]))
 parent, watcher = panes["terminal_1"], panes[sys.argv[3]]
-assert watcher["pane_x"] == parent["pane_x"] + parent["pane_columns"], (parent, watcher)
+assert watcher["tab_id"] != parent["tab_id"], (parent, watcher)
+assert watcher["tab_name"] == "🔍 repo", watcher
 assert watcher["title"] == "🦀 ▸ 🌿 ▸ 🔍", watcher
 assert clients == [{"client_id": 1, "focused_pane": "terminal_9"}], clients
 PY
@@ -199,25 +213,25 @@ PY
 zellij --session s action close-pane -p "$P1"
 P3="$(python3 "$CTL" ensure --session s --parent terminal_1 --root "$T/repo" --base "$BASE" --kind worktree --label repo)"
 [ -z "$P3" ]
-[ "$(grep -c 'new-pane' "$ZELLIJ_LOG")" = 1 ]
+[ "$(grep -c 'new-tab' "$ZELLIJ_LOG")" = 1 ]
 printf 'changed\n' >> "$T/repo/a.txt"
 P4="$(python3 "$CTL" ensure --session s --parent terminal_1 --root "$T/repo" --base "$BASE" --kind worktree --label repo)"
 [ -n "$P4" ]
-[ "$(grep -c 'new-pane' "$ZELLIJ_LOG")" = 2 ]
+[ "$(grep -c 'new-tab' "$ZELLIJ_LOG")" = 2 ]
 zellij --session s action close-pane -p "$P4"
 P5="$(python3 "$CTL" ensure --session s --parent terminal_1 --root "$T/repo" --base "$BASE" --kind worktree --label repo)"
 [ -z "$P5" ]
 P6="$(python3 "$CTL" ensure --session s --parent terminal_1 --root "$T/repo" --base "$BASE" --kind worktree --label repo --explicit)"
 [ -n "$P6" ]
 
-# With no attached client, spawning falls back to plain tiled new-pane.
+# Background tab creation does not depend on an attached client.
 printf '[]\n' > "$ZELLIJ_DATA/clients.json"
 before="$(wc -l < "$ZELLIJ_LOG")"
 P7="$(python3 "$CTL" ensure --session s --parent terminal_2 --root "$T/repo" --base "$BASE" --kind worktree --label fallback --explicit)"
-tail -n "+$((before + 1))" "$ZELLIJ_LOG" | grep -q 'new-pane --no-focus --cwd'
+tail -n "+$((before + 1))" "$ZELLIJ_LOG" | grep -q 'new-tab --no-focus --cwd'
 ! tail -n "+$((before + 1))" "$ZELLIJ_LOG" | grep -q -- '--direction'
 
-# A bad returned ID is recovered via the unique generated pane title.
+# A bad returned tab ID is recovered from the single new terminal pane.
 export ZELLIJ_FAKE_BAD_ID=1
 P8="$(python3 "$CTL" ensure --session s --parent terminal_3 --root "$T/repo" --base "$BASE" --kind worktree --label recovered --explicit)"
 unset ZELLIJ_FAKE_BAD_ID
@@ -225,13 +239,13 @@ unset ZELLIJ_FAKE_BAD_ID
 
 # Roll-up closes only the supplied child panes and keeps the original fixed base.
 printf '%s\n' '[{"client_id":1,"focused_pane":"terminal_9"}]' > "$ZELLIJ_DATA/clients.json"
-rollup_new_before="$(grep -c 'new-pane' "$ZELLIJ_LOG")"
+rollup_new_before="$(grep -c 'new-tab' "$ZELLIJ_LOG")"
 AGG="$(python3 "$CTL" rollup --session s --parent terminal_1 --root "$T/repo" --base "$BASE" --label session --child-pane "$P7" --child-pane "$P8")"
 [ -n "$AGG" ]
-[ "$(( $(grep -c 'new-pane' "$ZELLIJ_LOG") - rollup_new_before ))" = 1 ]
+[ "$(( $(grep -c 'new-tab' "$ZELLIJ_LOG") - rollup_new_before ))" = 1 ]
 grep -q "close-pane -p $P7" "$ZELLIJ_LOG"
 grep -q "close-pane -p $P8" "$ZELLIJ_LOG"
-last_new="$(grep 'new-pane' "$ZELLIJ_LOG" | tail -1)"
+last_new="$(grep 'new-tab' "$ZELLIJ_LOG" | tail -1)"
 case "$last_new" in *"hunk diff $BASE --watch"*) ;; *) exit 1 ;; esac
 python3 - "$XDG_CACHE_HOME" "$P7" "$P8" <<'PY'
 import glob, json, os, sys
@@ -244,17 +258,17 @@ python3 - "$ZELLIJ_DATA/panes.json" "$P6" <<'PY'
 import json, sys
 assert sys.argv[2] in {pane["id"] for pane in json.load(open(sys.argv[1]))}
 PY
-echo 'reconciliation/placement/rollup: PASS'
+echo 'reconciliation/background-tab/rollup: PASS'
 
 # Public helpers route through the controller, retain one pane per stream, and preserve
 # explicit reopen plus roll-up teardown behavior.
 export ZJ_SESSION=helper-s ZELLIJ_PANE_ID=20
 source "$ZJ"
-helper_new_before="$(grep -c 'new-pane' "$ZELLIJ_LOG")"
+helper_new_before="$(grep -c 'new-tab' "$ZELLIJ_LOG")"
 H1="$(zj_watch_worktree "$T/repo" "$BASE" helper-worktree)"
 H2="$(zj_watch_worktree "$T/repo/." "$BASE" helper-worktree)"
 [ "$H1" = "$H2" ]
-[ "$(( $(grep -c 'new-pane' "$ZELLIJ_LOG") - helper_new_before ))" = 1 ]
+[ "$(( $(grep -c 'new-tab' "$ZELLIJ_LOG") - helper_new_before ))" = 1 ]
 
 zellij --session helper-s action close-pane -p "$H1"
 if zj_watch_worktree "$T/repo" "$BASE" helper-worktree > "$T/dismissed.out"; then
@@ -266,11 +280,11 @@ R1="$(zj_review_stream "$T/repo" "$BASE" helper-worktree)"
 R2="$(zj_review_stream "$T/repo/." "$BASE" helper-worktree)"
 [ "$R1" = "$R2" ]
 
-rollup_new_before="$(grep -c 'new-pane' "$ZELLIJ_LOG")"
+rollup_new_before="$(grep -c 'new-tab' "$ZELLIJ_LOG")"
 A1="$(zj_watch_session "$T/repo" "$BASE" helper-session "$R1" "$P6")"
 A2="$(zj_watch_session "$T/repo/." "$BASE" helper-session "$R1" "$P6")"
 [ "$A1" = "$A2" ]
-[ "$(( $(grep -c 'new-pane' "$ZELLIJ_LOG") - rollup_new_before ))" = 1 ]
+[ "$(( $(grep -c 'new-tab' "$ZELLIJ_LOG") - rollup_new_before ))" = 1 ]
 grep -q "close-pane -p $R1" "$ZELLIJ_LOG"
 grep -q "close-pane -p $P6" "$ZELLIJ_LOG"
 echo 'public helper routing/reopen/rollup: PASS'
@@ -292,20 +306,20 @@ import json, sys
 assert json.load(open(sys.argv[1]))["parent_pane"] == "terminal_1"
 PY
 printf '%s\n' '{"hook_event_name":"SessionStart","session_id":"claude-session","agent_id":"child","cwd":"'$T'/repo"}' | bash "$ORIGIN"
-before="$(grep -c 'new-pane' "$ZELLIJ_LOG")"
+before="$(grep -c 'new-tab' "$ZELLIJ_LOG")"
 printf '%s\n' '{"hook_event_name":"PostToolUse","session_id":"claude-session","cwd":"'$T'/repo","tool_name":"Edit","tool_input":{"file_path":"'$T'/repo/a.txt"}}' | bash "$AUTODIFF"
-[ "$(( $(grep -c 'new-pane' "$ZELLIJ_LOG") - before ))" = 1 ]
+[ "$(( $(grep -c 'new-tab' "$ZELLIJ_LOG") - before ))" = 1 ]
 ! tail -n "+$((before + 1))" "$ZELLIJ_LOG" | grep -q 'focus-pane-id'
 for tool in MultiEdit NotebookEdit; do
   sid="claude-$tool"
   ZAH_HOST=claude ZELLIJ_SESSION_NAME="s-$sid" ZELLIJ_PANE_ID=1 bash "$ORIGIN" <<EOF
 {"hook_event_name":"SessionStart","session_id":"$sid","cwd":"$T/repo"}
 EOF
-  before="$(grep -c 'new-pane' "$ZELLIJ_LOG")"
+  before="$(grep -c 'new-tab' "$ZELLIJ_LOG")"
   ZELLIJ_PANE_ID=7 bash "$AUTODIFF" <<EOF
 {"hook_event_name":"PostToolUse","session_id":"$sid","cwd":"$T/repo","tool_name":"$tool","tool_input":{"file_path":"$T/repo/a.txt"}}
 EOF
-  [ "$(( $(grep -c 'new-pane' "$ZELLIJ_LOG") - before ))" = 1 ]
+  [ "$(( $(grep -c 'new-tab' "$ZELLIJ_LOG") - before ))" = 1 ]
 done
 
 export ZELLIJ_PANE_ID=1
@@ -322,15 +336,15 @@ for tool in apply_patch Edit Write; do
   ZAH_HOST=codex ZELLIJ_SESSION_NAME="s-$sid" ZELLIJ_PANE_ID=1 bash "$ORIGIN" <<EOF
 {"hook_event_name":"SessionStart","session_id":"$sid","cwd":"$T/repo"}
 EOF
-  before="$(grep -c 'new-pane' "$ZELLIJ_LOG")"
+  before="$(grep -c 'new-tab' "$ZELLIJ_LOG")"
   ZELLIJ_PANE_ID=7 bash "$AUTODIFF" <<EOF
 {"hook_event_name":"PostToolUse","session_id":"$sid","model":"gpt-5","turn_id":"turn-$tool","cwd":"$T/repo","tool_name":"$tool","tool_input":{"file_path":"$T/repo/a.txt"}}
 EOF
-  [ "$(( $(grep -c 'new-pane' "$ZELLIJ_LOG") - before ))" = 1 ]
+  [ "$(( $(grep -c 'new-tab' "$ZELLIJ_LOG") - before ))" = 1 ]
 done
-before="$(grep -c 'new-pane' "$ZELLIJ_LOG")"
+before="$(grep -c 'new-tab' "$ZELLIJ_LOG")"
 printf '%s\n' '{"hook_event_name":"PostToolUse","session_id":"codex-session","model":"gpt-5","turn_id":"turn-read","cwd":"'$T'/repo","tool_name":"Read","tool_input":{"file_path":"'$T'/repo/a.txt"}}' | bash "$AUTODIFF"
-[ "$(grep -c 'new-pane' "$ZELLIJ_LOG")" = "$before" ]
+[ "$(grep -c 'new-tab' "$ZELLIJ_LOG")" = "$before" ]
 
 # Claude mappings stay intact; Codex adds PermissionRequest and clears status on exit.
 export ZELLIJ_SESSION_NAME=status-s
@@ -440,7 +454,8 @@ import json, sys
 panes = {("plugin_" if p.get("is_plugin") else "terminal_") + str(p["id"]): p for p in json.load(open(sys.argv[1]))}
 assert set(sys.argv[2:]).issubset(panes), (sys.argv[2:], panes)
 parent, watcher, old = (panes[pane_id] for pane_id in sys.argv[2:])
-assert watcher["pane_x"] == parent["pane_x"] + parent["pane_columns"], (parent, watcher)
+assert watcher["tab_id"] != parent["tab_id"], (parent, watcher)
+assert watcher["tab_name"].startswith("🔍 "), watcher
 assert old["is_focused"], old
 PY
   python3 - "$T/live-clients.txt" "$old" <<'PY'
@@ -453,5 +468,5 @@ PY
   ! kill -0 "$client_pid" 2>/dev/null
   ! "$REAL_ZELLIJ" list-sessions 2>/dev/null | grep -Fq "$session"
   echo "live scratch cleanup: PASS ($session)"
-  echo 'live placement/focus: PASS'
+  echo 'live background-tab/focus: PASS'
 fi

@@ -16,7 +16,7 @@ If `$ZELLIJ` is unset, stop: this skill does not apply. If it is set to any valu
 - The hierarchy is session → tabs → panes. Address a pane by `(session, pane_id)`; pane IDs are not stable global identifiers.
 - Target a session with `zellij --session <name> action <command>` or `$ZELLIJ_SESSION_NAME`. Helpers default `ZJ_SESSION` to that name.
 - `--name`/`-n` sets a title, not an address. Resolve a name with `zj_resolve_id`.
-- Spawn only through `zj_spawn`. It uses native `--no-focus`, preserves directional placement in attached and headless sessions, and stacks a new pane behind its parent when the target tab already has four visible panes. Hunk review streams target their parent's tab, use bounded pane moves toward the recorded origin, keep the parent expanded when stacking, and retain a verified tiled fallback when exact adjacency cannot be achieved.
+- Spawn agent panes only through `zj_spawn`. It uses native `--no-focus`, preserves directional placement in attached and headless sessions, and stacks a new pane behind its parent when the target tab already has four visible panes. Hunk review streams use dedicated background tabs so they do not consume space in agent tabs.
 - Before fan-out, capture one fixed branch-point `BASE`. Never substitute advancing `main` or current `HEAD`; doing so produces incomplete or misleading aggregate diffs.
 
 ## Load helpers

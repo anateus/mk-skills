@@ -6,8 +6,8 @@ Sharp edges of driving zellij headlessly, and how each surfaces.
 
 - **Old Zellij builds lack safe background creation.** This skill requires `new-pane --no-focus` from [zellij-org/zellij#5346](https://github.com/zellij-org/zellij/pull/5346). A binary may still report `0.45.0`, so verify the flag in `zellij action new-pane --help`.
 - **Focus theft.** Plain `new-pane`, `zellij run`, `new-tab`, `go-to-tab*`, `focus-*`, and `move-focus` can move an attached human's view. Prefer `zj_spawn`, which always uses `--no-focus`; use `new-tab --no-focus` for automated tab creation.
-- **A review's recorded origin can differ from its issuing pane.** `--no-focus` places relative to the issuing pane, not an arbitrary recorded parent. When they match, the controller creates directly to the origin's right. Otherwise it targets the parent's tab, verifies the created pane, and uses bounded `move-pane -p ID DIRECTION` steps with refreshed geometry. Unsafe geometry keeps the verified tiled fallback without changing client focus.
-- **Floating panes won't render under `hide_floating_panes = true`.** A `--floating` pane *does* show in `list-panes` but stays invisible under that setting — another reason to use tiled for watcher panes.
+- **A review's recorded origin can differ from its issuing pane.** Review streams avoid relative pane placement. The controller uses `new-tab --no-focus`, verifies the tab's single terminal pane, and keeps attached clients on their current tabs.
+- **Floating panes won't render under `hide_floating_panes = true`.** A `--floating` pane *does* show in `list-panes` but stays invisible under that setting. This is another reason to use tiled panes for watchers.
 
 ## Reading panes
 
@@ -18,7 +18,7 @@ Sharp edges of driving zellij headlessly, and how each surfaces.
 
 ## Sending input
 
-- **Prompt visible but not submitted.** If you `write-chars` and the text sits in the composer unsent, the Enter didn't register — send `write -p <id> 13` again. Codex composers often need it twice (`PEER_DOUBLE_ENTER=1`).
+- **Prompt visible but not submitted.** If you `write-chars` and the text sits in the composer unsent, the Enter didn't register. Send `write -p <id> 13` again. Codex composers often need it twice (`PEER_DOUBLE_ENTER=1`).
 
 ## Naming & ids
 
@@ -29,7 +29,7 @@ Sharp edges of driving zellij headlessly, and how each surfaces.
 ## Sessions
 
 - **One zellij server, many sessions.** For a fleet, use a **dedicated session per run** with a unique name so tests/automation don't collide with a human's session.
-- **Never `pkill zellij`** — it kills every session including the human's. Kill only the specific scratch session you created (`zellij kill-session <name>`).
+- **Never `pkill zellij`.** It kills every session including the human's. Kill only the specific scratch session you created (`zellij kill-session <name>`).
 
 ## Status not updating
 
@@ -37,7 +37,7 @@ Sharp edges of driving zellij headlessly, and how each surfaces.
 - Check the host's supported status events. Claude uses `UserPromptSubmit` → `working`, permission-prompt `Notification` → `blocked`, `Stop` → `idle`, and `SessionEnd` → clear. Codex uses `SessionStart` → clear stale status, `UserPromptSubmit` → `working`, `PermissionRequest` → `blocked`, `Stop` → `idle`, and `SessionEnd` → clear.
 - For Codex, use `/hooks` in a new interactive session to trust new or changed definitions; valid `~/.codex/hooks.json` entries do not become trusted automatically.
 - Status updates only when a supported Claude Code or Codex lifecycle event fires; a plain shell pane never gets a status token.
-- Subagents are intentionally skipped (`agent_id` guard) — a subagent won't stamp its parent's pane.
+- Subagents are intentionally skipped by the `agent_id` guard. A subagent won't stamp its parent's pane.
 
 ## hunk pane didn't open
 
@@ -53,7 +53,7 @@ If state points to a pane that no longer exists but behavior does not match the 
 
 ## Triggering / the `ZELLIJ` env var
 
-- **`ZELLIJ=0` means inside zellij, not "off".** zellij sets `ZELLIJ` to a **client index** (`0` for the primary/only client; higher values for additional clients attached to the same session). The skill keys on the var being **set to any value** — presence, not truthiness. Any integer (including `0`) means you're inside. Only a genuinely **unset** `ZELLIJ` means "not in zellij." Never write `if [ "$ZELLIJ" = 1 ]` or otherwise treat `0` as false.
+- **`ZELLIJ=0` means inside zellij, not "off".** zellij sets `ZELLIJ` to a **client index** (`0` for the primary/only client; higher values for additional clients attached to the same session). The skill keys on presence, not truthiness. Any integer (including `0`) means you're inside. Only a genuinely **unset** `ZELLIJ` means "not in zellij." Never write `if [ "$ZELLIJ" = 1 ]` or otherwise treat `0` as false.
 
 ## Portability
 

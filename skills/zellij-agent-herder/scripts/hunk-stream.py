@@ -12,16 +12,14 @@ import os
 import subprocess
 import sys
 import tempfile
-import time
-import uuid
 from collections.abc import Iterator
 from typing import Any
 
 
 STATE_FIELDS = (
-    "version", "key", "generation", "session", "parent_pane", "pane_id",
+    "version", "key", "generation", "session", "parent_pane", "pane_id", "tab_id",
     "root", "common_dir", "base", "kind", "label", "signature",
-    "dismissed_signature", "complete",
+    "dismissed_signature", "complete", "dedicated_tab",
 )
 
 
@@ -148,6 +146,12 @@ def review_title(session: str, parent: str) -> str:
     return " ▸ ".join([*emojis, "🔍"])
 
 
+def review_tab_title(request: dict[str, Any]) -> str:
+    label = str(request.get("label") or os.path.basename(request["root"]))
+    cleaned = " ".join(label.split()) or "review"
+    return f"🔍 {cleaned}"[:48]
+
+
 def hook_host(payload: dict[str, Any]) -> str:
     return os.environ.get("ZAH_HOST") or (
         "codex" if "model" in payload or "turn_id" in payload else "claude"
@@ -258,206 +262,43 @@ def pane_map(session: str) -> dict[str, dict[str, Any]]:
     return {pane_id(item): item for item in panes(session)}
 
 
-def visible_panes_in_parent_tab(items: list[dict[str, Any]], parent_id: str) -> int:
-    parent = next((item for item in items if pane_id(item) == parent_id), None)
-    if parent is None:
-        return 0
-    tab_id = parent.get("tab_id")
-    tab_position = parent.get("tab_position")
-
-    def same_tab(item: dict[str, Any]) -> bool:
-        if tab_id is not None:
-            return item.get("tab_id") == tab_id
-        return tab_position is not None and item.get("tab_position") == tab_position
-
-    return sum(
-        same_tab(item) and not item.get("is_suppressed", False)
-        for item in items
-    )
-
-
-def geometry(pane: dict[str, Any]) -> tuple[int, int, int, int] | None:
-    values = tuple(pane.get(key) for key in ("pane_x", "pane_y", "pane_columns", "pane_rows"))
-    if not all(isinstance(value, int) for value in values):
-        return None
-    x, y, width, height = values
-    return (x, y, width, height) if width > 0 and height > 0 else None
-
-
-def overlaps(start_a: int, length_a: int, start_b: int, length_b: int) -> bool:
-    return start_a < start_b + length_b and start_b < start_a + length_a
-
-
-def immediately_right(parent: dict[str, Any], watcher: dict[str, Any]) -> bool:
-    parent_rect = geometry(parent)
-    watcher_rect = geometry(watcher)
-    if parent_rect is None or watcher_rect is None:
-        return False
-    px, py, pw, ph = parent_rect
-    wx, wy, _, wh = watcher_rect
-    return wx == px + pw and overlaps(py, ph, wy, wh)
-
-
-def placement_direction(parent: dict[str, Any], watcher: dict[str, Any]) -> str | None:
-    parent_rect = geometry(parent)
-    watcher_rect = geometry(watcher)
-    if parent_rect is None or watcher_rect is None:
-        return None
-    px, py, pw, ph = parent_rect
-    wx, wy, _, wh = watcher_rect
-    if not overlaps(py, ph, wy, wh):
-        return None
-    target_x = px + pw
-    if wx > target_x:
-        return "left"
-    if wx < target_x:
-        return "right"
-    return None
-
-
-def place_right(session: str, parent_id: str, watcher_id: str, limit: int = 8) -> bool:
-    for attempt in range(limit + 1):
-        current = pane_map(session)
-        parent = current.get(parent_id)
-        watcher = current.get(watcher_id)
-        if parent is None or watcher is None:
-            return False
-        if immediately_right(parent, watcher):
-            return True
-        direction = placement_direction(parent, watcher)
-        if direction is None or attempt == limit:
-            return False
-        zellij(session, ["move-pane", "-p", watcher_id, direction])
-    return False
-
-
-def float_review(session: str, watcher_id: str) -> None:
-    zellij(session, ["toggle-pane-embed-or-floating", "-p", watcher_id])
-    zellij(session, [
-        "change-floating-pane-coordinates", "-p", watcher_id,
-        "--width", "45%", "--height", "70%", "--x", "52%", "--y", "15%",
-    ])
-
-
-def review_is_stacked_behind(
-    parent: dict[str, Any], watcher: dict[str, Any],
-) -> bool:
-    parent_rect = geometry(parent)
-    watcher_rect = geometry(watcher)
-    if parent_rect is None or watcher_rect is None:
-        return False
-    px, _, pw, ph = parent_rect
-    wx, _, ww, wh = watcher_rect
-    return px == wx and pw == ww and ph > 1 and wh == 1
-
-
-def review_is_in_parent_stack(
-    parent: dict[str, Any], watcher: dict[str, Any],
-) -> bool:
-    parent_rect = geometry(parent)
-    watcher_rect = geometry(watcher)
-    if parent_rect is None or watcher_rect is None:
-        return False
-    px, _, pw, ph = parent_rect
-    wx, _, ww, wh = watcher_rect
-    return px == wx and pw == ww and sorted((ph, wh))[0] == 1
-
-
-def stack_review_behind_parent(
-    session: str, parent_id: str, watcher_id: str, attempts: int = 10,
-) -> bool:
-    zellij(session, ["stack-panes", "--", parent_id, watcher_id])
-    for attempt in range(attempts):
-        current = pane_map(session)
-        parent = current.get(parent_id)
-        watcher = current.get(watcher_id)
-        if (
-            parent is not None
-            and watcher is not None
-            and review_is_in_parent_stack(parent, watcher)
-        ):
-            break
-        if attempt + 1 < attempts:
-            time.sleep(0.01)
-    else:
-        return False
-
-    # stack-panes always expands its final argument. Wait for the stack action
-    # before re-expanding the recorded parent; separate CLI actions can be
-    # processed out of order if issued back-to-back.
-    zellij(session, ["focus-pane-id", parent_id])
-    for attempt in range(attempts):
-        current = pane_map(session)
-        parent = current.get(parent_id)
-        watcher = current.get(watcher_id)
-        if (
-            parent is not None
-            and watcher is not None
-            and review_is_stacked_behind(parent, watcher)
-        ):
-            return True
-        if attempt + 1 < attempts:
-            time.sleep(0.01)
-    return False
-
-
 def request_matches(state: dict[str, Any], request: dict[str, Any]) -> bool:
     fields = ("session", "parent_pane", "root", "common_dir", "base", "kind", "label")
     return all(state.get(field) == request[field] for field in fields)
 
 
-def spawn_hunk(request: dict[str, Any], title: str) -> str:
+def spawn_hunk(request: dict[str, Any]) -> tuple[str, int]:
     session = request["session"]
     parent = request["parent_pane"]
     initial_panes = panes(session)
-    parent_pane = next(
-        (item for item in initial_panes if pane_id(item) == parent), None,
-    )
-    tab_id = parent_pane.get("tab_id") if parent_pane is not None else None
-    stack_behind_parent = visible_panes_in_parent_tab(initial_panes, parent) >= 4
-    args = ["new-pane"]
-    if isinstance(tab_id, int):
-        args.extend(["--tab-id", str(tab_id)])
-    args.append("--no-focus")
-    issuing_pane = os.environ.get("ZELLIJ_PANE_ID")
-    if (
-        not stack_behind_parent
-        and issuing_pane
-        and normalize_parent(issuing_pane) == parent
-    ):
-        args.extend(["--direction", "right"])
-    if stack_behind_parent:
-        args.extend([
-            "--floating", "--width", "45%", "--height", "70%",
-            "--x", "52%", "--y", "15%",
-        ])
-    args.extend([
-        "--cwd", request["root"], "--name", title, "--",
+    initial_ids = {pane_id(item) for item in initial_panes}
+    args = [
+        "new-tab", "--no-focus", "--cwd", request["root"],
+        "--name", review_tab_title(request), "--",
         "hunk", "diff", request["base"], "--watch",
-    ])
+    ]
     output = zellij(session, args).splitlines()
     returned = output[-1] if output else ""
-    if pane_exists(session, returned):
-        spawned = returned
-    else:
-        matches = [pane_id(item) for item in panes(session) if item.get("title") == title]
-        if len(matches) != 1:
-            raise RuntimeError(f"spawned pane could not be verified: {returned!r}")
-        spawned = matches[0]
+    try:
+        tab_id = int(returned)
+    except ValueError:
+        tab_id = None
+
+    new_panes = [
+        item for item in panes(session)
+        if pane_id(item) not in initial_ids and not item.get("is_plugin", False)
+    ]
+    matches = [item for item in new_panes if item.get("tab_id") == tab_id]
+    if len(matches) != 1 and len(new_panes) == 1:
+        matches = new_panes
+        tab_id = matches[0].get("tab_id")
+    if len(matches) != 1 or not isinstance(tab_id, int):
+        raise RuntimeError(
+            f"new review tab must contain exactly one pane: {returned!r}",
+        )
+    spawned = pane_id(matches[0])
     zellij(session, ["rename-pane", "-p", spawned, review_title(session, parent)])
-    if stack_behind_parent:
-        if not stack_review_behind_parent(session, parent, spawned):
-            watcher = pane_map(session).get(spawned)
-            if watcher is not None and not watcher.get("is_floating", False):
-                float_review(session, spawned)
-    if not stack_behind_parent:
-        try:
-            current = pane_map(session)
-            if parent in current:
-                place_right(session, parent, spawned)
-        except (OSError, ValueError, subprocess.CalledProcessError):
-            pass
-    return spawned
+    return spawned, tab_id
 
 
 def ensure_stream(
@@ -476,7 +317,11 @@ def ensure_stream(
     signature = diff_signature(root, base)
     with locked_state(cache_root(), key) as state:
         present = pane_exists(session, state.get("pane_id"))
-        if present and request_matches(state, request):
+        if (
+            present
+            and request_matches(state, request)
+            and state.get("dedicated_tab") is True
+        ):
             state["signature"] = signature
             zellij(
                 session,
@@ -492,14 +337,14 @@ def ensure_stream(
         if present:
             zellij(session, ["close-pane", "-p", str(state["pane_id"])])
         generation = int(state.get("generation") or 0) + 1
-        title = f"diff:{label}:{key[:8]}:{generation}:{uuid.uuid4().hex[:8]}"
-        spawned = spawn_hunk(request, title)
+        spawned, tab_id = spawn_hunk(request)
         state.clear()
         state.update(empty_state(key))
         state.update(request)
         state.update(
-            generation=generation, pane_id=spawned, signature=signature,
-            dismissed_signature=None, complete=False,
+            generation=generation, pane_id=spawned, tab_id=tab_id,
+            signature=signature, dismissed_signature=None, complete=False,
+            dedicated_tab=True,
         )
         return spawned
 
