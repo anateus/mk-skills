@@ -54,6 +54,27 @@ test('Claude declaration invokes the shared runner for supported session sources
   }]);
 });
 
+test('Codex and Claude register identical subagent lifecycle handlers', () => {
+  const codex = JSON.parse(fs.readFileSync(path.join(root, 'hooks', 'hooks.json')));
+  const claude = JSON.parse(fs.readFileSync(path.join(root, 'adapters', 'claude', 'hooks.json')));
+  for (const eventName of ['SubagentStart', 'SubagentStop']) {
+    assert.equal(codex.hooks[eventName].length, 1);
+    assert.equal(claude.hooks[eventName].length, 1);
+    assert.equal(Object.hasOwn(codex.hooks[eventName][0], 'matcher'), false);
+    assert.equal(Object.hasOwn(claude.hooks[eventName][0], 'matcher'), false);
+    assert.deepEqual(codex.hooks[eventName][0].hooks, [{
+      type: 'command',
+      command: 'node "${PLUGIN_ROOT}/hooks/artifact-discipline.js"',
+      timeout: 10,
+    }]);
+    assert.deepEqual(claude.hooks[eventName][0].hooks, [{
+      type: 'command',
+      command: 'node "${CLAUDE_PLUGIN_ROOT}/hooks/artifact-discipline.js"',
+      timeout: 10,
+    }]);
+  }
+});
+
 test('Codex and Claude emit host-correct envelopes with identical policy context', () => {
   const codexInput = fixture('codex-session-start.json');
   const claudeInput = fixture('claude-session-start.json');
@@ -98,11 +119,13 @@ test('unified validator runs repository checks and supports optional plugin vali
     'test-pane-identity.py', 'test-hunk-placement.py', 'test-hunk-stream.sh',
     'test-install-hooks.sh', 'test-shared-agent-config.sh',
   ].map((name) => source.indexOf(name));
+  const artifactInstaller = source.indexOf('skills/subagent-artifact-discipline/tests/test-install-hooks.sh');
   const plugin = source.indexOf('PLUGIN_VALIDATOR');
   const diff = source.indexOf("'git', ['diff', '--check']");
   assert.ok(hooks >= 0 && skills >= hooks);
   assert.ok(curation > skills);
   assert.ok(zellijCommands.every((position) => position > curation));
+  assert.ok(artifactInstaller > curation);
   assert.ok(zellijCommands.every((position) => position < plugin));
   assert.ok(plugin > curation);
   assert.ok(diff > plugin);
@@ -126,6 +149,8 @@ test('README documents every Task 9 operating and installation contract', () => 
     /upstream.*curat|curat.*upstream/is,
     /bidirectional.*independent|independent.*both directions/is,
     /zellij-agent-herder/i,
+    /subagent-artifact-discipline\/scripts\/install-hooks\.sh/,
+    /pnpx skills update -g/,
     /node scripts\/validate\.js/,
   ]) assert.match(readme, requirement);
 });

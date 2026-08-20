@@ -10,7 +10,7 @@ The core set covers `clarifying-work`, `adversarial-refinement`, `specifying-wor
 
 ## Codex plugin
 
-Install or link this repository through the Codex plugin workflow so `.codex-plugin/plugin.json`, `skills/`, `hooks/`, `lib/`, and `config/` remain together. Before trusting the plugin, review [`hooks/hooks.json`](hooks/hooks.json) and [`hooks/run-hook.js`](hooks/run-hook.js): the synchronous `SessionStart` hook reads the documented event fields, loads the shared local policy, and writes context JSON.
+Install or link this repository through the Codex plugin workflow so `.codex-plugin/plugin.json`, `skills/`, `hooks/`, `lib/`, and `config/` remain together. Before trusting the plugin, review [`hooks/hooks.json`](hooks/hooks.json), [`hooks/run-hook.js`](hooks/run-hook.js), and [`hooks/artifact-discipline.js`](hooks/artifact-discipline.js). The artifact entrypoint delegates to the installable [`subagent-artifact-discipline`](skills/subagent-artifact-discipline/SKILL.md) runtime. The synchronous `SessionStart` hook reads the documented event fields, loads the shared local policy, and writes context JSON. The subagent hooks are described below.
 
 Choose a profile with an environment override:
 
@@ -18,22 +18,46 @@ Choose a profile with an environment override:
 MK_SKILLS_MODE=strict|selective|off
 ```
 
-Use one concrete value, for example `MK_SKILLS_MODE=strict codex`. Until reasoning effort becomes a stable hook field, pair a low-reasoning Codex profile with `strict` explicitly; the hook deliberately does not inspect transcripts. `off` disables policy injection but leaves skills available for explicit use.
+Use one concrete value, for example `MK_SKILLS_MODE=strict codex`. Until reasoning effort becomes a stable hook field, pair a low-reasoning Codex profile with `strict` explicitly. Mode selection does not inspect transcripts. `off` disables policy injection but leaves skills available for explicit use.
 
-Without an override, conservative small-model markers (`mini`, `nano`, and `haiku`) and legacy GPT-3.x/Claude 2–3 families select strict mode automatically. Other and unknown model identifiers remain selective; adjust `config/mode-policy.json` when a host introduces a new stable model family.
+Without an override, conservative small-model markers (`mini`, `nano`, and `haiku`) and legacy GPT-3.x, Claude 2, and Claude 3 families select strict mode automatically. Other and unknown model identifiers remain selective; adjust `config/mode-policy.json` when a host introduces a new stable model family.
 
 ## Claude Code adapter
 
-Claude support is a required deliverable, not a separate skill fork. Package or link the repository as a Claude plugin and expose [`adapters/claude/hooks.json`](adapters/claude/hooks.json) as its hook declaration. It invokes the same runner and `config/mode-policy.json` through `CLAUDE_PLUGIN_ROOT`, so both hosts select identical text. Review the hook command before enabling the plugin. Startup, resume, clear, and compact use the shared selector where Claude supports those `SessionStart` sources.
+Claude support is a required deliverable, not a separate skill fork. Package or link the repository as a Claude plugin and expose [`adapters/claude/hooks.json`](adapters/claude/hooks.json) as its hook declaration. It invokes the same runners and configuration through `CLAUDE_PLUGIN_ROOT`, so both hosts use identical mode and subagent artifact behavior. Review both hook commands before enabling the plugin. Startup, resume, clear, and compact use the shared selector where Claude supports those `SessionStart` sources.
 
-For skills-only installation, the existing CLI remains available:
+## Subagent artifacts
 
-```bash
-npx skills add anateus/mk-skills
-npx skills add anateus/mk-skills -g
+Codex and Claude Code use the same `SubagentStart` and `SubagentStop` runner. At start, the hook gives the subagent a path for detailed findings. At stop, it keeps an existing non-empty artifact or writes the subagent's final response there as a fallback. If neither exists, the hook asks the subagent to continue once. It never reads a transcript and never changes tool permissions.
+
+Artifacts default to:
+
+```text
+${TMPDIR}/mk-skills/agent-artifacts/<session_id>/<agent_id>/findings.md
 ```
 
-Ordinary execution skills are self-contained and work offline after installation. Network access is used only for deliberate upstream curation; [`curating-skills`](skills/curating-skills/SKILL.md) additionally requires an mk-skills source checkout, reviews pinned sources, and produces a manual merge report without overwriting local skills.
+Set `MK_SKILLS_ARTIFACT_DIR` to an absolute directory to change the root. Set `MK_SKILLS_ARTIFACT_DISCIPLINE=off` to disable both lifecycle hooks. The plugin does not delete artifacts, so users who choose a persistent root must manage retention. Review the [runner](skills/subagent-artifact-discipline/scripts/artifact-discipline.js) and its [configuration](skills/subagent-artifact-discipline/config/artifact-discipline.json) before trusting this behavior.
+
+For a global skills installation, wire the artifact hooks into both hosts once:
+
+```bash
+pnpx skills add anateus/mk-skills --skill subagent-artifact-discipline --agent codex claude-code -g -y
+bash "$HOME/.agents/skills/subagent-artifact-discipline/scripts/install-hooks.sh" --all
+```
+
+The installer preserves unrelated hooks and links Claude Code and Codex to the stable global skill path. Future updates replace the linked runtime in place:
+
+```bash
+pnpx skills update -g -y
+```
+
+Review the updated runner, then start new Claude Code and Codex sessions. Use Codex `/hooks` to confirm the hook is enabled; Codex requires another trust decision if its installed definition hash changes. Rerun the installer only after changing installation scope or when a release changes lifecycle event wiring. `pnpx skills update` updates skill directories only, so it cannot update a separately cached plugin installation.
+
+Use either plugin-provided artifact hooks or the standalone installer. Enabling both runs the same lifecycle handler twice.
+
+The update command does not install skills added to the repository after your original installation. If `subagent-artifact-discipline` is not present under `~/.agents/skills`, run the one-time `skills add` command above before the installer.
+
+For a project-only skills installation without hooks, use `pnpx skills add anateus/mk-skills`. Ordinary execution skills are self-contained and work offline after installation. Network access is used only for deliberate upstream curation; [`curating-skills`](skills/curating-skills/SKILL.md) additionally requires an mk-skills source checkout, reviews pinned sources, and produces a manual merge report without overwriting local skills.
 
 ## Validate
 

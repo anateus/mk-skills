@@ -1,0 +1,8 @@
+{
+  "version": 1,
+  "defaultSubdirectory": ["mk-skills", "agent-artifacts"],
+  "artifactFilename": "findings.md",
+  "maxInputBytes": 1048576,
+  "maxFallbackBytes": 262144,
+  "contextTemplate": "Preserve your detailed findings in {{artifact_path}} before finishing when you have a writing tool. If you cannot write files, put the full findings in your final response so the lifecycle hook can preserve them. Return a short summary and name the artifact path."
+}

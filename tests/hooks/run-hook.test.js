@@ -83,7 +83,7 @@ test('output is JSON and does not expose the absolute checkout path', () => {
 test('plugin manifest and discovered hook declaration use the supported schemas', () => {
   const manifest = JSON.parse(fs.readFileSync(path.join(root, '.codex-plugin', 'plugin.json')));
   assert.equal(manifest.name, 'mk-skills');
-  assert.equal(manifest.version, '0.1.0');
+  assert.equal(manifest.version, '0.2.0');
   assert.equal(manifest.skills, './skills/');
   assert.equal(Object.hasOwn(manifest, 'hooks'), false);
   assert.deepEqual(manifest.interface.defaultPrompt, [

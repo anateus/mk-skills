@@ -32,6 +32,7 @@ const checks = [
   ['Zellij Hunk stream', 'bash', ['skills/zellij-agent-herder/tests/test-hunk-stream.sh']],
   ['Zellij hook installer', 'bash', ['skills/zellij-agent-herder/tests/test-install-hooks.sh']],
   ['Zellij shared agent config', 'bash', ['skills/zellij-agent-herder/tests/test-shared-agent-config.sh']],
+  ['Subagent artifact hook installer', 'bash', ['skills/subagent-artifact-discipline/tests/test-install-hooks.sh']],
 ];
 
 for (const check of checks) {
