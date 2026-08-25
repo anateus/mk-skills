@@ -1,6 +1,6 @@
 ---
 name: specifying-work
-description: Turn agreed intent and repository evidence into a concise behavior contract with acceptance criteria, testing seams, constraints, and non-goals. Use when the user asks for a specification, design contract, requirements, or acceptance criteria before planning or implementation.
+description: Turn agreed intent and repository evidence into a concise behavior contract with acceptance criteria, testing seams, constraints, and non-goals. Use when the user asks for a specification, design contract, requirements, or acceptance criteria before planning or implementation. Also use when drafting a tracker ticket that is more than a small placeholder: the ticket body is the behavior contract.
 ---
 
 # Specifying Work

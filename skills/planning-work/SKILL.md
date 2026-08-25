@@ -31,6 +31,10 @@ Tracker publication, commits, branches, and worktrees belong to repository or us
 
 When sequencing, dependency, rollout, or rollback assumptions are materially uncertain, use `adversarial-refinement` on the draft plan.
 
+## Plan artifacts are shipped artifacts
+
+Code blocks, queries, and commands embedded in the plan get executed verbatim by whoever runs the slice. Review them as code: check interpolations and correlation scope, and re-derive embedded numbers, queries, and snippets after any design change. Fix the block itself, not only the surrounding prose.
+
 ## Final check
 
 Confirm that dependencies form a valid order, every acceptance criterion has coverage, risky assumptions are surfaced early, and completion claims map to fresh evidence.

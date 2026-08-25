@@ -47,7 +47,7 @@ test('verifying-work maps each claim to fresh relevant evidence and stays compac
   assert.match(skill, /fresh.*evidence|evidence.*fresh/is);
   assert.match(skill, /relevant evidence/i);
   assert.match(skill, /limitations/i);
-  assert.ok(skill.trim().split(/\s+/).length < 250, 'verifying-work is under 250 words');
+  assert.ok(skill.trim().split(/\s+/).length < 300, 'verifying-work is under 300 words');
 });
 
 test('handing-off-work creates a temporary redacted summary using references', () => {

@@ -1,6 +1,6 @@
 ---
 name: clarifying-work
-description: Reduce consequential uncertainty by inspecting facts, separating assumptions from decisions, and mapping integration risks. Use when a request is ambiguous, integration-heavy, cross-boundary, or likely to hide decisions that could cause substantial rework.
+description: Reduce consequential uncertainty by inspecting facts, separating assumptions from decisions, and mapping integration risks. Use when a request is ambiguous, integration-heavy, cross-boundary, or likely to hide decisions that could cause substantial rework. Consider whenever drafting or filing a tracker ticket (e.g. Linear), so the ticket records decisions rather than assumptions.
 ---
 
 # Clarifying Work

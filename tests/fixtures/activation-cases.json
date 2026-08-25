@@ -2,181 +2,339 @@
   {
     "id": "ambiguous-cross-system-change",
     "prompt": "Change how account deletion propagates between the API, worker, and billing system. The desired timing and partial-failure behavior are not specified.",
-    "expectedSkills": ["clarifying-work"],
+    "expectedSkills": [
+      "clarifying-work"
+    ],
     "forbiddenSkills": [],
     "expectedReferences": [],
-    "rubric": ["Inspects local contracts and surfaces consumers, failure recovery, ownership, and unresolved decisions before selecting a solution."]
+    "rubric": [
+      "Inspects local contracts and surfaces consumers, failure recovery, ownership, and unresolved decisions before selecting a solution."
+    ]
   },
   {
     "id": "explicit-specification",
     "prompt": "Write a specification with acceptance criteria for adding organization-level API keys.",
-    "expectedSkills": ["specifying-work"],
+    "expectedSkills": [
+      "specifying-work"
+    ],
     "forbiddenSkills": [],
     "expectedReferences": [],
-    "rubric": ["Produces a behavior contract with constraints, seams, acceptance criteria, and non-goals."]
+    "rubric": [
+      "Produces a behavior contract with constraints, seams, acceptance criteria, and non-goals."
+    ]
   },
   {
     "id": "explicit-implementation-plan",
     "prompt": "Make an implementation plan for migrating this service from local sessions to signed cookies.",
-    "expectedSkills": ["planning-work"],
+    "expectedSkills": [
+      "planning-work"
+    ],
     "forbiddenSkills": [],
     "expectedReferences": [],
-    "rubric": ["Grounds ordered vertical slices, dependencies, owned files, outputs, and verification in the repository."]
+    "rubric": [
+      "Grounds ordered vertical slices, dependencies, owned files, outputs, and verification in the repository."
+    ]
   },
   {
     "id": "explicit-tdd",
     "prompt": "Use TDD and write tests first to add retry behavior to the public client API.",
-    "expectedSkills": ["test-driven-development"],
+    "expectedSkills": [
+      "test-driven-development"
+    ],
     "forbiddenSkills": [],
     "expectedReferences": [],
-    "rubric": ["Shows an intended behavioral red state before the minimal green change."]
+    "rubric": [
+      "Shows an intended behavioral red state before the minimal green change."
+    ]
   },
   {
     "id": "flaky-unexplained-failure",
     "prompt": "This test fails intermittently in CI and we do not know why. Diagnose it.",
-    "expectedSkills": ["diagnosing-bugs"],
-    "forbiddenSkills": ["implementing-work"],
+    "expectedSkills": [
+      "diagnosing-bugs"
+    ],
+    "forbiddenSkills": [
+      "implementing-work"
+    ],
     "expectedReferences": [],
-    "rubric": ["Reproduces or narrows the failure and tests competing hypotheses before proposing a change."]
+    "rubric": [
+      "Reproduces or narrows the failure and tests competing hypotheses before proposing a change."
+    ]
   },
   {
     "id": "direct-clear-implementation",
     "prompt": "Add a --json flag to the existing status command and implement the tests.",
-    "expectedSkills": ["implementing-work"],
-    "forbiddenSkills": ["specifying-work"],
+    "expectedSkills": [
+      "implementing-work"
+    ],
+    "forbiddenSkills": [
+      "specifying-work"
+    ],
     "expectedReferences": [],
-    "rubric": ["Implements the clear request without requiring a formal specification."]
+    "rubric": [
+      "Implements the clear request without requiring a formal specification."
+    ]
   },
   {
     "id": "fixed-diff-review",
     "prompt": "Review this committed diff from BASE to HEAD for release readiness.",
-    "expectedSkills": ["reviewing-code"],
+    "expectedSkills": [
+      "reviewing-code"
+    ],
     "forbiddenSkills": [],
     "expectedReferences": [],
-    "rubric": ["Fixes provenance and reports severity-ordered evidence-backed findings."]
+    "rubric": [
+      "Fixes provenance and reports severity-ordered evidence-backed findings."
+    ]
   },
   {
     "id": "mixed-state-review",
     "prompt": "Review this PR plus its staged, unstaged, untracked, and generated working-tree files.",
-    "expectedSkills": ["reviewing-code"],
+    "expectedSkills": [
+      "reviewing-code"
+    ],
     "forbiddenSkills": [],
-    "expectedReferences": ["skills/reviewing-code/references/diff-provenance.md"],
-    "rubric": ["Inventories every state layer and declares inclusions and exclusions."]
+    "expectedReferences": [
+      "skills/reviewing-code/references/diff-provenance.md"
+    ],
+    "rubric": [
+      "Inventories every state layer and declares inclusions and exclusions."
+    ]
   },
   {
     "id": "review-feedback-assessment",
     "prompt": "Assess these inline review comments, apply the valid requested changes, and explain any rejection.",
-    "expectedSkills": ["handling-review-feedback"],
+    "expectedSkills": [
+      "handling-review-feedback"
+    ],
     "forbiddenSkills": [],
     "expectedReferences": [],
-    "rubric": ["Classifies each comment and verifies accepted changes."]
+    "rubric": [
+      "Classifies each comment and verifies accepted changes."
+    ]
   },
   {
     "id": "explicit-readiness-verification",
     "prompt": "Verify and confirm this branch is tested, buildable, and ready to release.",
-    "expectedSkills": ["verifying-work"],
+    "expectedSkills": [
+      "verifying-work"
+    ],
     "forbiddenSkills": [],
     "expectedReferences": [],
-    "rubric": ["Maps each readiness claim to fresh direct evidence and reports limitations."]
+    "rubric": [
+      "Maps each readiness claim to fresh direct evidence and reports limitations."
+    ]
   },
   {
     "id": "cross-session-resume",
     "prompt": "Prepare a handoff so another session can resume this unfinished work safely.",
-    "expectedSkills": ["handing-off-work"],
+    "expectedSkills": [
+      "handing-off-work"
+    ],
     "forbiddenSkills": [],
     "expectedReferences": [],
-    "rubric": ["Creates a concise redacted transfer with verified facts and ordered remaining work."]
+    "rubric": [
+      "Creates a concise redacted transfer with verified facts and ordered remaining work."
+    ]
   },
   {
     "id": "explicit-strict-execution",
     "prompt": "Use strict execution for this change, with checkpoints and fresh proof before completion.",
-    "expectedSkills": ["strict-mode"],
+    "expectedSkills": [
+      "strict-mode"
+    ],
     "forbiddenSkills": [],
     "expectedReferences": [],
-    "rubric": ["Selects applicable skills, orders dependencies, records checkpoints, and preserves authority boundaries."]
+    "rubric": [
+      "Selects applicable skills, orders dependencies, records checkpoints, and preserves authority boundaries."
+    ]
   },
   {
     "id": "mk-skills-upstream-curation",
     "prompt": "Inside this mk-skills checkout, deliberately review configured upstream skill changes since their recorded revisions.",
-    "expectedSkills": ["curating-skills"],
+    "expectedSkills": [
+      "curating-skills"
+    ],
     "forbiddenSkills": [],
     "expectedReferences": [],
-    "rubric": ["Verifies the mk-skills checkout, reads the decision ledger, and treats upstreams as conceptual inputs."]
+    "rubric": [
+      "Verifies the mk-skills checkout, reads the decision ledger, and treats upstreams as conceptual inputs."
+    ]
   },
   {
     "id": "zellij-pane-control-zero",
     "prompt": "Environment: ZELLIJ=0. Spawn a worker pane and wait for its status.",
-    "expectedSkills": ["zellij-agent-herder"],
+    "expectedSkills": [
+      "zellij-agent-herder"
+    ],
     "forbiddenSkills": [],
-    "expectedReferences": ["skills/zellij-agent-herder/references/peer-agents.md"],
-    "rubric": ["Treats ZELLIJ=0 as active and uses bundled spawn and wait helpers."]
+    "expectedReferences": [
+      "skills/zellij-agent-herder/references/peer-agents.md"
+    ],
+    "rubric": [
+      "Treats ZELLIJ=0 as active and uses bundled spawn and wait helpers."
+    ]
   },
   {
     "id": "interactive-architecture-grill",
     "prompt": "Grill me on this architecture decision and poke holes in it one question at a time.",
-    "expectedSkills": ["adversarial-refinement"],
+    "expectedSkills": [
+      "adversarial-refinement"
+    ],
     "forbiddenSkills": [],
     "expectedReferences": [],
-    "rubric": ["Uses interactive grill mode with one material question and a recommended answer per turn."]
+    "rubric": [
+      "Uses interactive grill mode with one material question and a recommended answer per turn."
+    ]
   },
   {
     "id": "artifact-rollout-stress-test",
     "prompt": "Stress-test this rollout plan and return findings, alternatives, and residual risks.",
-    "expectedSkills": ["adversarial-refinement"],
+    "expectedSkills": [
+      "adversarial-refinement"
+    ],
     "forbiddenSkills": [],
-    "expectedReferences": ["skills/adversarial-refinement/references/challenge-lenses.md"],
-    "rubric": ["Uses artifact critique mode, inspects facts, steelmans the plan, and returns prioritized refinements."]
+    "expectedReferences": [
+      "skills/adversarial-refinement/references/challenge-lenses.md"
+    ],
+    "rubric": [
+      "Uses artifact critique mode, inspects facts, steelmans the plan, and returns prioritized refinements."
+    ]
   },
   {
     "id": "trivial-local-typo",
     "prompt": "Fix the single typo 'teh' to 'the' in README.md.",
-    "expectedSkills": ["implementing-work"],
-    "forbiddenSkills": ["adversarial-refinement", "specifying-work", "planning-work"],
+    "expectedSkills": [
+      "implementing-work"
+    ],
+    "forbiddenSkills": [
+      "adversarial-refinement",
+      "specifying-work",
+      "planning-work"
+    ],
     "expectedReferences": [],
-    "rubric": ["Makes the local mechanical edit without design or pressure-testing ceremony."]
+    "rubric": [
+      "Makes the local mechanical edit without design or pressure-testing ceremony."
+    ]
   },
   {
     "id": "straightforward-spec-no-refinement",
     "prompt": "Write a straightforward specification for a --version flag, including acceptance criteria.",
-    "expectedSkills": ["specifying-work"],
-    "forbiddenSkills": ["adversarial-refinement"],
+    "expectedSkills": [
+      "specifying-work"
+    ],
+    "forbiddenSkills": [
+      "adversarial-refinement"
+    ],
     "expectedReferences": [],
-    "rubric": ["Creates the requested contract without automatically invoking adversarial refinement."]
+    "rubric": [
+      "Creates the requested contract without automatically invoking adversarial refinement."
+    ]
   },
   {
     "id": "distributed-production-incident",
     "prompt": "Investigate this production throughput collapse across our queue, app, payment provider, and carrier. Several metrics disagree and I want parallel probes without repeating yesterday's work.",
-    "expectedSkills": ["investigating-incidents"],
+    "expectedSkills": [
+      "investigating-incidents"
+    ],
     "forbiddenSkills": [],
     "expectedReferences": [
       "skills/investigating-incidents/references/distributed-evidence.md",
       "skills/investigating-incidents/references/evidence-ledger.md",
       "skills/investigating-incidents/references/parallel-investigations.md"
     ],
-    "rubric": ["Creates an evidence ledger, proves current runtime wiring, assigns distinct discriminators, and reconciles corrections before claiming root cause."]
+    "rubric": [
+      "Creates an evidence ledger, proves current runtime wiring, assigns distinct discriminators, and reconciles corrections before claiming root cause."
+    ]
   },
   {
     "id": "large-transcript-search",
-    "prompt": "Find where an upstream model shutdown was discussed across a 12 MB Claude Code session transcript (JSONL) and pull the relevant lines — without reading the whole file into context.",
-    "expectedSkills": ["data-spelunking"],
+    "prompt": "Find where an upstream model shutdown was discussed across a 12 MB Claude Code session transcript (JSONL) and pull the relevant lines \u2014 without reading the whole file into context.",
+    "expectedSkills": [
+      "data-spelunking"
+    ],
     "forbiddenSkills": [],
-    "expectedReferences": ["skills/data-spelunking/references/large-outputs-and-transcripts.md"],
-    "rubric": ["Locates matches and reads bounded, line-referenced windows (or uses the JSONL/transcript extractor) instead of loading the whole transcript into context."]
+    "expectedReferences": [
+      "skills/data-spelunking/references/large-outputs-and-transcripts.md"
+    ],
+    "rubric": [
+      "Locates matches and reads bounded, line-referenced windows (or uses the JSONL/transcript extractor) instead of loading the whole transcript into context."
+    ]
   },
   {
     "id": "big-csv-slice",
-    "prompt": "This CSV export has millions of rows. Which status codes appear and how often, and pull just the 5xx rows — without loading the whole file.",
-    "expectedSkills": ["data-spelunking"],
+    "prompt": "This CSV export has millions of rows. Which status codes appear and how often, and pull just the 5xx rows \u2014 without loading the whole file.",
+    "expectedSkills": [
+      "data-spelunking"
+    ],
     "forbiddenSkills": [],
-    "expectedReferences": ["skills/data-spelunking/references/tabular-and-json.md"],
-    "rubric": ["Uses a streaming tabular tool (headers/frequency/search) to answer from a projected slice rather than reading the entire file."]
+    "expectedReferences": [
+      "skills/data-spelunking/references/tabular-and-json.md"
+    ],
+    "rubric": [
+      "Uses a streaming tabular tool (headers/frequency/search) to answer from a projected slice rather than reading the entire file."
+    ]
   },
   {
     "id": "bootstrap-mk-skills-guidance",
     "prompt": "I just installed mk-skills on a new machine. Merge its shipped agent guidance into my AGENTS.md.",
-    "expectedSkills": ["mk-skills-setup"],
+    "expectedSkills": [
+      "mk-skills-setup"
+    ],
     "forbiddenSkills": [],
     "expectedReferences": [],
-    "rubric": ["Merges the shipped guidance as an idempotent, marker-delimited managed block, dry-run first and backed up on apply, without touching surrounding content."]
+    "rubric": [
+      "Merges the shipped guidance as an idempotent, marker-delimited managed block, dry-run first and backed up on apply, without touching surrounding content."
+    ]
+  },
+  {
+    "id": "casual-did-it-work-check",
+    "prompt": "I think the fix landed. Did it work? Double-check before we tell the team it's done.",
+    "expectedSkills": [
+      "verifying-work"
+    ],
+    "forbiddenSkills": [],
+    "expectedReferences": [],
+    "rubric": [
+      "Runs the relevant checks fresh, treats prior reports as claims, and confirms any silent sweep can detect a known positive before trusting it."
+    ]
+  },
+  {
+    "id": "small-placeholder-ticket",
+    "prompt": "File a quick Linear ticket to track renaming the config flag later.",
+    "expectedSkills": [
+      "clarifying-work"
+    ],
+    "forbiddenSkills": [
+      "specifying-work"
+    ],
+    "expectedReferences": [],
+    "rubric": [
+      "Records the decision and intent in the ticket without inflating a placeholder into a full specification."
+    ]
+  },
+  {
+    "id": "substantial-ticket-needs-spec",
+    "prompt": "Write up a Linear ticket for the new SFTP ingestion feature, including acceptance criteria and edge cases.",
+    "expectedSkills": [
+      "specifying-work"
+    ],
+    "forbiddenSkills": [],
+    "expectedReferences": [],
+    "rubric": [
+      "Treats the ticket body as a behavior contract with acceptance criteria, constraints, and non-goals."
+    ]
+  },
+  {
+    "id": "ai-sounding-prose-cleanup",
+    "prompt": "This README section sounds like a chatbot wrote it. Clean it up without changing what it says.",
+    "expectedSkills": [
+      "humanizer"
+    ],
+    "forbiddenSkills": [],
+    "expectedReferences": [],
+    "rubric": [
+      "Removes AI writing patterns while preserving every claim, fact, and identifier."
+    ]
   }
 ]

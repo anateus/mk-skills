@@ -24,3 +24,5 @@ Reference durable artifacts—specifications, plans, issues, commits, diffs, log
 Redact secrets, credentials, tokens, personal data, and unnecessary environment details. Do not copy sensitive command output merely for completeness. Distinguish direct observations from inferences and stale results. If peer work contributed, identify its scope and the primary verification performed; peer completion reports are not independent evidence.
 
 Keep the handoff concise and disposable. Durable decisions belong in the project's established artifacts, not only in the temporary file.
+
+Hand off deliverables as things the repository can regenerate: a script, generator, or CLI flag plus the command that produces the artifact. An artifact only the current session can produce is not transferable.

@@ -1,6 +1,6 @@
 ---
 name: diagnosing-bugs
-description: Diagnose failures by reproducing, minimizing, and testing competing hypotheses before changing behavior. Use when behavior is failing, inconsistent, flaky, regressed, or unexplained and the cause is not established by evidence.
+description: Diagnose failures by reproducing, minimizing, and testing competing hypotheses before changing behavior. Use when behavior is failing, inconsistent, flaky, regressed, or unexplained and the cause is not established by evidence. Triggers on "why is this failing", "doesn't work", "flaky", "regression", "worked before".
 ---
 
 # Diagnosing Bugs

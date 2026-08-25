@@ -16,6 +16,7 @@ Inspect each axis separately so one kind of confidence does not hide another:
 1. **Correctness and risk:** trace changed behavior, boundary conditions, failures, security, data integrity, compatibility, and test adequacy.
 2. **Specification compliance:** when a specification exists, map requirements and non-goals to the diff and evidence. Distinguish missing behavior from a flawed implementation.
 3. **Repository standards:** apply documented local conventions, architecture, tooling, and maintainability expectations.
+4. **Executed behavior:** when the change is runnable, run it: the focused tests and the real code path with realistic input. Results reported by the implementer, a subagent, or a CI comment are claims to check, not evidence.
 
 Read enough surrounding code to validate assumptions. Prefer concrete execution paths and evidence over style speculation. Confirm the comparison point remains fixed before reporting.
 

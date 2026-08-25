@@ -64,3 +64,8 @@ Relay: `read` agent A → `ask` agent B with A's output → `wait` B → `read` 
 ## Before reporting success
 
 `wait idle` + `read` tells you what the peer *said*, not what it *did*. **Inspect the actual file changes yourself** (`git diff`, run the tests) before you report a peer's work as complete.
+
+## Model tiering and parallel fan-out
+
+- Default peer implementers to a mid-tier model; reserve the strongest model for the hardest tasks and for taking over when a cheaper peer is stuck. Small fast models suit only well-specified mechanical tasks, and their output needs a stronger reviewer plus a controller-level run of the real code.
+- For parallel worktree fan-out: check task file overlap before dispatch, give each peer a unique port and resource range for e2e runs, never let a peer kill processes by name (it kills siblings), and let the controller alone rebase, re-run gates, and merge in a fixed order.

@@ -25,6 +25,8 @@ Maintain at least two plausible hypotheses until a discriminating observation se
 
 Use comparable cohorts: identical windows and timezones, explicit denominators, null rates, instrumentation coverage, and deployment/config boundaries. Trace representative entities end to end using stable correlation IDs. Pair volume with dwell time, concurrency, retry, or queue depth so a rate change has a mechanism.
 
+A hypothesis is tested by the observations it does not explain. If it covers K of N failures, the remaining N-K are the test: count both, and treat "the rest are noise" as a claim needing its own evidence.
+
 When independent surfaces justify parallel work and agent execution is available, read [parallel investigations](references/parallel-investigations.md). Bound the first wave, give each probe a distinct discriminator, and reconcile all returns before dispatching more work.
 
 ## Reconcile and communicate
