@@ -165,7 +165,7 @@ class ReviewUpstreamsTests(unittest.TestCase):
 
     def test_checked_in_provenance_and_notices_preserve_sources(self):
         manifest = json.loads((ROOT / "config" / "sources.yaml").read_text())
-        expected = {"matt-pocock-skills", "spec-kitty", "superpowers"}
+        expected = {"matt-pocock-skills", "spec-kitty", "superpowers", "humanizer"}
         sources = {source["name"]: source for source in manifest["sources"]}
         self.assertEqual(expected, set(sources))
         for name in expected:

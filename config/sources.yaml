@@ -10,39 +10,58 @@
       "mappings": [
         {
           "localSkill": "clarifying-work",
-          "upstreamPaths": ["skills/productivity/grilling"]
+          "upstreamPaths": [
+            "skills/productivity/grilling"
+          ]
         },
         {
           "localSkill": "adversarial-refinement",
-          "upstreamPaths": ["skills/productivity/grilling"]
+          "upstreamPaths": [
+            "skills/productivity/grilling"
+          ]
         },
         {
           "localSkill": "specifying-work",
-          "upstreamPaths": ["skills/engineering/to-spec"]
+          "upstreamPaths": [
+            "skills/engineering/to-spec"
+          ]
         },
         {
           "localSkill": "planning-work",
-          "upstreamPaths": ["skills/engineering/to-tickets", "skills/engineering/wayfinder"]
+          "upstreamPaths": [
+            "skills/engineering/to-tickets",
+            "skills/engineering/wayfinder"
+          ]
         },
         {
           "localSkill": "test-driven-development",
-          "upstreamPaths": ["skills/engineering/tdd"]
+          "upstreamPaths": [
+            "skills/engineering/tdd"
+          ]
         },
         {
           "localSkill": "diagnosing-bugs",
-          "upstreamPaths": ["skills/engineering/diagnosing-bugs"]
+          "upstreamPaths": [
+            "skills/engineering/diagnosing-bugs"
+          ]
         },
         {
           "localSkill": "implementing-work",
-          "upstreamPaths": ["skills/engineering/implement"]
+          "upstreamPaths": [
+            "skills/engineering/implement"
+          ]
         },
         {
           "localSkill": "reviewing-code",
-          "upstreamPaths": ["skills/engineering/code-review"]
+          "upstreamPaths": [
+            "skills/engineering/code-review"
+          ]
         },
         {
           "localSkill": "handing-off-work",
-          "upstreamPaths": ["skills/productivity/handoff"]
+          "upstreamPaths": [
+            "skills/productivity/handoff"
+          ]
         }
       ]
     },
@@ -103,39 +122,73 @@
       "mappings": [
         {
           "localSkill": "clarifying-work",
-          "upstreamPaths": ["skills/brainstorming"]
+          "upstreamPaths": [
+            "skills/brainstorming"
+          ]
         },
         {
           "localSkill": "adversarial-refinement",
-          "upstreamPaths": ["skills/brainstorming"]
+          "upstreamPaths": [
+            "skills/brainstorming"
+          ]
         },
         {
           "localSkill": "planning-work",
-          "upstreamPaths": ["skills/writing-plans"]
+          "upstreamPaths": [
+            "skills/writing-plans"
+          ]
         },
         {
           "localSkill": "test-driven-development",
-          "upstreamPaths": ["skills/test-driven-development"]
+          "upstreamPaths": [
+            "skills/test-driven-development"
+          ]
         },
         {
           "localSkill": "diagnosing-bugs",
-          "upstreamPaths": ["skills/systematic-debugging"]
+          "upstreamPaths": [
+            "skills/systematic-debugging"
+          ]
         },
         {
           "localSkill": "implementing-work",
-          "upstreamPaths": ["skills/executing-plans", "skills/subagent-driven-development"]
+          "upstreamPaths": [
+            "skills/executing-plans",
+            "skills/subagent-driven-development"
+          ]
         },
         {
           "localSkill": "reviewing-code",
-          "upstreamPaths": ["skills/requesting-code-review"]
+          "upstreamPaths": [
+            "skills/requesting-code-review"
+          ]
         },
         {
           "localSkill": "handling-review-feedback",
-          "upstreamPaths": ["skills/receiving-code-review"]
+          "upstreamPaths": [
+            "skills/receiving-code-review"
+          ]
         },
         {
           "localSkill": "verifying-work",
-          "upstreamPaths": ["skills/verification-before-completion"]
+          "upstreamPaths": [
+            "skills/verification-before-completion"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "humanizer",
+      "url": "https://github.com/blader/humanizer",
+      "branch": "main",
+      "reviewedCommit": "e2e92e7b4b8229253ed5c8e81dc65463fdeddda5",
+      "license": "MIT",
+      "mappings": [
+        {
+          "localSkill": "humanizer",
+          "upstreamPaths": [
+            "SKILL.md"
+          ]
         }
       ]
     }
@@ -145,21 +198,27 @@
       "name": "mk-clarify",
       "originalPath": "/Users/mike/Library/Mobile Documents/iCloud~md~obsidian/Documents/Exocortex/Agents/skills/mk-clarify",
       "documentedAt": "docs/designs/2026-07-20-curated-agent-skills-design.md#existing-mk-skills",
-      "localSkills": ["clarifying-work"],
+      "localSkills": [
+        "clarifying-work"
+      ],
       "fetchable": false
     },
     {
       "name": "mk-write-plan",
       "originalPath": "/Users/mike/Library/Mobile Documents/iCloud~md~obsidian/Documents/Exocortex/Agents/skills/mk-write-plan",
       "documentedAt": "docs/designs/2026-07-20-curated-agent-skills-design.md#existing-mk-skills",
-      "localSkills": ["planning-work"],
+      "localSkills": [
+        "planning-work"
+      ],
       "fetchable": false
     },
     {
       "name": "mk-pr",
       "originalPath": "/Users/mike/Library/Mobile Documents/iCloud~md~obsidian/Documents/Exocortex/Agents/skills/mk-pr",
       "documentedAt": "docs/designs/2026-07-20-curated-agent-skills-design.md#existing-mk-skills",
-      "localSkills": ["implementing-work"],
+      "localSkills": [
+        "implementing-work"
+      ],
       "fetchable": false
     }
   ]
