@@ -1,0 +1,20 @@
+#!/bin/sh
+set -eu
+
+script_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+source_file="$script_dir/writing-corpus.go"
+cache_root="${XDG_CACHE_HOME:-$HOME/.cache}/mk-skills"
+binary="$cache_root/writing-corpus"
+
+umask 077
+mkdir -p "$cache_root"
+if [ ! -x "$binary" ] || [ "$source_file" -nt "$binary" ]; then
+  temporary=$(mktemp "$cache_root/writing-corpus.XXXXXX")
+  trap 'rm -f "$temporary"' EXIT HUP INT TERM
+  go build -o "$temporary" "$source_file"
+  chmod 700 "$temporary"
+  mv -f "$temporary" "$binary"
+  trap - EXIT HUP INT TERM
+fi
+
+exec "$binary" "$@"
