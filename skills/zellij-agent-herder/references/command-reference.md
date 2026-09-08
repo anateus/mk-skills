@@ -19,7 +19,8 @@ Verified against a recent **zellij 0.45.0 development build containing [zellij-o
 | `_zj_panes` | emits each pane object from `list-panes -j` as one JSON line, `id` normalized to `terminal_<n>`/`plugin_<n>` per `is_plugin` (handles both flat-list and dict-by-tab shapes). |
 | `zj_resolve_id` | `<name>` → prints `terminal_<n>` (exit 1 not found, 2 ambiguous). |
 | `zj_pane_exists` | `<pane_id>` → exit 0 if present, else 1. |
-| `zj_spawn` | `[new-pane args...]` → spawn a pane, echo its id. **Adaptive** (see below). |
+| `zj_spawn` | `[new-pane args...]` → spawn a pane beside the caller, echo its id. **Adaptive** (see below). |
+| `zj_spawn_grouped` | `<Peers\|Reviews> [-n NAME] [--cwd DIR] [-d DIR ignored] -- CMD...` → reuse or create the newest per-origin group tab, echo its pane id. |
 | `zj_wait_output` | `<pane_id> <match> <timeout_s> [interval_s] [--regex]` → 0 match / 1 timeout / 3 missing. `[interval_s]` and `[--regex]` are each independently optional, any order. |
 | `zj_wait_exit` | `<pane_id> <timeout_s> [interval_s]` → prints exit_status; 0 exited / 1 timeout / 3 missing. |
 | `zj_wait_status` | `<pane_id> <status> <timeout_s> [interval_s]` → 0 when the title's status token equals `<status>` (working\|idle\|blocked); 1 timeout / 3 missing. |
@@ -30,6 +31,7 @@ Verified against a recent **zellij 0.45.0 development build containing [zellij-o
 |---|---|---|
 | list panes | `pane list` | `_zj_panes` / `zellij action list-panes -j` |
 | spawn pane | `pane spawn` | `zj_spawn -d right --cwd DIR -n NAME -- CMD` |
+| grouped spawn | — | `zj_spawn_grouped Peers -n NAME --cwd DIR -- CMD` |
 | read pane | `pane read` | `_zj dump-screen -p <id> --full` (plain, never `-a/--ansi`) |
 | send text | `pane send` | `_zj write-chars -p <id> "text"` |
 | send Enter | — | `_zj write -p <id> 13` (Codex composers may need it twice) |
@@ -48,6 +50,8 @@ Verified against a recent **zellij 0.45.0 development build containing [zellij-o
 - **four or more visible panes in that tab** → adds `--stacked`, placing the new pane behind its parent instead of shrinking the visible layout again. Suppressed panes already in stacks and panes in other tabs are not counted.
 
 Go through `zj_spawn` so background automation consistently preserves client focus and applies the crowded-tab policy.
+
+`zj_spawn_grouped` derives the base from the originating tab, including when the origin is already a `- Peers N` or `- Reviews N` tab. It reuses the highest matching group below four visible panes. A full group creates the next numbered background tab. Visible means non-plugin, not suppressed, and not floating. `zj_spawn_tab` is retained as a wrapper for grouped Peers placement.
 
 ## Native blocking waits (zellij ≥ 0.44)
 

@@ -6,7 +6,7 @@ Spawn and drive peer coding agents (Claude, Codex, …) in sibling panes. All li
 
 | Command | Effect |
 |---|---|
-| `start <name> [--cwd DIR] [--direction right\|down] [--tab\|--pane] -- <agent-cmd...>` | Spawn an identified child pane; prints its real `terminal_N`. Default placement is a pane beside the caller (stacked once the tab shows four panes; `--direction` is dropped in that case because zellij rejects it with `--stacked`). `--tab` (or `ZJ_PEER_PLACEMENT=tab`) opens a dedicated background tab instead, the same way Hunk review streams do; prefer it on busy tabs and for long-running implementers. |
+| `start <name> [--cwd DIR] [--direction right\|down] [--tab\|--pane] -- <agent-cmd...>` | Spawn an identified child pane; prints its real `terminal_N`. The default places it in `<origin tab> - Peers N`, reusing the newest group while it has fewer than four visible panes and creating the next group when full. `--tab` and `ZJ_PEER_PLACEMENT=tab` are aliases for this grouped placement. `--pane` keeps the old beside-the-caller behavior. |
 | `ask <name> "<prompt>"` | `write-chars` the prompt into the pane, then Enter (`write 13`). |
 | `wait <name> [--status idle] [--timeout S]` | Block until the pane's status token equals `--status` (default `idle`, timeout 300s). Requires the status hook installed in the peer's agent. |
 | `read <name> [--lines N]` | Dump the pane's full scrollback, last `N` lines (default 200). |

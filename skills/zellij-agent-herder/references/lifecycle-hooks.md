@@ -29,4 +29,4 @@ Other Claude notification types, including idle prompts and agent-completed noti
 
 Origin metadata keeps qualifying top-level edits attached to their originating work stream even if another pane is focused. Automatic review respects a manually dismissed unchanged stream and reopens after the diff changes.
 
-After installation, restart the host, verify pane titles transition during a request, make a harmless file change, and confirm the review stream appears in a dedicated background tab without changing the active tab.
+After installation, restart the host, verify pane titles transition during a request, make a harmless file change, and confirm the review stream appears in an origin-named Reviews tab without changing the active tab.

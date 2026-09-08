@@ -15,7 +15,7 @@ Open one passive `hunk diff --watch` pane per headless worktree. Keep the agents
 
 ## Identity, tabs, and reopening
 
-A stream is keyed by Zellij session, originating pane, and Git identity (common directory plus worktree root/kind). Each review opens as the only pane in a dedicated tab named `🔍 <label>`. Native `new-tab --no-focus` keeps every attached client on its current tab. Existing streams created in an agent tab move to a background tab when the controller next reconciles them. Pane titles preserve compact lineage and append a review leaf.
+A stream is keyed by Zellij session, originating pane, and Git identity (common directory plus worktree root/kind). Reviews use `<origin tab> - Reviews N`, reusing the newest group while it has fewer than four visible panes and opening the next group when full. Native `new-pane --no-focus --tab-id` and `new-tab --no-focus` keep every attached client on its current tab. If the origin tab cannot be determined, the stream falls back to `🔍 <label>`. Pane titles preserve compact lineage and append a review leaf.
 
 At completion, run:
 

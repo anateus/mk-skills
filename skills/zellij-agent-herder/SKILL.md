@@ -16,7 +16,7 @@ If `$ZELLIJ` is unset, stop: this skill does not apply. If it is set to any valu
 - The hierarchy is session → tabs → panes. Address a pane by `(session, pane_id)`; pane IDs are not stable global identifiers.
 - Target a session with `zellij --session <name> action <command>` or `$ZELLIJ_SESSION_NAME`. Helpers default `ZJ_SESSION` to that name.
 - `--name`/`-n` sets a title, not an address. Resolve a name with `zj_resolve_id`.
-- Spawn agent panes only through `zj_spawn`. It uses native `--no-focus`, preserves directional placement in attached and headless sessions, and stacks a new pane behind its parent when the target tab already has four visible panes. Hunk review streams use dedicated background tabs so they do not consume space in agent tabs.
+- Spawn panes through `zj_spawn` or `zj_spawn_grouped`. Grouped peer and review panes use background tabs named `<origin tab> - Peers N` or `<origin tab> - Reviews N`, with up to four visible panes per tab. Both helpers use native `--no-focus` and preserve attached-client focus.
 - Before fan-out, capture one fixed branch-point `BASE`. Never substitute advancing `main` or current `HEAD`; doing so produces incomplete or misleading aggregate diffs.
 
 ## Load helpers
@@ -42,6 +42,7 @@ bash "<skill-base-dir>/scripts/zj.sh" zj_spawn -n worker -- bash
 | list panes | `_zj_panes` |
 | read pane | `_zj dump-screen -p <id> --full` |
 | spawn | `zj_spawn -d right --cwd DIR -n NAME -- CMD` |
+| grouped spawn | `zj_spawn_grouped Peers -n NAME --cwd DIR -- CMD` |
 | send text / Enter | `_zj write-chars -p <id> "text"`; `_zj write -p <id> 13` |
 | close | `zj_close_pane <id>` |
 | wait for text | `zj_wait_output <id> <match> <timeout> [--regex]` |

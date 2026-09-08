@@ -16,6 +16,33 @@ SPEC.loader.exec_module(hunk_stream)
 
 
 class HunkPlacementTests(unittest.TestCase):
+    def test_grouped_tab_name_and_reuse_under_four_visible_panes(self):
+        items = [
+            {"id": 1, "tab_id": 7, "tab_name": "󰚩 Bots #1"},
+            {"id": 2, "tab_id": 7, "tab_name": "󰚩 Bots #1"},
+            {"id": 10, "tab_id": 12, "tab_name": "󰚩 Bots #1 - Peers 1"},
+            {"id": 11, "tab_id": 12, "tab_name": "󰚩 Bots #1 - Peers 1"},
+            {"id": 12, "tab_id": 12, "tab_name": "󰚩 Bots #1 - Peers 1", "is_floating": True},
+            {"id": 20, "tab_id": 15, "tab_name": "󰚩 Bots #1 - Peers 2"},
+        ]
+        self.assertEqual(
+            hunk_stream.grouped_tab_placement(items, "terminal_1", "Peers"),
+            {"base": "󰚩 Bots #1", "number": 2, "tab_id": 15, "reuse": True},
+        )
+
+    def test_grouped_tab_starts_next_number_at_four_visible_panes(self):
+        items = [
+            {"id": 1, "tab_id": 7, "tab_name": "Bots"},
+            *[
+                {"id": number, "tab_id": 12, "tab_name": "Bots - Reviews 1"}
+                for number in range(10, 14)
+            ],
+        ]
+        self.assertEqual(
+            hunk_stream.grouped_tab_placement(items, "terminal_1", "Reviews"),
+            {"base": "Bots", "number": 2, "tab_id": None, "reuse": False},
+        )
+
     def test_spawn_opens_one_background_tab_and_returns_its_pane(self):
         initial = [
             {"id": 1, "tab_id": 7, "title": "agent", "is_plugin": False},
@@ -54,6 +81,30 @@ class HunkPlacementTests(unittest.TestCase):
         self.assertIn(
             ["rename-pane", "-p", "terminal_10", "🦉 ▸ 🔍"], commands,
         )
+
+    def test_spawn_reuses_newest_review_group_below_four_panes(self):
+        initial = [
+            {"id": 1, "tab_id": 7, "tab_name": "Bots", "is_plugin": False},
+            {"id": 10, "tab_id": 12, "tab_name": "Bots - Reviews 1", "is_plugin": False},
+            {"id": 11, "tab_id": 12, "tab_name": "Bots - Reviews 1", "is_plugin": False},
+        ]
+        after = [
+            *initial,
+            {"id": 20, "tab_id": 12, "tab_name": "Bots - Reviews 1", "is_plugin": False},
+        ]
+        commands = []
+
+        with mock.patch.object(hunk_stream, "panes", side_effect=[initial, after]), \
+             mock.patch.object(hunk_stream, "zellij", side_effect=lambda _s, args: commands.append(args) or ""), \
+             mock.patch.object(hunk_stream, "review_title", return_value="🔍"):
+            spawned, tab_id = hunk_stream.spawn_hunk({
+                "session": "s", "parent_pane": "terminal_1", "root": "/repo",
+                "base": "base", "label": "review",
+            })
+
+        self.assertEqual((spawned, tab_id), ("terminal_20", 12))
+        self.assertEqual(commands[0][:4], ["new-pane", "--no-focus", "--tab-id", "12"])
+        self.assertFalse(any(command[0] == "new-tab" for command in commands))
 
     def test_spawn_rejects_an_ambiguous_new_tab(self):
         initial = [{"id": 1, "tab_id": 7, "is_plugin": False}]

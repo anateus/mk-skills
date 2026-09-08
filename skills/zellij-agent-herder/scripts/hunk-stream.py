@@ -9,9 +9,11 @@ import fcntl
 import hashlib
 import json
 import os
+import re
 import subprocess
 import sys
 import tempfile
+import time
 from collections.abc import Iterator
 from typing import Any
 
@@ -267,35 +269,96 @@ def request_matches(state: dict[str, Any], request: dict[str, Any]) -> bool:
     return all(state.get(field) == request[field] for field in fields)
 
 
+def grouped_tab_placement(
+    items: list[dict[str, Any]], origin: str, kind: str,
+) -> dict[str, Any] | None:
+    """Return the newest matching group and whether it can accept another pane."""
+    parent = next((item for item in items if pane_id(item) == origin), None)
+    if parent is None:
+        return None
+    tab_name = parent.get("tab_name")
+    if not isinstance(tab_name, str) or not tab_name:
+        return None
+    origin_match = re.fullmatch(r"(.+) - (?:Peers|Reviews) [0-9]+", tab_name)
+    base = origin_match.group(1) if origin_match else tab_name
+    pattern = re.compile(r"^" + re.escape(base) + rf" - {re.escape(kind)} ([0-9]+)$")
+    groups: dict[int, dict[str, Any]] = {}
+    for item in items:
+        match = pattern.fullmatch(str(item.get("tab_name") or ""))
+        if match:
+            number = int(match.group(1))
+            groups.setdefault(number, {"tab_id": item.get("tab_id")})
+    if not groups:
+        return {"base": base, "number": 1, "tab_id": None, "reuse": False}
+    number = max(groups)
+    tab_id = groups[number]["tab_id"]
+    visible = sum(
+        str(item.get("tab_id")) == str(tab_id)
+        and not item.get("is_plugin", False)
+        and not item.get("is_suppressed", False)
+        and not item.get("is_floating", False)
+        for item in items
+    )
+    reuse = visible < 4 and tab_id is not None
+    return {
+        "base": base,
+        "number": number if reuse else number + 1,
+        "tab_id": tab_id if reuse else None,
+        "reuse": reuse,
+    }
+
+
 def spawn_hunk(request: dict[str, Any]) -> tuple[str, int]:
     session = request["session"]
-    parent = request["parent_pane"]
+    parent = normalize_parent(request["parent_pane"])
     initial_panes = panes(session)
     initial_ids = {pane_id(item) for item in initial_panes}
-    args = [
-        "new-tab", "--no-focus", "--cwd", request["root"],
-        "--name", review_tab_title(request), "--",
-        "hunk", "diff", request["base"], "--watch",
-    ]
-    output = zellij(session, args).splitlines()
-    returned = output[-1] if output else ""
-    try:
-        tab_id = int(returned)
-    except ValueError:
+    placement = grouped_tab_placement(initial_panes, parent, "Reviews")
+    use_existing = bool(placement and placement["reuse"])
+    if use_existing:
+        tab_id = placement["tab_id"]
+        args = [
+            "new-pane", "--no-focus", "--tab-id", str(tab_id), "--cwd", request["root"], "--",
+            "hunk", "diff", request["base"], "--watch",
+        ]
+        zellij(session, args)
+        returned = str(tab_id)
+    else:
         tab_id = None
-
-    new_panes = [
-        item for item in panes(session)
-        if pane_id(item) not in initial_ids and not item.get("is_plugin", False)
-    ]
-    matches = [item for item in new_panes if item.get("tab_id") == tab_id]
-    if len(matches) != 1 and len(new_panes) == 1:
-        matches = new_panes
-        tab_id = matches[0].get("tab_id")
-    if len(matches) != 1 or not isinstance(tab_id, int):
-        raise RuntimeError(
-            f"new review tab must contain exactly one pane: {returned!r}",
+        tab_name = (
+            f"{placement['base']} - Reviews {placement['number']}"
+            if placement else review_tab_title(request)
         )
+        args = [
+            "new-tab", "--no-focus", "--cwd", request["root"],
+            "--name", tab_name, "--", "hunk", "diff", request["base"], "--watch",
+        ]
+        output = zellij(session, args).splitlines()
+        returned = output[-1] if output else ""
+        try:
+            tab_id = int(returned)
+        except ValueError:
+            tab_id = None
+
+    matches: list[dict[str, Any]] = []
+    for _ in range(20):
+        new_panes = [
+            item for item in panes(session)
+            if pane_id(item) not in initial_ids and not item.get("is_plugin", False)
+        ]
+        if tab_id is not None:
+            matches = [item for item in new_panes if str(item.get("tab_id")) == str(tab_id)]
+        elif len(new_panes) == 1:
+            # Keep the existing recovery path for a malformed new-tab response.
+            matches = new_panes
+            tab_id = new_panes[0].get("tab_id")
+        if len(matches) == 1 and isinstance(tab_id, int):
+            break
+        if len(matches) > 1:
+            raise RuntimeError(f"new review tab must contain exactly one pane: {returned!r}")
+        time.sleep(0.25)
+    if len(matches) != 1 or not isinstance(tab_id, int):
+        raise RuntimeError(f"new review tab must contain exactly one pane: {returned!r}")
     spawned = pane_id(matches[0])
     zellij(session, ["rename-pane", "-p", spawned, review_title(session, parent)])
     return spawned, tab_id

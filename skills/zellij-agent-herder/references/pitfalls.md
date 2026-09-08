@@ -6,7 +6,7 @@ Sharp edges of driving zellij headlessly, and how each surfaces.
 
 - **Old Zellij builds lack safe background creation.** This skill requires `new-pane --no-focus` from [zellij-org/zellij#5346](https://github.com/zellij-org/zellij/pull/5346). A binary may still report `0.45.0`, so verify the flag in `zellij action new-pane --help`.
 - **Focus theft.** Plain `new-pane`, `zellij run`, `new-tab`, `go-to-tab*`, `focus-*`, and `move-focus` can move an attached human's view. Prefer `zj_spawn`, which always uses `--no-focus`; use `new-tab --no-focus` for automated tab creation.
-- **A review's recorded origin can differ from its issuing pane.** Review streams avoid relative pane placement. The controller uses `new-tab --no-focus`, verifies the tab's single terminal pane, and keeps attached clients on their current tabs.
+- **A review's recorded origin can differ from its issuing pane.** Review streams use grouped origin-named tabs with `new-pane --no-focus --tab-id` or `new-tab --no-focus`, and keep attached clients on their current tabs.
 - **Floating panes won't render under `hide_floating_panes = true`.** A `--floating` pane *does* show in `list-panes` but stays invisible under that setting. This is another reason to use tiled panes for watchers.
 
 ## Reading panes

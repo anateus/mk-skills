@@ -148,36 +148,117 @@ zj_spawn() {
   fi
 }
 
-# zj_spawn_tab -n NAME [--cwd DIR] -- CMD... -> prints the new pane id.
-# Opens a dedicated background tab (no focus theft) and runs CMD in its single pane.
-zj_spawn_tab() {
-  local name="" cwd="" ; local -a cmd=()
-  while [ $# -gt 0 ]; do case "$1" in
-    -n|--name) name="$2"; shift 2;; --cwd) cwd="$2"; shift 2;; -d|--direction) shift 2;;
-    --) shift; cmd=("$@"); break;; *) shift;; esac; done
-  local before; before="$(_zj_panes | python3 -c 'import sys,json; print(" ".join(json.loads(l)["id"] for l in sys.stdin))')"
-  local -a args=(new-tab --no-focus); [ -n "$name" ] && args+=(--name "$name"); [ -n "$cwd" ] && args+=(--cwd "$cwd")
-  args+=(-- "${cmd[@]}")
-  local tab_id; tab_id="$(_zj "${args[@]}" | tail -n 1)"
-  local tries=0 new=""
-  while [ $tries -lt 20 ]; do
-    new="$(_zj_panes | python3 -c '
-import sys, json
-before = set(sys.argv[1].split()); tab = sys.argv[2]
-cands = []
-for line in sys.stdin:
-    p = json.loads(line)
-    if p.get("is_plugin") or p["id"] in before: continue
-    if tab.isdigit() and p.get("tab_id") is not None and str(p.get("tab_id")) != tab: continue
-    cands.append(p["id"])
-print(cands[0] if len(cands) == 1 else "")
-' "$before" "$tab_id")"
-    [ -n "$new" ] && break
-    tries=$((tries+1)); sleep 0.25
+# zj_spawn_grouped <Kind> [-n NAME] [--cwd DIR] [-d DIR ignored] -- CMD...
+# -> prints the created terminal_N. Kind is Peers or Reviews. Group tabs are
+# named after the originating tab and hold up to four visible terminal panes.
+zj_spawn_grouped() {
+  local kind="${1:-}"; shift || true
+  case "$kind" in Peers|Reviews) ;; *) echo "zj_spawn_grouped: kind must be Peers or Reviews" >&2; return 2 ;; esac
+  local name="" cwd=""; local -a cmd=()
+  while [ $# -gt 0 ]; do
+    case "$1" in
+      -n|--name) [ $# -ge 2 ] || { echo "zj_spawn_grouped: $1 needs a value" >&2; return 2; }; name="$2"; shift 2;;
+      --cwd) [ $# -ge 2 ] || { echo "zj_spawn_grouped: --cwd needs a value" >&2; return 2; }; cwd="$2"; shift 2;;
+      -d|--direction) [ $# -ge 2 ] || { echo "zj_spawn_grouped: $1 needs a value" >&2; return 2; }; shift 2;;
+      --) shift; cmd=("$@"); break;;
+      *) echo "zj_spawn_grouped: unknown option: $1" >&2; return 2;;
+    esac
   done
-  [ -n "$new" ] || { echo "zj_spawn_tab: could not identify new pane (tab $tab_id)" >&2; return 1; }
+  [ "${#cmd[@]}" -gt 0 ] || { echo "zj_spawn_grouped: command is required after --" >&2; return 2; }
+
+  local origin="${ZJ_ORIGIN_PANE:-${ZELLIJ_PANE_ID:-terminal_0}}"
+  origin="$(zj_normalize_pane_id "$origin")"
+  local before; before="$(_zj_panes)" || return 1
+  local placement; placement="$(printf '%s\n' "$before" | python3 -c '
+import json, re, sys
+origin, kind = sys.argv[1:]
+items = [json.loads(line) for line in sys.stdin if line.strip()]
+parent = next((item for item in items if item.get("id") == origin), None)
+if parent is None:
+    raise SystemExit("zj_spawn_grouped: origin pane not found: " + origin)
+tab_name = str(parent.get("tab_name") or "")
+match = re.fullmatch(r"(.+) - (?:Peers|Reviews) [0-9]+", tab_name)
+base = match.group(1) if match else (tab_name or "tab")
+pattern = re.compile(r"^" + re.escape(base) + r" - " + re.escape(kind) + r" ([0-9]+)$")
+groups = {}
+for item in items:
+    name = str(item.get("tab_name") or "")
+    match = pattern.fullmatch(name)
+    if not match:
+        continue
+    number = int(match.group(1))
+    tab_id = item.get("tab_id")
+    key = str(tab_id) if tab_id is not None else ""
+    groups.setdefault(number, {"tab_id": tab_id, "key": key})
+if not groups:
+    print(json.dumps({"base": base, "number": 1, "reuse": False, "tab_id": None}))
+    raise SystemExit
+number = max(groups)
+target = groups[number]
+visible = sum(
+    str(item.get("tab_id")) == target["key"]
+    and not item.get("is_plugin", False)
+    and not item.get("is_suppressed", False)
+    and not item.get("is_floating", False)
+    for item in items
+)
+reuse = visible < 4 and target["tab_id"] is not None
+print(json.dumps({"base": base, "number": number if reuse else number + 1,
+                  "reuse": reuse, "tab_id": target["tab_id"] if reuse else None}))
+' "$origin" "$kind")" || return 1
+  local base number reuse tab_id
+  base="$(printf '%s' "$placement" | python3 -c 'import json,sys; print(json.load(sys.stdin)["base"])')"
+  number="$(printf '%s' "$placement" | python3 -c 'import json,sys; print(json.load(sys.stdin)["number"])')"
+  reuse="$(printf '%s' "$placement" | python3 -c 'import json,sys; print(1 if json.load(sys.stdin)["reuse"] else 0)')"
+  tab_id="$(printf '%s' "$placement" | python3 -c 'import json,sys; v=json.load(sys.stdin)["tab_id"]; print("" if v is None else v)')"
+  local target_tab="$tab_id" tab_name="$base - $kind $number" output
+  local -a args
+  if [ "$reuse" = 1 ]; then
+    args=(new-pane --no-focus --tab-id "$target_tab")
+    [ -n "$name" ] && args+=(--name "$name")
+    [ -n "$cwd" ] && args+=(--cwd "$cwd")
+    args+=(-- "${cmd[@]}")
+    _zj "${args[@]}" >/dev/null || return 1
+  else
+    args=(new-tab --no-focus --name "$tab_name")
+    [ -n "$cwd" ] && args+=(--cwd "$cwd")
+    args+=(-- "${cmd[@]}")
+    output="$(_zj "${args[@]}")" || return 1
+    target_tab="$(printf '%s\n' "$output" | tail -n 1)"
+    case "$target_tab" in ''|*[!0-9]*) echo "zj_spawn_grouped: new-tab returned invalid tab id: $target_tab" >&2; return 1 ;; esac
+  fi
+
+  local tries=0 candidate_count candidates new=""
+  while [ "$tries" -lt 20 ]; do
+    candidates="$(_zj_panes | python3 -c '
+import json, sys
+before = set(sys.argv[1].split()); target = str(sys.argv[2])
+candidates = []
+for line in sys.stdin:
+    item = json.loads(line)
+    if item.get("is_plugin", False) or item.get("id") in before:
+        continue
+    if item.get("tab_id") is None or str(item.get("tab_id")) != target:
+        continue
+    candidates.append(item.get("id"))
+print("\n".join(str(item) for item in candidates))
+' "$(printf '%s\n' "$before" | python3 -c 'import json,sys; print(" ".join(json.loads(l)["id"] for l in sys.stdin))')" "$target_tab")" || return 1
+    candidate_count="$(printf '%s\n' "$candidates" | awk 'NF {n++} END {print n+0}')"
+    if [ "$candidate_count" -eq 1 ]; then new="$(printf '%s\n' "$candidates")"; break; fi
+    if [ "$candidate_count" -gt 1 ]; then
+      echo "zj_spawn_grouped: ambiguous new pane in tab $target_tab: $candidates" >&2
+      return 1
+    fi
+    tries=$((tries + 1)); sleep 0.25
+  done
+  [ -n "$new" ] || { echo "zj_spawn_grouped: could not identify new pane in tab $target_tab" >&2; return 1; }
+  [ -z "$name" ] || { _zj rename-pane -p "$new" "$name" >/dev/null || return 1; }
   printf '%s\n' "$new"
 }
+
+# zj_spawn_tab is retained for callers that need the historical entrypoint.
+# It now uses the same grouped Peers placement policy.
+zj_spawn_tab() { zj_spawn_grouped Peers "$@"; }
 
 _zj_stream() {
   local command="$1" root="$2" requested_root="$2" base="$3" label="$4"; shift 4

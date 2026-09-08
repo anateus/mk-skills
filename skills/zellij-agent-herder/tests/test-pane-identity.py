@@ -321,7 +321,7 @@ class PaneIdentityTests(unittest.TestCase):
             "ZJ_FAKE_PANES": json.dumps([{"id": 2, "title": "reviewer"}]),
         }
         started = subprocess.run(
-            ["bash", str(PEER), "start", "reviewer", "--cwd", "/tmp/project", "--", "claude"],
+            ["bash", str(PEER), "start", "reviewer", "--pane", "--cwd", "/tmp/project", "--", "claude"],
             text=True,
             capture_output=True,
             env=env,

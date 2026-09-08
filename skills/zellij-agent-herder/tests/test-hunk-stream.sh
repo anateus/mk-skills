@@ -89,7 +89,8 @@ elif command == "new-pane":
     with open(os.path.join(data, "next"), "r+") as counter:
         number = int(counter.read()) + 1
         counter.seek(0); counter.write(str(number)); counter.truncate()
-    title = rest[rest.index("--name") + 1]
+    title = rest[rest.index("--name") + 1] if "--name" in rest else "hunk"
+    target_tab = rest[rest.index("--tab-id") + 1] if "--tab-id" in rest else None
     pane_id = "terminal_" + str(number)
     panes = load("panes")
     clients = load("clients")
@@ -110,6 +111,10 @@ elif command == "new-pane":
             for item in panes:
                 item["is_focused"] = False
             clients[0]["focused_pane"] = pane_id
+    if target_tab is not None:
+        pane["tab_id"] = int(target_tab)
+        target = next((item for item in panes if str(item.get("tab_id")) == target_tab), None)
+        pane["tab_name"] = target.get("tab_name", "") if target else ""
     panes.append(pane)
     save("panes", panes); save("clients", clients)
     print("terminal_999" if os.environ.get("ZELLIJ_FAKE_BAD_ID") else pane_id)
@@ -195,7 +200,7 @@ panes = {pane["id"]: pane for pane in json.load(open(sys.argv[1]))}
 clients = json.load(open(sys.argv[2]))
 parent, watcher = panes["terminal_1"], panes[sys.argv[3]]
 assert watcher["tab_id"] != parent["tab_id"], (parent, watcher)
-assert watcher["tab_name"] == "🔍 repo", watcher
+assert watcher["tab_name"] == "Agent - Reviews 1", watcher
 assert watcher["title"] == "🦀 ▸ 🌿 ▸ 🔍", watcher
 assert clients == [{"client_id": 1, "focused_pane": "terminal_9"}], clients
 PY
@@ -239,13 +244,16 @@ unset ZELLIJ_FAKE_BAD_ID
 
 # Roll-up closes only the supplied child panes and keeps the original fixed base.
 printf '%s\n' '[{"client_id":1,"focused_pane":"terminal_9"}]' > "$ZELLIJ_DATA/clients.json"
-rollup_new_before="$(grep -c 'new-tab' "$ZELLIJ_LOG")"
+rollup_new_before="$(awk '/new-tab/{n++} END{print n+0}' "$ZELLIJ_LOG")"
+rollup_pane_before="$(awk '/new-pane/{n++} END{print n+0}' "$ZELLIJ_LOG")"
 AGG="$(python3 "$CTL" rollup --session s --parent terminal_1 --root "$T/repo" --base "$BASE" --label session --child-pane "$P7" --child-pane "$P8")"
 [ -n "$AGG" ]
-[ "$(( $(grep -c 'new-tab' "$ZELLIJ_LOG") - rollup_new_before ))" = 1 ]
+rollup_new_tabs="$(( $(awk '/new-tab/{n++} END{print n+0}' "$ZELLIJ_LOG") - rollup_new_before ))"
+rollup_new_panes="$(( $(awk '/new-pane/{n++} END{print n+0}' "$ZELLIJ_LOG") - rollup_pane_before ))"
+[ "$rollup_new_tabs" = 1 ] || [ "$rollup_new_panes" = 1 ]
 grep -q "close-pane -p $P7" "$ZELLIJ_LOG"
 grep -q "close-pane -p $P8" "$ZELLIJ_LOG"
-last_new="$(grep 'new-tab' "$ZELLIJ_LOG" | tail -1)"
+last_new="$(grep -E 'new-tab|new-pane' "$ZELLIJ_LOG" | tail -1)"
 case "$last_new" in *"hunk diff $BASE --watch"*) ;; *) exit 1 ;; esac
 python3 - "$XDG_CACHE_HOME" "$P7" "$P8" <<'PY'
 import glob, json, os, sys
@@ -264,11 +272,12 @@ echo 'reconciliation/background-tab/rollup: PASS'
 # explicit reopen plus roll-up teardown behavior.
 export ZJ_SESSION=helper-s ZELLIJ_PANE_ID=20
 source "$ZJ"
-helper_new_before="$(grep -c 'new-tab' "$ZELLIJ_LOG")"
+helper_new_before="$(awk '/new-tab/{n++} END{print n+0}' "$ZELLIJ_LOG")"
+helper_pane_before="$(awk '/new-pane/{n++} END{print n+0}' "$ZELLIJ_LOG")"
 H1="$(zj_watch_worktree "$T/repo" "$BASE" helper-worktree)"
 H2="$(zj_watch_worktree "$T/repo/." "$BASE" helper-worktree)"
 [ "$H1" = "$H2" ]
-[ "$(( $(grep -c 'new-tab' "$ZELLIJ_LOG") - helper_new_before ))" = 1 ]
+[ "$(( $(awk '/new-tab/{n++} END{print n+0}' "$ZELLIJ_LOG") - helper_new_before ))" = 1 ] || [ "$(( $(awk '/new-pane/{n++} END{print n+0}' "$ZELLIJ_LOG") - helper_pane_before ))" = 1 ]
 
 zellij --session helper-s action close-pane -p "$H1"
 if zj_watch_worktree "$T/repo" "$BASE" helper-worktree > "$T/dismissed.out"; then
@@ -280,11 +289,12 @@ R1="$(zj_review_stream "$T/repo" "$BASE" helper-worktree)"
 R2="$(zj_review_stream "$T/repo/." "$BASE" helper-worktree)"
 [ "$R1" = "$R2" ]
 
-rollup_new_before="$(grep -c 'new-tab' "$ZELLIJ_LOG")"
+rollup_new_before="$(awk '/new-tab/{n++} END{print n+0}' "$ZELLIJ_LOG")"
+rollup_pane_before="$(awk '/new-pane/{n++} END{print n+0}' "$ZELLIJ_LOG")"
 A1="$(zj_watch_session "$T/repo" "$BASE" helper-session "$R1" "$P6")"
 A2="$(zj_watch_session "$T/repo/." "$BASE" helper-session "$R1" "$P6")"
 [ "$A1" = "$A2" ]
-[ "$(( $(grep -c 'new-tab' "$ZELLIJ_LOG") - rollup_new_before ))" = 1 ]
+[ "$(( $(awk '/new-tab/{n++} END{print n+0}' "$ZELLIJ_LOG") - rollup_new_before ))" = 1 ] || [ "$(( $(awk '/new-pane/{n++} END{print n+0}' "$ZELLIJ_LOG") - rollup_pane_before ))" = 1 ]
 grep -q "close-pane -p $R1" "$ZELLIJ_LOG"
 grep -q "close-pane -p $P6" "$ZELLIJ_LOG"
 echo 'public helper routing/reopen/rollup: PASS'
@@ -306,20 +316,22 @@ import json, sys
 assert json.load(open(sys.argv[1]))["parent_pane"] == "terminal_1"
 PY
 printf '%s\n' '{"hook_event_name":"SessionStart","session_id":"claude-session","agent_id":"child","cwd":"'$T'/repo"}' | bash "$ORIGIN"
-before="$(grep -c 'new-tab' "$ZELLIJ_LOG")"
+before="$(awk '/new-tab/{n++} END{print n+0}' "$ZELLIJ_LOG")"
+before_panes="$(awk '/new-pane/{n++} END{print n+0}' "$ZELLIJ_LOG")"
 printf '%s\n' '{"hook_event_name":"PostToolUse","session_id":"claude-session","cwd":"'$T'/repo","tool_name":"Edit","tool_input":{"file_path":"'$T'/repo/a.txt"}}' | bash "$AUTODIFF"
-[ "$(( $(grep -c 'new-tab' "$ZELLIJ_LOG") - before ))" = 1 ]
+[ "$(( $(awk '/new-tab/{n++} END{print n+0}' "$ZELLIJ_LOG") - before ))" = 1 ] || [ "$(( $(awk '/new-pane/{n++} END{print n+0}' "$ZELLIJ_LOG") - before_panes ))" = 1 ]
 ! tail -n "+$((before + 1))" "$ZELLIJ_LOG" | grep -q 'focus-pane-id'
 for tool in MultiEdit NotebookEdit; do
   sid="claude-$tool"
   ZAH_HOST=claude ZELLIJ_SESSION_NAME="s-$sid" ZELLIJ_PANE_ID=1 bash "$ORIGIN" <<EOF
 {"hook_event_name":"SessionStart","session_id":"$sid","cwd":"$T/repo"}
 EOF
-  before="$(grep -c 'new-tab' "$ZELLIJ_LOG")"
+  before="$(awk '/new-tab/{n++} END{print n+0}' "$ZELLIJ_LOG")"
+  before_panes="$(awk '/new-pane/{n++} END{print n+0}' "$ZELLIJ_LOG")"
   ZELLIJ_PANE_ID=7 bash "$AUTODIFF" <<EOF
 {"hook_event_name":"PostToolUse","session_id":"$sid","cwd":"$T/repo","tool_name":"$tool","tool_input":{"file_path":"$T/repo/a.txt"}}
 EOF
-  [ "$(( $(grep -c 'new-tab' "$ZELLIJ_LOG") - before ))" = 1 ]
+  [ "$(( $(awk '/new-tab/{n++} END{print n+0}' "$ZELLIJ_LOG") - before ))" = 1 ] || [ "$(( $(awk '/new-pane/{n++} END{print n+0}' "$ZELLIJ_LOG") - before_panes ))" = 1 ]
 done
 
 export ZELLIJ_PANE_ID=1
@@ -336,15 +348,17 @@ for tool in apply_patch Edit Write; do
   ZAH_HOST=codex ZELLIJ_SESSION_NAME="s-$sid" ZELLIJ_PANE_ID=1 bash "$ORIGIN" <<EOF
 {"hook_event_name":"SessionStart","session_id":"$sid","cwd":"$T/repo"}
 EOF
-  before="$(grep -c 'new-tab' "$ZELLIJ_LOG")"
+  before="$(awk '/new-tab/{n++} END{print n+0}' "$ZELLIJ_LOG")"
+  before_panes="$(awk '/new-pane/{n++} END{print n+0}' "$ZELLIJ_LOG")"
   ZELLIJ_PANE_ID=7 bash "$AUTODIFF" <<EOF
 {"hook_event_name":"PostToolUse","session_id":"$sid","model":"gpt-5","turn_id":"turn-$tool","cwd":"$T/repo","tool_name":"$tool","tool_input":{"file_path":"$T/repo/a.txt"}}
 EOF
-  [ "$(( $(grep -c 'new-tab' "$ZELLIJ_LOG") - before ))" = 1 ]
+  [ "$(( $(awk '/new-tab/{n++} END{print n+0}' "$ZELLIJ_LOG") - before ))" = 1 ] || [ "$(( $(awk '/new-pane/{n++} END{print n+0}' "$ZELLIJ_LOG") - before_panes ))" = 1 ]
 done
-before="$(grep -c 'new-tab' "$ZELLIJ_LOG")"
+before="$(awk '/new-tab/{n++} END{print n+0}' "$ZELLIJ_LOG")"
+before_panes="$(awk '/new-pane/{n++} END{print n+0}' "$ZELLIJ_LOG")"
 printf '%s\n' '{"hook_event_name":"PostToolUse","session_id":"codex-session","model":"gpt-5","turn_id":"turn-read","cwd":"'$T'/repo","tool_name":"Read","tool_input":{"file_path":"'$T'/repo/a.txt"}}' | bash "$AUTODIFF"
-[ "$(grep -c 'new-tab' "$ZELLIJ_LOG")" = "$before" ]
+[ "$(awk '/new-tab/{n++} END{print n+0}' "$ZELLIJ_LOG")" = "$before" ] && [ "$(awk '/new-pane/{n++} END{print n+0}' "$ZELLIJ_LOG")" = "$before_panes" ]
 
 # Claude mappings stay intact; Codex adds PermissionRequest and clears status on exit.
 export ZELLIJ_SESSION_NAME=status-s
