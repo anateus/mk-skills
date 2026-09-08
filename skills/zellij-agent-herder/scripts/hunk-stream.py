@@ -269,12 +269,6 @@ def request_matches(state: dict[str, Any], request: dict[str, Any]) -> bool:
     return all(state.get(field) == request[field] for field in fields)
 
 
-def strip_origin_tab_prefix(tab_name: str) -> str:
-    """Drop leading decoration while preserving the tab's inner punctuation."""
-    start = next((index for index, char in enumerate(tab_name) if char.isalnum()), len(tab_name))
-    return tab_name[start:]
-
-
 def grouped_tab_placement(
     items: list[dict[str, Any]], origin: str, kind: str,
 ) -> dict[str, Any] | None:
@@ -286,7 +280,7 @@ def grouped_tab_placement(
     if not isinstance(tab_name, str) or not tab_name:
         return None
     origin_match = re.fullmatch(r"(.+) - (?:Peers|Reviews) [0-9]+", tab_name)
-    base = strip_origin_tab_prefix(origin_match.group(1) if origin_match else tab_name)
+    base = origin_match.group(1) if origin_match else tab_name
     pattern = re.compile(r"^" + re.escape(base) + rf" - {re.escape(kind)} ([0-9]+)$")
     groups: dict[int, dict[str, Any]] = {}
     for item in items:
