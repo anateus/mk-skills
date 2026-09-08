@@ -1,4 +1,5 @@
 const assert = require('node:assert/strict');
+const { spawnSync } = require('node:child_process');
 const fs = require('node:fs');
 const path = require('node:path');
 
@@ -9,12 +10,14 @@ function parseSkill(file) {
   const source = fs.readFileSync(file, 'utf8');
   const match = source.match(/^---\n([\s\S]*?)\n---\n([\s\S]*)$/);
   assert.ok(match, `${file} has YAML frontmatter`);
-  const fields = {};
-  for (const line of match[1].split('\n')) {
-    const field = line.match(/^([a-z][a-z-]*):\s*(.+)$/);
-    assert.ok(field, `${file} has simple key/value frontmatter`);
-    fields[field[1]] = field[2].replace(/^(["'])(.*)\1$/, '$2');
-  }
+  const result = spawnSync('ruby', ['-ryaml', '-rjson', '-e', [
+    'value = YAML.safe_load(STDIN.read)',
+    'abort("frontmatter must be a mapping") unless value.is_a?(Hash)',
+    'puts JSON.generate(value)',
+  ].join(';')], { input: match[1], encoding: 'utf8' });
+  assert.ifError(result.error);
+  assert.equal(result.status, 0, `${file} has valid YAML frontmatter: ${result.stderr.trim()}`);
+  const fields = JSON.parse(result.stdout);
   return { fields, body: match[2], source, file };
 }
 
