@@ -38,6 +38,10 @@ Later commands may address the explicit pane ID, current rendered base, or stabl
 
 Start at the lowest level that fits. Higher levels cost more tokens and more coordination.
 
+## Choosing peer panes
+
+Claude Code's built-in Agent-tool subagents are good enough most of the time for dispatch-and-wait delegation. Use peer panes when the new agents are genuine peers of the current one: parallel independent work streams, long-lived agents, or cross-harness coordination. In Codex, the interface for inspecting subagents is still rudimentary, so prefer peer panes by default until its capabilities change.
+
 ## Workflows
 
 ### One-shot review

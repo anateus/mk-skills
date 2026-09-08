@@ -22,6 +22,10 @@ Verify by re-reading the artifact after writing or publishing it instead of trus
 Conversational replies do not need the skills invoked, but the same patterns apply: write chat output as though it had already been through both.
 </important>
 
+<important if="you are about to delegate work to another agent">
+Claude Code's built-in Agent-tool subagents are good enough most of the time for dispatch-and-wait delegation. Use peer panes when the new agents are genuine peers of the current one, such as parallel independent work streams, long-lived agents, or cross-harness coordination. In Codex, the interface for inspecting subagents is still rudimentary, so prefer peer panes by default until its capabilities change.
+</important>
+
 <important if="you are dispatching a subagent to search, read, or extract from files, logs, transcripts, datasets, or trackers">
 Give the subagent read discipline or it will thrash its own context and abort mid-task (a single oversized tool result refills the window faster than autocompaction can recover). Locate first, then read only narrow line-windows — never whole large files (>~500 lines) or whole session/log transcripts. Never call heavy MCP fetches (e.g. Linear `get_issue`) in a loop; prefer list/summary calls, and when the agent must edit a large record, pass its current content in the dispatch instead of having it re-fetch. Pipe large search output to a scratch file and read filtered slices rather than letting a multi-hundred-KB result land in context. Require each spelunking subagent to write findings to a file and return a short summary, not raw dumps. Use the `data-spelunking` skill for the tool decision tree (ripgrep, ast-grep, qsv, jq) and a bundled JSONL/transcript extractor.
 </important>

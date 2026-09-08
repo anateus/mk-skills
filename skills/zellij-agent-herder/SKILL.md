@@ -11,6 +11,8 @@ Control Zellij panes and sessions from inside a Zellij pane.
 
 If `$ZELLIJ` is unset, stop: this skill does not apply. If it is set to any value, proceed. Zellij stores a client index there, so `ZELLIJ=0` means inside; check presence, not truthiness. Requires a recent Zellij build containing [zellij-org/zellij#5346](https://github.com/zellij-org/zellij/pull/5346); check that `zellij action new-pane --help` includes `--no-focus`.
 
+For delegation choice, Claude Code's built-in Agent-tool usually suffices for dispatch-and-wait; use peer panes for genuine peers and by default in Codex until its capabilities change.
+
 ## Addressing and safety
 
 - The hierarchy is session → tabs → panes. Address a pane by `(session, pane_id)`; pane IDs are not stable global identifiers.
