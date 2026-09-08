@@ -136,10 +136,47 @@ print(sum(same_tab(item) and not item.get("is_suppressed", False) for item in it
 # If its tab already has at least four visible panes, stack the new pane behind its parent.
 zj_spawn() {
   if [ "$(zj_visible_panes_in_parent_tab)" -ge 4 ]; then
-    _zj new-pane --no-focus --stacked "$@"
+    # --stacked is mutually exclusive with --direction in zellij; drop any direction flag.
+    local -a rest=(); local skip=0
+    for a in "$@"; do
+      if [ "$skip" = 1 ]; then skip=0; continue; fi
+      case "$a" in -d|--direction) skip=1;; *) rest+=("$a");; esac
+    done
+    _zj new-pane --no-focus --stacked "${rest[@]}"
   else
     _zj new-pane --no-focus "$@"
   fi
+}
+
+# zj_spawn_tab -n NAME [--cwd DIR] -- CMD... -> prints the new pane id.
+# Opens a dedicated background tab (no focus theft) and runs CMD in its single pane.
+zj_spawn_tab() {
+  local name="" cwd="" ; local -a cmd=()
+  while [ $# -gt 0 ]; do case "$1" in
+    -n|--name) name="$2"; shift 2;; --cwd) cwd="$2"; shift 2;; -d|--direction) shift 2;;
+    --) shift; cmd=("$@"); break;; *) shift;; esac; done
+  local before; before="$(_zj_panes | python3 -c 'import sys,json; print(" ".join(json.loads(l)["id"] for l in sys.stdin))')"
+  local -a args=(new-tab --no-focus); [ -n "$name" ] && args+=(--name "$name"); [ -n "$cwd" ] && args+=(--cwd "$cwd")
+  args+=(-- "${cmd[@]}")
+  local tab_id; tab_id="$(_zj "${args[@]}" | tail -n 1)"
+  local tries=0 new=""
+  while [ $tries -lt 20 ]; do
+    new="$(_zj_panes | python3 -c '
+import sys, json
+before = set(sys.argv[1].split()); tab = sys.argv[2]
+cands = []
+for line in sys.stdin:
+    p = json.loads(line)
+    if p.get("is_plugin") or p["id"] in before: continue
+    if tab.isdigit() and p.get("tab_id") is not None and str(p.get("tab_id")) != tab: continue
+    cands.append(p["id"])
+print(cands[0] if len(cands) == 1 else "")
+' "$before" "$tab_id")"
+    [ -n "$new" ] && break
+    tries=$((tries+1)); sleep 0.25
+  done
+  [ -n "$new" ] || { echo "zj_spawn_tab: could not identify new pane (tab $tab_id)" >&2; return 1; }
+  printf '%s\n' "$new"
 }
 
 _zj_stream() {

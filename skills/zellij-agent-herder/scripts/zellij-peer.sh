@@ -4,16 +4,21 @@ set -euo pipefail
 script_dir="$(cd "$(dirname "$0")" && pwd)"
 export ZAH_IDENTITY_SCRIPT="${ZAH_IDENTITY_SCRIPT:-$script_dir/pane-identity.py}"
 source "$script_dir/zj.sh"
-usage(){ echo "usage: zellij-peer.sh {start|ask|wait|read|list|close} ..." >&2; exit 2; }
+usage(){ echo "usage: zellij-peer.sh {start|ask|wait|read|list|close} ...  (start: [--cwd DIR] [--direction D] [--tab|--pane] -- CMD; ZJ_PEER_PLACEMENT=tab sets the default)" >&2; exit 2; }
 cmd="${1:-}"; shift || usage
 case "$cmd" in
   start)
-    name="${1:-}"; shift || usage; cwd=""; dir="right"
+    name="${1:-}"; shift || usage; cwd=""; dir="right"; placement="${ZJ_PEER_PLACEMENT:-pane}"
     while [ $# -gt 0 ]; do case "$1" in
-      --cwd) cwd="$2"; shift 2;; --direction) dir="$2"; shift 2;; --) shift; break;; *) break;; esac; done
+      --cwd) cwd="$2"; shift 2;; --direction) dir="$2"; shift 2;; --tab) placement="tab"; shift;;
+      --pane) placement="pane"; shift;; --) shift; break;; *) break;; esac; done
     args=(-d "$dir" -n "$name"); [ -n "$cwd" ] && args+=(--cwd "$cwd")
     args+=(-- "$@")
-    id="$(zj_spawn "${args[@]}")"                 # real terminal_N from new-pane
+    if [ "$placement" = "tab" ]; then
+      id="$(zj_spawn_tab "${args[@]}")"           # dedicated background tab, one pane
+    else
+      id="$(zj_spawn "${args[@]}")"               # real terminal_N from new-pane
+    fi
     id="$(zj_normalize_pane_id "$(printf '%s\n' "$id" | tail -n 1)")"
     session="${ZJ_SESSION:-${ZELLIJ_SESSION_NAME:-default}}"
     parent="$(zj_normalize_pane_id "${ZELLIJ_PANE_ID:-0}")"
