@@ -178,7 +178,9 @@ if parent is None:
     raise SystemExit("zj_spawn_grouped: origin pane not found: " + origin)
 tab_name = str(parent.get("tab_name") or "")
 match = re.fullmatch(r"(.+) - (?:Peers|Reviews) [0-9]+", tab_name)
-base = match.group(1) if match else (tab_name or "tab")
+base = match.group(1) if match else tab_name
+base = base[next((index for index, char in enumerate(base) if char.isalnum()), len(base)):]
+base = base or "tab"
 pattern = re.compile(r"^" + re.escape(base) + r" - " + re.escape(kind) + r" ([0-9]+)$")
 groups = {}
 for item in items:

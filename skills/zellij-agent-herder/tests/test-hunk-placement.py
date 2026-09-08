@@ -16,18 +16,27 @@ SPEC.loader.exec_module(hunk_stream)
 
 
 class HunkPlacementTests(unittest.TestCase):
+    def test_strip_origin_tab_prefix(self):
+        for source, expected in (
+            ("󰚩 Bots #1", "Bots #1"),
+            ("🔍 domu-gitops", "domu-gitops"),
+            ("Tab #4", "Tab #4"),
+        ):
+            with self.subTest(source=source):
+                self.assertEqual(hunk_stream.strip_origin_tab_prefix(source), expected)
+
     def test_grouped_tab_name_and_reuse_under_four_visible_panes(self):
         items = [
             {"id": 1, "tab_id": 7, "tab_name": "󰚩 Bots #1"},
             {"id": 2, "tab_id": 7, "tab_name": "󰚩 Bots #1"},
-            {"id": 10, "tab_id": 12, "tab_name": "󰚩 Bots #1 - Peers 1"},
-            {"id": 11, "tab_id": 12, "tab_name": "󰚩 Bots #1 - Peers 1"},
-            {"id": 12, "tab_id": 12, "tab_name": "󰚩 Bots #1 - Peers 1", "is_floating": True},
-            {"id": 20, "tab_id": 15, "tab_name": "󰚩 Bots #1 - Peers 2"},
+            {"id": 10, "tab_id": 12, "tab_name": "Bots #1 - Peers 1"},
+            {"id": 11, "tab_id": 12, "tab_name": "Bots #1 - Peers 1"},
+            {"id": 12, "tab_id": 12, "tab_name": "Bots #1 - Peers 1", "is_floating": True},
+            {"id": 20, "tab_id": 15, "tab_name": "Bots #1 - Peers 2"},
         ]
         self.assertEqual(
             hunk_stream.grouped_tab_placement(items, "terminal_1", "Peers"),
-            {"base": "󰚩 Bots #1", "number": 2, "tab_id": 15, "reuse": True},
+            {"base": "Bots #1", "number": 2, "tab_id": 15, "reuse": True},
         )
 
     def test_grouped_tab_starts_next_number_at_four_visible_panes(self):
