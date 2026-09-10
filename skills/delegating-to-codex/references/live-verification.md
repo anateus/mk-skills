@@ -1,6 +1,6 @@
 # Live verification checklist
 
-Seven scenarios run against a real `codex app-server` (codex-cli 0.154.0, model
+Eight scenarios run against a real `codex app-server` (codex-cli 0.154.0, model
 `gpt-5.6-luna`, logged in) to confirm codex-run actually drives the protocol
 correctly, not just that it parses flags. Each scenario was also run alone
 (not only as part of a batch), since job files and thread state persist
@@ -49,6 +49,8 @@ codex-run cancel cr-20260910-38e90c
 
 Observed: `exit=130 session=01a08d1c-2bd8-75b2-8123-af9e0c066cb7 out=out4.md log=out4.log job=cr-20260910-38e90c status=interrupted`. Log shows `SIGTERM received, sending turn/interrupt` followed by `turn/completed status=interrupted` within the 15s window. Worker process confirmed gone via `ps` afterward. Pass.
 
+Clean rerun (under `$HOME`, post thread-config fix): `job=cr-20260910-5232ed`, `exit=130`, `status=interrupted`. Same log sequence, `SIGTERM received, sending turn/interrupt` then `turn/completed status=interrupted`; worker process gone afterward. Cancel behavior is unaffected by the sandbox-config change. Pass.
+
 ## 5. Resume
 
 ```bash
@@ -57,14 +59,18 @@ codex-run -C /tmp/cr-test -s read-only -r 01a08d1b-9f32-7c93-a617-31be283e11bd -
 
 Observed: `exit=0 session=01a08d1b-9f32-7c93-a617-31be283e11bd out=out5.md log=out5.log job=cr-20260910-e3d008 status=completed` — same thread id as scenario 1, confirming resume reused the thread rather than starting a new one. `out5.md` contained `PONG`. Pass.
 
-## 6. Worktree (DOM-7702 case)
+## 6. Worktree git-dir denial (DOM-7702 case)
 
 ```bash
 git -C /tmp/cr-test worktree add ../cr-wt -b wt
-codex-run -C /tmp/cr-wt -s workspace-write -p p6.md -o out6.md   # p6.md: "Create b.txt containing 'wt', run `git add b.txt && git commit -m wt`, reply with the new commit hash."
+codex-run -C /tmp/cr-wt -s workspace-write -w /tmp/cr-test/.git -p p6.md -o out6.md   # p6.md: "Create b.txt containing 'wt', run `git add b.txt && git commit -m wt`, reply with the new commit hash."
 ```
 
-Observed: `exit=0 session=01a08d1c-79d4-7eb3-828d-f52f2c1f1261 out=out6.md log=out6.log job=cr-20260910-00c785 status=completed`. Real commit landed on the `wt` branch (`0fd9a7e wt`, parent `bb193d0 init`). codex-run's auto-added common-git-dir writable root let the agent write into `.git/worktrees/wt/`; the agent's own transcript shows it hit `Operation not permitted` on the normal `index.lock` path (a codex sandbox restriction on that specific file, independent of writableRoots) and routed around it with plumbing commands rather than falling back to `danger-full-access`. This matches the writable-root injection working as designed — v1 failed this case entirely. Pass, with the caveat that codex's sandbox has a hardcoded protection on specific git lock files that codex-run does not (and should not) try to route around itself.
+Expected: codex denies the `git commit` write to the worktree's private git metadata (`.git/worktrees/wt/index.lock: Operation not permitted`) regardless of the `-w` root, because that protection covers the checkout's own git dir and cannot be granted away. `out6.md` reports the fatal error; the turn itself still finishes normally (`status=completed`, `exit=0`); no new commit lands on `wt`.
+
+Observed (clean rerun under `$HOME`, not `/tmp`, after the thread-level config fix): `exit=0 session=01a08d2e-2774-71f1-8287-57e459cd8c9b out=/Users/mike/.cache/cr6b-geiN/wt/out.md log=/Users/mike/.cache/cr6b-geiN/wt/out.log job=cr-20260910-1300aa status=completed`. The `thread/start` response echoed `writableRoots: ["/Users/mike/.cache/cr6b-geiN/repo/.git"]`, confirming the root now actually reaches the thread, and the commit still failed with `fatal: Unable to create '.../repo/.git/worktrees/wt/index.lock': Operation not permitted`, reported by the agent in `out.md`. No commit was made. Pass, in the sense that codex-run now reports the real, honest failure instead of hanging or silently succeeding.
+
+An earlier run of this scenario looked like a pass only because the agent, once denied the lock file, used `git update-ref` directly against the shared repo's refs to route around the sandbox instead of reporting the failure. That is not behavior codex-run should encourage, and the worktree auto-root feature that made it easy to reach has been removed. This is an upstream codex limitation (openai/codex #7071, #23661), not something fixable from this client; see "Sandbox" in `SKILL.md` for the recommended pattern (let Codex leave the tree modified and commit from the controlling agent, or pass `-s danger-full-access` deliberately).
 
 ## 7. Usage and list
 
@@ -73,6 +79,15 @@ codex-run -o out.md        # no -p
 ```
 
 Observed: usage text on stderr, `rc=2`. `codex-run list` (no arguments) printed all known jobs, newest first, one line per job (`jobId status threadId cwd startedAt`), including all of the above. Pass.
+
+## 8. Network access (`--net`)
+
+```bash
+codex-run -C /tmp/cr-test -s workspace-write -p p8.md -o out8.md         # p8.md: "Run `curl -sf --max-time 3 -o /dev/null -w '%{http_code}' https://example.com` and reply with its output."
+codex-run -C /tmp/cr-test -s workspace-write --net -p p8.md -o out8b.md
+```
+
+Observed: without `--net`, curl could not resolve the host (`curl: (6) Could not resolve host: example.com`), `job=cr-20260910-a943e3`. With `--net`, the same command returned `200`, `job=cr-20260910-34e606`. Confirms `--net` reaches the thread-level `sandbox_workspace_write.network_access` override, not just the per-turn policy. Pass.
 
 ## Protocol notes confirmed from the wire
 

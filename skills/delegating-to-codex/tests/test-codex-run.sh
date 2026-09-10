@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Offline tests for codex-run: no real `codex` process is spawned or
 # required. Exercises CLI parsing, job-file bookkeeping in an isolated
-# state dir, and worktree auto-root detection via --print-policy.
+# state dir, and the sandbox/thread-config policy via --print-policy.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
@@ -55,39 +55,39 @@ set -e
 echo "$OUT" | grep -qi "no such job or thread" || fail "status <unknown>: expected a clear not-found message, got: $OUT"
 echo "PASS: status <unknown> is non-zero with a clear message"
 
-# --- worktree common-dir detection via --print-policy (no codex contacted) ---
-REPO="$T/repo"
-git init -q "$REPO"
-git -C "$REPO" config user.email test@example.com
-git -C "$REPO" config user.name Test
-echo hi > "$REPO/a.txt"
-git -C "$REPO" add -A
-git -C "$REPO" commit -qm init
-git -C "$REPO" worktree add -q "$T/wt" -b wt-branch
-
-POLICY="$(node "$SCRIPT" --print-policy -C "$T/wt" -s workspace-write)"
-COMMON_DIR="$(git -C "$REPO" rev-parse --git-common-dir)"
-case "$COMMON_DIR" in
-  /*) ;;
-  *) COMMON_DIR="$REPO/$COMMON_DIR" ;;
-esac
-# Check membership in the writableRoots *array* specifically (not just
-# anywhere in the JSON) — worktreeRoot is reported separately and would
-# make this assertion pass vacuously if we only grepped the whole blob.
-ROOTS_JOINED="$(echo "$POLICY" | node -e "
+# --- -w relative root resolves absolute in BOTH sandboxPolicy.writableRoots
+#     and threadConfig — this is the thread-level override that actually
+#     gets enforced by the exec tool; sandboxPolicy alone was verified live
+#     to be echoed back by thread/start but not honored for writes. ---
+CWD_DIR="$T/cwd"
+mkdir -p "$CWD_DIR/rel/dir"
+EXPECT_ROOT="$CWD_DIR/rel/dir"
+POLICY="$(node "$SCRIPT" --print-policy -C "$CWD_DIR" -s workspace-write -w rel/dir)"
+CHECK="$(echo "$POLICY" | node -e "
   let d='';process.stdin.on('data',c=>d+=c);process.stdin.on('end',()=>{
-    const p=JSON.parse(d);
-    console.log((p.sandboxPolicy.writableRoots||[]).join('\n'));
+    const p = JSON.parse(d);
+    const roots = p.sandboxPolicy.writableRoots || [];
+    const tc = (p.threadConfig || {})['sandbox_workspace_write.writable_roots'] || [];
+    const want = '$EXPECT_ROOT';
+    console.log(JSON.stringify({ okSandbox: roots.includes(want), okThread: tc.includes(want) }));
   });
 ")"
-echo "$ROOTS_JOINED" | grep -qxF "$COMMON_DIR" || fail "print-policy: expected common git dir '$COMMON_DIR' in sandboxPolicy.writableRoots, got roots: [$ROOTS_JOINED]"
-echo "$POLICY" | grep -q '"type": "workspaceWrite"' || fail "print-policy: expected workspaceWrite sandbox type"
-echo "PASS: worktree common-dir detected and added as a writable root"
+echo "$CHECK" | grep -q '\"okSandbox\":true' || fail "-w: expected '$EXPECT_ROOT' in sandboxPolicy.writableRoots, got: $CHECK / policy: $POLICY"
+echo "$CHECK" | grep -q '\"okThread\":true' || fail "-w: expected '$EXPECT_ROOT' in threadConfig[sandbox_workspace_write.writable_roots], got: $CHECK / policy: $POLICY"
+echo "PASS: -w relative root resolves absolute in sandboxPolicy.writableRoots and threadConfig"
 
-# --- print-policy on a non-worktree dir: no worktreeRoot ---
-POLICY2="$(node "$SCRIPT" --print-policy -C "$REPO" -s read-only --net)"
-echo "$POLICY2" | grep -q '"worktreeRoot": null' || fail "print-policy (non-worktree): expected worktreeRoot null, got: $POLICY2"
-echo "$POLICY2" | grep -q '"networkAccess": true' || fail "print-policy (non-worktree): expected networkAccess true under --net"
-echo "PASS: non-worktree dir reports no worktree root; --net flips networkAccess"
+# --- --net sets sandboxPolicy.networkAccess AND the matching threadConfig key ---
+POLICY2="$(node "$SCRIPT" --print-policy -C "$CWD_DIR" -s workspace-write --net)"
+echo "$POLICY2" | grep -q '"networkAccess": true' || fail "--net: expected sandboxPolicy.networkAccess true, got: $POLICY2"
+echo "$POLICY2" | grep -q '"sandbox_workspace_write.network_access": true' || fail "--net: expected threadConfig network_access true, got: $POLICY2"
+echo "PASS: --net sets sandboxPolicy.networkAccess and threadConfig network_access"
+
+# --- without -w or --net under workspace-write, threadConfig is null (no
+#     override to send — nothing would vacuously pass here without a real
+#     assertion, since a bug that always emits {} instead of null would
+#     otherwise slip through undetected) ---
+POLICY3="$(node "$SCRIPT" --print-policy -C "$CWD_DIR" -s workspace-write)"
+echo "$POLICY3" | grep -q '"threadConfig": null' || fail "no -w/--net: expected threadConfig null, got: $POLICY3"
+echo "PASS: threadConfig is null without -w or --net"
 
 echo "All codex-run offline tests passed."

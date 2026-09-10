@@ -7,7 +7,7 @@
 // Protocol shapes verified against `codex app-server generate-json-schema`
 // (codex-cli 0.154.0) and confirmed against real events.jsonl from live runs.
 
-import { spawn, execFileSync } from "node:child_process";
+import { spawn } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
@@ -204,6 +204,10 @@ class AppServerClient {
     this._write({ id, result });
   }
 
+  respondError(id, code, message) {
+    this._write({ id, error: { code, message } });
+  }
+
   _write(obj) {
     if (this.rawLogFn) this.rawLogFn(obj, true);
     this.proc.stdin.write(JSON.stringify(obj) + "\n");
@@ -312,47 +316,30 @@ function buildSandboxPolicy(sandbox, net, writableRoots) {
   };
 }
 
-// Worktree auto-root: if <workdir>/.git is a *file* (not dir) containing
-// `gitdir: <path>`, this is a linked worktree. Resolve the common git dir
-// so the sandbox can write .git/worktrees/... state (index locks etc).
-function resolveWorktreeRoot(workdir, log) {
-  const gitPath = path.join(workdir, ".git");
-  try {
-    const st = fs.statSync(gitPath);
-    if (!st.isFile()) return null;
-  } catch {
-    return null;
+// The exec tool enforces the *thread's* sandbox, not the per-turn
+// sandboxPolicy (observed: turn-level writableRoots were echoed back but
+// index.lock writes were still denied). So writable roots and network go
+// in as thread-level config overrides too; the turn policy stays for
+// clients that do honor it.
+function buildThreadConfig(sandboxPolicy) {
+  const cfg = {};
+  if (sandboxPolicy.type === "workspaceWrite") {
+    if (sandboxPolicy.writableRoots.length) cfg["sandbox_workspace_write.writable_roots"] = sandboxPolicy.writableRoots;
+    if (sandboxPolicy.networkAccess) cfg["sandbox_workspace_write.network_access"] = true;
   }
-  const contents = fs.readFileSync(gitPath, "utf8").trim();
-  const m = contents.match(/^gitdir:\s*(.+)$/);
-  if (!m) return null;
-  try {
-    const out = execFileSync("git", ["-C", workdir, "rev-parse", "--git-common-dir"], {
-      encoding: "utf8",
-    }).trim();
-    const abs = path.isAbsolute(out) ? out : path.resolve(workdir, out);
-    if (log) log(`worktree detected: adding common git dir as writable root: ${abs}`);
-    return abs;
-  } catch (e) {
-    if (log) log(`worktree detected but git rev-parse --git-common-dir failed: ${e.message}`);
-    return null;
-  }
+  return Object.keys(cfg).length ? cfg : null;
 }
 
-// Compute the effective run policy (cwd, sandbox, sandboxPolicy, worktree
-// root) without touching the network or spawning codex. Shared by the real
-// run path and `--print-policy` (a debug entry point so tests can assert
-// worktree auto-root detection offline).
-function computeEffectivePolicy(o, log) {
+// Compute the effective run policy (cwd, sandboxPolicy, thread-level config
+// override) without touching the network or spawning codex. Shared by the
+// real run path and `--print-policy` (a debug entry point so tests can
+// assert this offline).
+function computeEffectivePolicy(o) {
   const cwd = path.resolve(o.cwd);
-  let writableRoots = o.writableRoots.map((p) => path.resolve(cwd, p));
-  let worktreeRoot = null;
-  if (o.sandbox === "workspace-write") {
-    worktreeRoot = resolveWorktreeRoot(cwd, log);
-    if (worktreeRoot && !writableRoots.includes(worktreeRoot)) writableRoots.push(worktreeRoot);
-  }
+  const writableRoots = o.writableRoots.map((p) => path.resolve(cwd, p));
   const sandboxPolicy = buildSandboxPolicy(o.sandbox, o.net, writableRoots);
-  return { cwd, writableRoots, worktreeRoot, sandboxPolicy };
+  const threadConfig = buildThreadConfig(sandboxPolicy);
+  return { cwd, writableRoots, sandboxPolicy, threadConfig };
 }
 
 // ---------------------------------------------------------------------------
@@ -454,8 +441,20 @@ async function runTurn(o, job, log, logEvent) {
 
   client.onServerRequest = (msg) => {
     // With approvalPolicy "never" these should not occur, but never hang.
-    log(`server request (unexpected under approvalPolicy=never): ${msg.method} — declining`);
-    client.respond(msg.id, { result: { decision: "decline" } });
+    // Only commandExecution/fileChange approval requests take a
+    // {decision: ...} result (schema: CommandExecutionApprovalDecision,
+    // FileChangeApprovalDecision both include "decline"). item/permissions/
+    // requestApproval expects {permissions, scope} instead, which codex-run
+    // doesn't have an answer for, and future builds may add other server
+    // request methods entirely — reply with a JSON-RPC method-not-found
+    // error for anything we don't recognize rather than guessing a shape.
+    if (msg.method === "item/commandExecution/requestApproval" || msg.method === "item/fileChange/requestApproval") {
+      log(`server request (unexpected under approvalPolicy=never): ${msg.method} — declining`);
+      client.respond(msg.id, { decision: "decline" });
+    } else {
+      log(`server request: unhandled method ${msg.method} — responding with method-not-found`);
+      client.respondError(msg.id, -32601, `codex-run does not handle ${msg.method}`);
+    }
   };
 
   client.start();
@@ -465,6 +464,7 @@ async function runTurn(o, job, log, logEvent) {
 
   try {
     const sandboxPolicy = o.sandboxPolicy;
+    const config = buildThreadConfig(sandboxPolicy);
 
     await client.send("initialize", {
       clientInfo: { name: "codex-run", title: "codex-run", version: "2.0.0" },
@@ -480,6 +480,7 @@ async function runTurn(o, job, log, logEvent) {
         model: o.model,
         approvalPolicy: "never",
         sandbox: o.sandbox,
+        config,
       });
       threadId = (resp.thread && resp.thread.id) || o.resumeThread;
     } else {
@@ -491,6 +492,7 @@ async function runTurn(o, job, log, logEvent) {
         sandbox: o.sandbox,
         serviceName: "codex-run",
         ephemeral: false,
+        config,
       });
       threadId = resp.thread && resp.thread.id;
     }
@@ -610,7 +612,7 @@ async function execJob(o, job) {
 async function runForeground(o) {
   if (!validSandbox(o.sandbox)) usageExit(`invalid -s sandbox: ${o.sandbox}`);
 
-  const policy = computeEffectivePolicy(o, null);
+  const policy = computeEffectivePolicy(o);
 
   if (o.printPolicy) {
     console.log(
@@ -619,7 +621,7 @@ async function runForeground(o) {
           cwd: policy.cwd,
           sandbox: o.sandbox,
           sandboxPolicy: policy.sandboxPolicy,
-          worktreeRoot: policy.worktreeRoot,
+          threadConfig: policy.threadConfig,
         },
         null,
         2

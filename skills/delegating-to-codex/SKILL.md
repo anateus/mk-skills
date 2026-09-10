@@ -5,7 +5,7 @@ description: Hand an implementation or investigation task to Codex from Claude C
 
 # Delegating to Codex
 
-`codex-run` drives `codex app-server` over JSON-RPC-over-stdio instead of shelling out to `codex exec`: per-turn sandbox policy (read-only, workspace-write, or danger-full-access, with writable roots and network on/off), background jobs, thread resume, a raw event log per run.
+`codex-run` drives `codex app-server` over JSON-RPC-over-stdio instead of shelling out to `codex exec`: per-turn sandbox policy (read-only, workspace-write, danger-full-access; writable roots, network on/off), background jobs, thread resume, a raw event log per run.
 
 ## Basic usage
 
@@ -23,33 +23,35 @@ exit=<rc> session=<threadId> out=<path> log=<path> job=<jobId> status=<completed
 
 ## Flags
 
-- `-C workdir` — directory to run in (default `$PWD`).
-- `-m model`, `-e effort` — model and reasoning effort (omitted if unset).
-- `-s sandbox` — `read-only`, `workspace-write` (default), or `danger-full-access`.
-- `--net` — network access under read-only/workspace-write (ignored otherwise).
+- `-C workdir` — run directory (default `$PWD`).
+- `-m model`, `-e effort` — model, reasoning effort, omitted if unset.
+- `-s sandbox` — `read-only`, `workspace-write` (default), `danger-full-access`.
+- `--net` — network under read-only/workspace-write.
 - `-w path` — extra writable root under workspace-write; repeatable.
-- `-r thread_id` — resume a thread (the `session=` value from a prior one-liner); model, sandbox, cwd can differ from the original run.
-- `-l log` — log path (default `<out-without-ext>.log`); raw JSON-RPC goes to `<out-without-ext>.events.jsonl` — inspect with `jq`, not `cat`.
-- `-b` — background: prints `job=<id> session=pending out=... log=...` immediately, exits 0.
-- `--timeout secs` — only meaningful with `wait`.
+- `-r thread_id` — resume a thread (`session=` from a prior one-liner); model, sandbox, cwd can differ.
+- `-l log` — log path (default `<out-without-ext>.log`); JSON-RPC in `<out-without-ext>.events.jsonl`.
+- `-b` — background: prints `job=<id> session=pending out=... log=...`, exits 0.
+- `--timeout secs` — only for `wait`.
 
 ## Background jobs
 
 ```bash
-codex-run -p prompt.md -o out.md -b            # returns immediately with a job id
-codex-run status <job|thread_id>               # prints the one-liner, rc 3 if still running
-codex-run wait <job|thread_id> [--timeout secs]   # blocks, polling every 1s, until terminal
-codex-run cancel <job|thread_id>               # SIGTERM, worker sends turn/interrupt, waits up to 15s
-codex-run list                                 # newest first: jobId status threadId cwd startedAt
+codex-run -p prompt.md -o out.md -b            # returns immediately, job id
+codex-run status <job|thread_id>               # one-liner, rc 3 if running
+codex-run wait <job|thread_id> [--timeout secs]   # blocks until terminal
+codex-run cancel <job|thread_id>               # SIGTERM, waits up to 15s
+codex-run list                                 # newest first
 ```
 
-`status`/`wait`/`cancel` take either the `job=` id or the `session=` thread id. Job files live at `~/.local/state/codex-run/jobs/<jobId>.json` (override with `CODEX_RUN_STATE_DIR`, mainly for tests): prompt text, sandbox policy, thread/turn ids, status, rc — enough for a detached worker to run the turn and for later lookups offline.
+`status`/`wait`/`cancel` take either the `job=` id or `session=` thread id. Job files live at `~/.local/state/codex-run/jobs/<jobId>.json` (override with `CODEX_RUN_STATE_DIR`, mainly for tests): prompt, sandbox policy, thread/turn ids, status, rc, enough for a detached worker to run the turn and for later offline lookups.
 
-## Sandbox and worktree roots
+## Sandbox
 
-Under `workspace-write`, cwd is writable by default; add more with `-w`. If `-C` is a linked git worktree (`.git` is a file, not a directory), codex-run resolves the common git dir via `git rev-parse --git-common-dir` and adds it as a writable root automatically — git needs that dir writable to commit from the worktree. Codex's sandbox can still block specific git lock files (`index.lock`, `COMMIT_EDITMSG`) even so; route around with plumbing commands rather than `danger-full-access`.
+Under `workspace-write`, cwd is writable by default; add roots with `-w`, network with `--net`. Both also need thread-level `config` (`thread/start`/`thread/resume`), not just per-turn policy: codex's exec tool enforces the thread's sandbox, so a turn-only root or `--net` is echoed back but ignored.
 
-`--print-policy` does the same resolution but skips codex — prints resolved cwd, sandbox policy, worktree root as JSON, exit 0. This is how the offline tests check worktree detection without a real codex run.
+Codex also denies writes to the checkout's own git directory under `workspace-write`, even inside a writable root. For a linked worktree that's `.git/worktrees/<name>/`, so `git add`/`git commit` from inside Codex fail with `index.lock: Operation not permitted` (openai/codex #7071, #23661). Do not let Codex route around that with `git update-ref` or other plumbing on the shared repo; that defeats the sandbox. Either let Codex leave the tree modified and commit from the controlling agent, or pass `-s danger-full-access` deliberately.
+
+`--print-policy` prints resolved cwd, sandbox policy, and thread config as JSON, no codex touched, exit 0; offline tests check `-w`/`--net` against it. Verify `--net` with curl: `curl -sf --max-time 3 https://example.com` fails to resolve without it, `200` with it.
 
 ## Install
 
@@ -58,10 +60,10 @@ pnpx skills add anateus/mk-skills
 ln -sf "$HOME/.agents/skills/delegating-to-codex/scripts/codex-run.mjs" ~/.local/bin/codex-run
 ```
 
-In development, point the symlink at the checkout's `scripts/codex-run.mjs` instead. Back up an older `codex-run` (the `codex exec` v1) first: `cp -n ~/.local/bin/codex-run ~/.local/bin/codex-run-v1`.
+In development, point the symlink at the checkout's `scripts/codex-run.mjs`. Back up an older `codex-run` (`codex exec` v1): `cp -n ~/.local/bin/codex-run ~/.local/bin/codex-run-v1`.
 
 ## Non-goals
 
 No broker, no MCP, no sandbox wrapper beyond `codex app-server`, no review or transfer commands. A thin single-turn driver; orchestration belongs in the caller.
 
-See [references/live-verification.md](references/live-verification.md) for the seven-scenario checklist and observed one-liners.
+See [references/live-verification.md](references/live-verification.md) for the scenario checklist and observed one-liners.
