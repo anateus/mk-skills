@@ -57,7 +57,7 @@ Clean rerun (under `$HOME`, post thread-config fix): `job=cr-20260910-5232ed`, `
 codex-run -C /tmp/cr-test -s read-only -r 01a08d1b-9f32-7c93-a617-31be283e11bd -p p5.md -o out5.md   # p5.md: "What single word did you reply last time? Answer with just that word."
 ```
 
-Observed: `exit=0 session=01a08d1b-9f32-7c93-a617-31be283e11bd out=out5.md log=out5.log job=cr-20260910-e3d008 status=completed` — same thread id as scenario 1, confirming resume reused the thread rather than starting a new one. `out5.md` contained `PONG`. Pass.
+Observed: `exit=0 session=01a08d1b-9f32-7c93-a617-31be283e11bd out=out5.md log=out5.log job=cr-20260910-e3d008 status=completed`, same thread id as scenario 1, confirming resume reused the thread rather than starting a new one. `out5.md` contained `PONG`. Pass.
 
 ## 6. Worktree git-dir denial (DOM-7702 case)
 
@@ -93,10 +93,10 @@ Observed: without `--net`, curl could not resolve the host (`curl: (6) Could not
 
 Field names relied on in `runTurn()` were checked directly against `events.jsonl` from run 1, not just against the JSON schema:
 
-- `AgentMessageThreadItem` — `.text` holds the reply text directly (no nested `content` array).
-- `CommandExecutionThreadItem` — `.command` and `.exitCode` (camelCase), plus `.status`.
-- `FileChangeThreadItem` — `.changes[]`, each with `.path`, `.diff`, `.kind`; the item itself has `.status`.
-- `Turn` — `.id` and `.status`.
+- `AgentMessageThreadItem`: `.text` holds the reply text directly (no nested `content` array).
+- `CommandExecutionThreadItem`: `.command` and `.exitCode` (camelCase), plus `.status`.
+- `FileChangeThreadItem`: `.changes[]`, each with `.path`, `.diff`, `.kind`; the item itself has `.status`.
+- `Turn`: `.id` and `.status`.
 - The wire omits `"jsonrpc":"2.0"` entirely on every frame, despite the protocol otherwise following JSON-RPC 2.0 request/response/notification shape.
 
 No discrepancy between the schema and the live wire was found; nothing in `codex-run.mjs` had to change as a result of this check.

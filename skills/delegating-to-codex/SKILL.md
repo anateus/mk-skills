@@ -23,15 +23,15 @@ exit=<rc> session=<threadId> out=<path> log=<path> job=<jobId> status=<completed
 
 ## Flags
 
-- `-C workdir` — run directory (default `$PWD`).
-- `-m model`, `-e effort` — model, reasoning effort, omitted if unset.
-- `-s sandbox` — `read-only`, `workspace-write` (default), `danger-full-access`.
-- `--net` — network under read-only/workspace-write.
-- `-w path` — extra writable root under workspace-write; repeatable.
-- `-r thread_id` — resume a thread (`session=` from a prior one-liner); model, sandbox, cwd can differ.
-- `-l log` — log path (default `<out-without-ext>.log`); JSON-RPC in `<out-without-ext>.events.jsonl`.
-- `-b` — background: prints `job=<id> session=pending out=... log=...`, exits 0.
-- `--timeout secs` — only for `wait`.
+- `-C workdir`: run directory (default `$PWD`).
+- `-m model`, `-e effort`: model, reasoning effort, omitted if unset.
+- `-s sandbox`: `read-only`, `workspace-write` (default), `danger-full-access`.
+- `--net`: network under read-only/workspace-write.
+- `-w path`: extra writable root under workspace-write; repeatable.
+- `-r thread_id`: resume a thread (`session=` from a prior one-liner); model, sandbox, cwd can differ.
+- `-l log`: log path (default `<out-without-ext>.log`); JSON-RPC in `<out-without-ext>.events.jsonl`.
+- `-b`: background: prints `job=<id> session=pending out=... log=...`, exits 0.
+- `--timeout secs`: only for `wait`.
 
 ## Background jobs
 
