@@ -1,0 +1,87 @@
+# Live verification checklist
+
+Seven scenarios run against a real `codex app-server` (codex-cli 0.154.0, model
+`gpt-5.6-luna`, logged in) to confirm codex-run actually drives the protocol
+correctly, not just that it parses flags. Each scenario was also run alone
+(not only as part of a batch), since job files and thread state persist
+between runs. Re-run this checklist after any change to `scripts/codex-run.mjs`
+that touches turn handling, sandbox policy, or job bookkeeping.
+
+Setup:
+
+```bash
+git init /tmp/cr-test && cd /tmp/cr-test
+echo hi > a.txt && git add -A && git commit -qm init
+```
+
+## 1. Foreground read-only
+
+```bash
+codex-run -C /tmp/cr-test -s read-only -p p1.md -o out1.md   # p1.md: "Reply with exactly the word PONG and nothing else."
+```
+
+Observed: `exit=0 session=01a08d1b-9f32-7c93-a617-31be283e11bd out=out1.md log=out1.log job=cr-20260910-2615df status=completed`. `out1.md` contained `PONG`. Pass.
+
+## 2. Foreground workspace-write
+
+```bash
+codex-run -C /tmp/cr-test -s workspace-write -p p2.md -o out2.md   # p2.md: "Append the line 'from codex' to a.txt, then reply DONE."
+```
+
+Observed: `exit=0 session=01a08d1b-bf1f-76e1-ba6a-3f0a16ba4fa6 out=out2.md log=out2.log job=cr-20260910-c003e5 status=completed`. `a.txt` gained the new line; `out2.md` ended in `DONE`. Pass.
+
+## 3. Background + wait
+
+```bash
+codex-run -C /tmp/cr-test -s read-only -p p1.md -o out3.md -b   # prints job=... session=pending immediately
+codex-run wait cr-20260910-e8fd5e
+```
+
+Observed final: `exit=0 session=01a08d1c-0780-7070-b48f-8bb34b2c2a5e out=out3.md log=out3.log job=cr-20260910-e8fd5e status=completed`, same shape as scenario 1. Pass.
+
+## 4. Cancel
+
+```bash
+codex-run -C /tmp/cr-test -s workspace-write -p p4.md -o out4.md -b   # p4.md: "Count from 1 to 200, one number per line, running `sleep 1` between each via the shell."
+sleep 5
+codex-run cancel cr-20260910-38e90c
+```
+
+Observed: `exit=130 session=01a08d1c-2bd8-75b2-8123-af9e0c066cb7 out=out4.md log=out4.log job=cr-20260910-38e90c status=interrupted`. Log shows `SIGTERM received, sending turn/interrupt` followed by `turn/completed status=interrupted` within the 15s window. Worker process confirmed gone via `ps` afterward. Pass.
+
+## 5. Resume
+
+```bash
+codex-run -C /tmp/cr-test -s read-only -r 01a08d1b-9f32-7c93-a617-31be283e11bd -p p5.md -o out5.md   # p5.md: "What single word did you reply last time? Answer with just that word."
+```
+
+Observed: `exit=0 session=01a08d1b-9f32-7c93-a617-31be283e11bd out=out5.md log=out5.log job=cr-20260910-e3d008 status=completed` — same thread id as scenario 1, confirming resume reused the thread rather than starting a new one. `out5.md` contained `PONG`. Pass.
+
+## 6. Worktree (DOM-7702 case)
+
+```bash
+git -C /tmp/cr-test worktree add ../cr-wt -b wt
+codex-run -C /tmp/cr-wt -s workspace-write -p p6.md -o out6.md   # p6.md: "Create b.txt containing 'wt', run `git add b.txt && git commit -m wt`, reply with the new commit hash."
+```
+
+Observed: `exit=0 session=01a08d1c-79d4-7eb3-828d-f52f2c1f1261 out=out6.md log=out6.log job=cr-20260910-00c785 status=completed`. Real commit landed on the `wt` branch (`0fd9a7e wt`, parent `bb193d0 init`). codex-run's auto-added common-git-dir writable root let the agent write into `.git/worktrees/wt/`; the agent's own transcript shows it hit `Operation not permitted` on the normal `index.lock` path (a codex sandbox restriction on that specific file, independent of writableRoots) and routed around it with plumbing commands rather than falling back to `danger-full-access`. This matches the writable-root injection working as designed — v1 failed this case entirely. Pass, with the caveat that codex's sandbox has a hardcoded protection on specific git lock files that codex-run does not (and should not) try to route around itself.
+
+## 7. Usage and list
+
+```bash
+codex-run -o out.md        # no -p
+```
+
+Observed: usage text on stderr, `rc=2`. `codex-run list` (no arguments) printed all known jobs, newest first, one line per job (`jobId status threadId cwd startedAt`), including all of the above. Pass.
+
+## Protocol notes confirmed from the wire
+
+Field names relied on in `runTurn()` were checked directly against `events.jsonl` from run 1, not just against the JSON schema:
+
+- `AgentMessageThreadItem` — `.text` holds the reply text directly (no nested `content` array).
+- `CommandExecutionThreadItem` — `.command` and `.exitCode` (camelCase), plus `.status`.
+- `FileChangeThreadItem` — `.changes[]`, each with `.path`, `.diff`, `.kind`; the item itself has `.status`.
+- `Turn` — `.id` and `.status`.
+- The wire omits `"jsonrpc":"2.0"` entirely on every frame, despite the protocol otherwise following JSON-RPC 2.0 request/response/notification shape.
+
+No discrepancy between the schema and the live wire was found; nothing in `codex-run.mjs` had to change as a result of this check.
