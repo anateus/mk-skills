@@ -1,6 +1,6 @@
 ---
 name: specifying-work
-description: "Turn agreed intent and repository evidence into a concise behavior contract with acceptance criteria, testing seams, constraints, and non-goals. Use when the user asks for a specification, design contract, requirements, or acceptance criteria before planning or implementation. Also use when drafting a tracker ticket that is more than a small placeholder: the ticket body is the behavior contract."
+description: Write a behavior contract from agreed intent and repository evidence. Use for specifications, requirements, acceptance criteria, or substantive tracker tickets.
 ---
 
 # Specifying Work
@@ -9,7 +9,7 @@ Synthesize established intent and repository evidence into a contract. Do not re
 
 ## Specification shape
 
-Write the smallest useful specification with:
+Cover the following in the smallest useful specification. These are coverage checks, not required headings:
 
 - **Problem:** who or what is affected, and why the current state is insufficient.
 - **Behavior:** externally observable outcomes, including important failure behavior.

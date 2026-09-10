@@ -15,10 +15,17 @@ test('review package covers an explicit multi-commit range without changing the 
   git(repo, 'add', '.'); git(repo, 'commit', '-m', 'base'); const base = git(repo, 'rev-parse', 'HEAD');
   fs.appendFileSync(path.join(repo, 'one.txt'), 'first change\n'); git(repo, 'add', '.'); git(repo, 'commit', '-m', 'first subject');
   fs.writeFileSync(path.join(repo, 'two.txt'), 'second change\n'); git(repo, 'add', '.'); git(repo, 'commit', '-m', 'second subject'); const head = git(repo, 'rev-parse', 'HEAD');
-  const result = spawnSync(script, [base, head], { cwd: repo, encoding: 'utf8' }); assert.equal(result.status, 0, result.stderr || result.error?.message);
+  const temp = fs.mkdtempSync(path.join(os.tmpdir(), 'review-package-output-'));
+  t.after(() => fs.rmSync(temp, { recursive: true, force: true }));
+  const options = { cwd: repo, encoding: 'utf8', env: { ...process.env, TMPDIR: temp } };
+  const result = spawnSync(script, [base, head], options); assert.equal(result.status, 0, result.stderr || result.error?.message);
   const packagePath = result.stdout.trim(); t.after(() => fs.rmSync(packagePath, { force: true }));
   assert.equal(result.stdout, `${packagePath}\n`); assert.equal(path.dirname(packagePath) === repo, false);
   const source = fs.readFileSync(packagePath, 'utf8');
+  const repeated = spawnSync(script, [base, head], options);
+  assert.equal(repeated.status, 0, repeated.stderr);
+  assert.notEqual(repeated.stdout.trim(), packagePath, 'each invocation gets its own artifact');
+  assert.equal(fs.readFileSync(repeated.stdout.trim(), 'utf8'), source);
   for (const value of [base, head, 'first subject', 'second subject', 'one.txt', 'two.txt', 'Diff stat', 'line 20']) assert.match(source, new RegExp(value));
   assert.equal(git(repo, 'status', '--porcelain'), '');
 });

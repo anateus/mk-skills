@@ -5,7 +5,7 @@
       "name": "matt-pocock-skills",
       "url": "https://github.com/mattpocock/skills",
       "branch": "main",
-      "reviewedCommit": "ed37663cc5fbef691ddfecd080dff42f7e7e350d",
+      "reviewedCommit": "3cca18b368ae95cdbdebbff572ccafa662551015",
       "license": "MIT",
       "mappings": [
         {
@@ -69,7 +69,7 @@
       "name": "spec-kitty",
       "url": "https://github.com/Priivacy-ai/spec-kitty",
       "branch": "main",
-      "reviewedCommit": "0a79355f821af9038d8b150b03c930f15970ef4c",
+      "reviewedCommit": "ab4636831945d20ac06d7e9b61d832ffd9a0359b",
       "license": "MIT",
       "mappings": [
         {
@@ -108,7 +108,7 @@
           "localSkill": "verifying-work",
           "upstreamPaths": [
             ".kittify/overrides/missions/software-dev/command-templates/accept.md",
-            ".kittify/overrides/missions/software-dev/expected-artifacts.yaml"
+            "packs/built-in/missions/software-dev/expected-artifacts.yaml"
           ]
         }
       ]
@@ -117,7 +117,7 @@
       "name": "superpowers",
       "url": "https://github.com/obra/superpowers",
       "branch": "main",
-      "reviewedCommit": "d884ae04edebef577e82ff7c4e143debd0bbec99",
+      "reviewedCommit": "b36e0829c6d0140e93cfef2ca599b1b07d4a7797",
       "license": "MIT",
       "mappings": [
         {
@@ -160,7 +160,8 @@
         {
           "localSkill": "reviewing-code",
           "upstreamPaths": [
-            "skills/requesting-code-review"
+            "skills/requesting-code-review",
+            "skills/subagent-driven-development/re-review-prompt.md"
           ]
         },
         {
@@ -181,7 +182,7 @@
       "name": "humanizer",
       "url": "https://github.com/blader/humanizer",
       "branch": "main",
-      "reviewedCommit": "e2e92e7b4b8229253ed5c8e81dc65463fdeddda5",
+      "reviewedCommit": "9862685f575c65a8247f90369951df1b3416e3d6",
       "license": "MIT",
       "mappings": [
         {

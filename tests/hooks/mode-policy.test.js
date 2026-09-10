@@ -73,17 +73,13 @@ test('off renders no context', () => {
   assert.equal(renderContext({ mode: 'off', policy }), '');
 });
 
-test('strict context is compact and preserves optional external workflow', () => {
+test('strict context routes to the installed policy skill without duplicating its body', () => {
   const { policy } = loadPolicy(fixture('valid.json'));
   const context = renderContext({ mode: 'strict', policy });
   const words = context.trim().split(/\s+/).length;
-  assert.ok(words >= 150 && words <= 250, `strict context has ${words} words`);
+  assert.ok(words > 0 && words <= 40, `strict context has ${words} words`);
   assert.match(context, /^The strict operating profile is active\. Read and apply the `strict-mode` skill before acting\./);
-  assert.match(context, /steps in order/i);
-  assert.match(context, /fresh commands/i);
-  for (const optional of ['Commits', 'pull requests', 'issue trackers', 'worktrees', 'subagents']) {
-    assert.match(context, new RegExp(`${optional}.*optional`, 'is'));
-  }
+  assert.equal(context, policy.contexts.strict);
 });
 
 test('selective context stays below 100 words and uses clear triggers', () => {

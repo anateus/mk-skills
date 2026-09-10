@@ -100,7 +100,7 @@ test('Claude accepts a missing optional model and preserves explicit overrides',
   const event = JSON.parse(fixture('claude-session-start.json'));
   delete event.model;
   for (const [mode, expected] of [
-    ['strict', /steps in order/i],
+    ['strict', /Read and apply the `strict-mode` skill/i],
     ['selective', /trigger clearly matches/i],
     ['off', /^$/],
   ]) {

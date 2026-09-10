@@ -1,6 +1,6 @@
 ---
 name: verifying-work
-description: Map completion and readiness claims to fresh direct evidence, run the relevant checks, and report limitations precisely. Use when asked to verify, check, test, confirm, or prove that work is correct, complete, passing, buildable, or ready. Triggers on "did it work", "make sure it passes", "double-check", "is this done", "confirm the fix", and before any claim that work is verified, passing, or clean.
+description: Tie completion and readiness claims to direct evidence. Use when asked to verify, test, confirm, or double-check, and before claiming work is correct, complete, passing, or clean.
 ---
 
 # Verifying Work
@@ -11,8 +11,8 @@ Map each completion claim to fresh, relevant evidence before stating it as fact.
 
 1. List the claims the handoff or response will make.
 2. Choose evidence that directly proves each claim: the focused behavior test for a fix, the affected suite for regressions, a build for buildability, or inspection for an artifact property.
-3. Run the command or inspection now. Read its full result, exit status, failures, warnings, and scope.
-4. Compare the observed result with the claim. Do not substitute old output, a peer report, a nearby check, or confidence.
+3. Run the command or inspection and read its full result, exit status, failures, warnings, and scope. Reuse your directly inspected evidence from this work when relevant code, inputs, configuration, and environment are unchanged, unless current instructions require a new run.
+4. Compare the observed result with the claim. A peer report, stale output, nearby check, or confidence cannot substitute for your direct check.
 5. State only what the evidence supports, including relevant limitations and unverified areas.
 
 Scale breadth to impact, but never scale away the direct check. If verification cannot run, report the blocker and narrow the claim instead of predicting success.
@@ -21,4 +21,4 @@ Evidence expires when code, inputs, configuration, or environment relevant to th
 
 ## Sweep integrity
 
-A check that cannot fail is not evidence. A sweep that reports nothing counts only after it detects a planted known positive; typos, unsupported flags, and swallowed errors all read as clean. Enumerate every occurrence rather than judging the first match. When the real end-to-end command is runnable now, run it instead of declaring a later manual step.
+A check that cannot fail is not evidence. Before claiming a custom search found nothing, prove detection with a disposable positive fixture exercising the same search boundary. Never plant data in the real corpus. Check errors and enumerate all occurrences. Run an available end-to-end check instead of deferring it to a manual step.

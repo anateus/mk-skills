@@ -1,17 +1,17 @@
 ---
 name: planning-work
-description: Create a codebase-grounded, executable implementation sequence using narrow vertical slices, dependencies, owned files, expected outputs, and verification. Use when the user asks for an implementation plan or when a reviewed request or specification has multi-step dependencies.
+description: Plan executable slices from repository evidence. Use for implementation plans or work with multi-step dependencies, owned boundaries, and verification points.
 ---
 
 # Planning Work
 
-Build a codebase-grounded route from current behavior to verified behavior. Inspect before naming exact paths, interfaces, or commands.
+Build a route from current behavior to verified behavior. Link the originating specification when one exists. Inspect before naming exact paths, interfaces, or commands.
 
 ## Plan vertical slices
 
 Prefer narrow vertical tracer-bullet slices that deliver an observable thread through the system. Each slice should leave the workspace coherent and make the next uncertainty cheaper.
 
-For every slice state:
+Specify the next executable slice precisely. For later slices, record outcomes and dependencies, adding exact edits when their interfaces are known:
 
 - the outcome and acceptance criterion it advances;
 - owned files or components, based on repository evidence;
@@ -21,11 +21,11 @@ For every slice state:
 
 Put discovery or contract-proving slices before work that depends on their result. Call out coordination points, shared files, migrations, rollout concerns, and rollback needs only when applicable. Keep tests beside the behavior they establish rather than in a final testing phase.
 
+Use a small reversible probe for empirical feasibility questions. For broad compatibility changes, consider expand, migrate, then contract stages so consumers can move without a flag day.
+
 ## Executable topology
 
-Write boundaries that are peer-ready: a reader can execute a slice from its inputs, expected outputs, and verification without reconstructing hidden context. The same plan must remain executable inline by one agent.
-
-Zellij and peers remain optional execution choices. Suggest peer execution only when slices are independent, ownership is non-overlapping, and coordination cost is justified. Peer-ready wording does not imply dispatch, and peer results still require verification by the responsible agent.
+Define boundaries a reader can execute from the recorded inputs, outputs, and verification. Plans remain executable inline. Optional peers or Zellij can handle independent slices with distinct ownership when coordination pays off; dispatch still follows user or repository authority and peer results need primary verification.
 
 Tracker publication, commits, branches, and worktrees belong to repository or user policy, not the core plan format.
 

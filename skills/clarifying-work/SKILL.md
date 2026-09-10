@@ -1,6 +1,6 @@
 ---
 name: clarifying-work
-description: Reduce consequential uncertainty by inspecting facts, separating assumptions from decisions, and mapping integration risks. Use when a request is ambiguous, integration-heavy, cross-boundary, or likely to hide decisions that could cause substantial rework. Consider whenever drafting or filing a tracker ticket (e.g. Linear), so the ticket records decisions rather than assumptions.
+description: Resolve consequential uncertainty from evidence. Use for ambiguous or integration-heavy work, or tracker tickets whose unresolved choices could cause substantial rework.
 ---
 
 # Clarifying Work
@@ -12,9 +12,11 @@ Reduce consequential uncertainty before choosing a solution. Scale the effort to
 1. Inspect the repository, documentation, configuration, and established conversation to discover facts locally.
 2. Separate known facts, reasonable inferences, and unresolved choices.
 3. Rank uncertainties by how much a wrong assumption would change scope, architecture, safety, or acceptance.
-4. Continue with a stated reversible assumption when risk is low. When an answer materially changes the result, ask one material question at a time and explain the decision it unlocks.
+4. Use a stated reversible assumption for low-risk gaps. Ask only about material choices evidence cannot resolve. Group independent questions; wait for prerequisites before asking dependent ones.
 
 Do not turn clarification into a generic interview or ask for facts available in the workspace.
+
+For empirical uncertainty, run the smallest reversible feasibility probe within the task's authority. Label temporary artifacts and report what the probe establishes. A feasibility question does not authorize shipping a prototype.
 
 ## Integration scan
 
@@ -33,6 +35,6 @@ For changes spanning boundaries, produce a compact integration map: affected pro
 
 ## Outcome
 
-Return the clarified objective, discovered constraints, material assumptions, and any remaining decision. Preserve the user's intent; clarification narrows uncertainty rather than inventing scope.
+Report what the evidence settled and any decision still needed. Preserve the user's scope.
 
 When the request is understood but a proposed direction remains insufficiently challenged, use `adversarial-refinement`; do not keep inventing clarification questions.

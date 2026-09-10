@@ -1,0 +1,13 @@
+extends: existence
+message: "Review the staging phrase '%s'; keep any actual claim."
+level: warning
+scope: ~text.frontmatter
+ignorecase: true
+tokens:
+  - let that sink in
+  - read that again
+  - here(?:'s| is) the (?:thing|kicker)
+  - that(?:'s| is) the real win
+  - it(?:'s| is) worth noting that
+  - at the end of the day
+  - in today(?:'s|’s) (?:fast-paced|ever-evolving) world

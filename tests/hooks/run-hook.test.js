@@ -37,7 +37,7 @@ function contextOf(output) {
 test('startup with strict override returns strict context', () => {
   const result = runHook(fixture('codex-session-start.json'), 'strict');
   assert.equal(result.status, 0);
-  assert.match(contextOf(result.output), /steps in order/i);
+  assert.match(contextOf(result.output), /Read and apply the `strict-mode` skill/i);
 });
 
 test('off override returns no injected context', () => {
@@ -70,7 +70,7 @@ test('all session lifecycle sources use the same selector', () => {
       model: 'gpt-5.6-codex',
       cwd: '/tmp/example-project',
     });
-    assert.match(contextOf(runHook(input, 'strict').output), /steps in order/i);
+    assert.match(contextOf(runHook(input, 'strict').output), /Read and apply the `strict-mode` skill/i);
   }
 });
 

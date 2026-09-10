@@ -5,6 +5,7 @@ import argparse
 import json
 from pathlib import Path
 import subprocess
+import sys
 import tempfile
 
 
@@ -16,13 +17,18 @@ class ReviewError(Exception):
     pass
 
 
-def run_git(repo, *args):
+def run_git(repo, *args, warnings=None):
     result = subprocess.run(
         ["git", "-C", str(repo), *args], text=True, capture_output=True, check=False,
     )
     if result.returncode:
         detail = result.stderr.strip() or result.stdout.strip() or "git command failed"
         raise ReviewError(detail)
+    if result.stderr.strip():
+        if warnings is not None:
+            warnings.append(result.stderr.strip())
+        else:
+            print(result.stderr.strip(), file=sys.stderr)
     return result.stdout
 
 
@@ -100,8 +106,9 @@ def prepare_repo(source, cache_dir):
     return repo, reviewed, head
 
 
-def inventory(repo, reviewed, head):
-    lines = run_git(repo, "diff", "--name-status", "--find-renames", reviewed, head).splitlines()
+def inventory(repo, reviewed, head, warnings=None):
+    lines = run_git(repo, "diff", "--name-status", "--find-renames", reviewed, head,
+                    warnings=warnings).splitlines()
     changes = []
     for line in lines:
         fields = line.split("\t")
@@ -133,7 +140,8 @@ def format_change(change):
 
 
 def source_report(source, repo, reviewed, head):
-    changes = inventory(repo, reviewed, head)
+    warnings = []
+    changes = inventory(repo, reviewed, head, warnings)
     mappings = sorted(source["mappings"], key=lambda item: item["localSkill"])
     affected = [(mapping, mapped_changes(changes, mapping)) for mapping in mappings]
     affected = [(mapping, changeset) for mapping, changeset in affected if changeset]
@@ -159,22 +167,40 @@ def source_report(source, repo, reviewed, head):
     lines.extend(format_change(change) for change in changes)
     if not changes:
         lines.append("- No file changes.")
-    lines.extend(["", "### Affected Local Skills", ""])
+    lines.extend(["", "### Mapping Liveness", "",
+                  "| Upstream path | Recorded | Current | Local skills |",
+                  "|---|---|---|---|"])
+    paths = sorted({path for mapping in mappings for path in mapping['upstreamPaths']})
+    for path in paths:
+        states = ['yes' if run_git(repo, 'ls-tree', revision, '--', path.rstrip('/'),
+                                   warnings=warnings).strip() else 'no'
+                  for revision in (reviewed, head)]
+        owners = ', '.join(mapping['localSkill'] for mapping in mappings
+                           if path in mapping['upstreamPaths'])
+        lines.append(f"| `{path}` | {states[0]} | {states[1]} | {owners} |")
+    lines.extend(["", "Check moved, removed, or stale mappings before interpreting a quiet diff. "
+                  "Existence does not prove runtime use; trace the current loader for deprecated sources.",
+                  "", "### Affected Local Skills", ""])
+    unique = sorted({change for _, changeset in affected for change in changeset})
+    anchors = {change: f"{cache_name(source['name'])}-diff-{index}"
+               for index, change in enumerate(unique, 1)}
     for mapping, changeset in affected:
-        paths = ", ".join(f"`{path}`" for path in sorted({p for c in changeset for p in c[1:]}))
-        lines.append(f"- `{mapping['localSkill']}`: {paths}")
+        links = ", ".join(f"[{change[-1]}](#{anchors[change]})" for change in changeset)
+        lines.append(f"- `{mapping['localSkill']}`: {links}")
     if not affected:
         lines.append("- No mapped local skills are affected.")
     lines.extend(["", "### Mapped Diffs", ""])
-    for mapping, changeset in affected:
-        selected_paths = sorted({path for change in changeset for path in change[1:]})
+    for change in unique:
         diff = run_git(
             repo, "diff", "--no-ext-diff", "--find-renames", "--unified=3",
-            reviewed, head, "--", *selected_paths,
+            reviewed, head, "--", *change[1:], warnings=warnings,
         ).rstrip()
-        lines.extend([f"#### {mapping['localSkill']}", "", "```diff", diff, "```", ""])
+        lines.extend([f'<a id="{anchors[change]}"></a>', f"#### {change[-1]}",
+                      "", "```diff", diff, "```", ""])
     if not affected:
         lines.extend(["No mapped diffs.", ""])
+    if warnings:
+        lines.extend(["### Git Warnings", "", "```text", *sorted(set(warnings)), "```", ""])
     lines.extend([
         "### Manual Review Checklist", "",
         "1. Compare current local behavior with behavior at the recorded upstream commit and current upstream behavior.",

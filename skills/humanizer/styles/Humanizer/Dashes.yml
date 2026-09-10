@@ -1,0 +1,7 @@
+extends: existence
+message: "Check whether this dash fits the writer's punctuation and rhythm."
+level: suggestion
+scope: ~text.frontmatter
+nonword: true
+tokens:
+  - '[\u2013\u2014]'

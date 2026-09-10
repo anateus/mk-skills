@@ -9,7 +9,7 @@ Create a temporary summary that lets the next worker resume without reconstructi
 
 ## Build the handoff
 
-Write to an appropriate temporary location and include:
+Write to an appropriate temporary location. Include what the next worker needs from:
 
 - **Current state:** scope, branch or workspace identity when relevant, and what has changed.
 - **Remaining work:** ordered next actions with dependencies and expected outcomes.
@@ -17,7 +17,7 @@ Write to an appropriate temporary location and include:
 - **Blockers:** missing authority, information, access, failing checks, or unresolved decisions.
 - **Suggested skills:** only workflows likely to help with the next actions.
 
-Reference durable artifacts—specifications, plans, issues, commits, diffs, logs, and source paths—rather than duplicating their contents. Use stable identifiers and record whether referenced working-tree state is uncommitted or may move.
+Link to durable specifications, plans, issues, commits, diffs, logs, and source paths. Avoid duplicating their contents. Use stable identifiers and record whether referenced working-tree state is uncommitted or may move.
 
 ## Safety and accuracy
 
@@ -25,4 +25,4 @@ Redact secrets, credentials, tokens, personal data, and unnecessary environment 
 
 Keep the handoff concise and disposable. Durable decisions belong in the project's established artifacts, not only in the temporary file.
 
-Hand off deliverables as things the repository can regenerate: a script, generator, or CLI flag plus the command that produces the artifact. An artifact only the current session can produce is not transferable.
+For generated deliverables, include the generator and command needed to reproduce them. Other artifacts need a durable, accessible copy and enough context to continue.

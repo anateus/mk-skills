@@ -21,7 +21,7 @@ Read [distributed evidence](references/distributed-evidence.md) when the inciden
 
 ## Run discriminating probes
 
-Maintain at least two plausible hypotheses until a discriminating observation separates them. Prefer the cheapest reversible observation that should differ between hypotheses.
+While the cause is uncertain, maintain at least two plausible hypotheses and seek a discriminating observation. Prefer the cheapest reversible observation that should differ between them.
 
 Use comparable cohorts: identical windows and timezones, explicit denominators, null rates, instrumentation coverage, and deployment/config boundaries. Trace representative entities end to end using stable correlation IDs. Pair volume with dwell time, concurrency, retry, or queue depth so a rate change has a mechanism.
 

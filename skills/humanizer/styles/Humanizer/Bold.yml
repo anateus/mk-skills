@@ -1,0 +1,7 @@
+extends: existence
+message: "Check whether this bold span conveys useful hierarchy."
+level: suggestion
+scope: strong
+nonword: true
+tokens:
+  - '.+'

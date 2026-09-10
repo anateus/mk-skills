@@ -13,7 +13,7 @@ base_sha=$(git rev-parse --verify "${base}^{commit}" 2>/dev/null) || { echo "BAS
 head_sha=$(git rev-parse --verify "${head}^{commit}" 2>/dev/null) || { echo "HEAD does not resolve to a commit: $head" >&2; exit 2; }
 git merge-base --is-ancestor "$base_sha" "$head_sha" || { echo "BASE is not an ancestor of HEAD" >&2; exit 2; }
 
-package=$(mktemp "${TMPDIR:-/tmp}/review-package.XXXXXX.md")
+package=$(mktemp "${TMPDIR:-/tmp}/review-package.XXXXXX")
 cleanup() { rm -f "$package"; }
 trap cleanup EXIT HUP INT TERM
 

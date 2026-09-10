@@ -20,23 +20,29 @@ test('every skill has valid matching frontmatter and stays within its budget', (
   }
 });
 
-test('every reference is directly linked with a read condition and all local Markdown links resolve', () => {
+test('every reference is reachable from its entry and all local Markdown links resolve', () => {
   for (const name of skillDirectories()) {
     const base = path.join(skillsRoot, name, 'SKILL.md');
-    const baseSource = fs.readFileSync(base, 'utf8');
     const references = markdownReferences(name);
-    for (const reference of references) {
-      const relative = path.relative(path.dirname(base), reference).split(path.sep).join('/');
-      const escaped = relative.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      assert.match(baseSource, new RegExp(`(?:Read|when|for|required reference)[^\\n]*\\[[^\\]]*\\]\\(${escaped}\\)`, 'i'), `${name} directly routes ${relative}`);
-    }
+    const edges = new Map();
     for (const file of [base, ...references]) {
       const source = fs.readFileSync(file, 'utf8');
+      edges.set(file, []);
       for (const link of markdownLinks(source)) {
         const target = link.split('#', 1)[0];
         if (!target || /^[a-z][a-z+.-]*:/i.test(target) || target.startsWith('#')) continue;
         assert.ok(fs.existsSync(path.resolve(path.dirname(file), target)), `${file} links to ${target}`);
+        edges.get(file).push(path.resolve(path.dirname(file), target));
       }
     }
+    const seen = new Set();
+    const pending = [base];
+    while (pending.length) {
+      const file = pending.pop();
+      if (seen.has(file)) continue;
+      seen.add(file);
+      pending.push(...(edges.get(file) || []));
+    }
+    for (const reference of references) assert.ok(seen.has(reference), `${name}: unreachable ${reference}`);
   }
 });

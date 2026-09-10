@@ -249,7 +249,7 @@
   },
   {
     "id": "large-transcript-search",
-    "prompt": "Find where an upstream model shutdown was discussed across a 12 MB Claude Code session transcript (JSONL) and pull the relevant lines \u2014 without reading the whole file into context.",
+    "prompt": "Find where an upstream model shutdown was discussed across a 12 MB Claude Code session transcript (JSONL) and pull the relevant lines — without reading the whole file into context.",
     "expectedSkills": [
       "data-spelunking"
     ],
@@ -263,7 +263,7 @@
   },
   {
     "id": "big-csv-slice",
-    "prompt": "This CSV export has millions of rows. Which status codes appear and how often, and pull just the 5xx rows \u2014 without loading the whole file.",
+    "prompt": "This CSV export has millions of rows. Which status codes appear and how often, and pull just the 5xx rows — without loading the whole file.",
     "expectedSkills": [
       "data-spelunking"
     ],
@@ -335,6 +335,67 @@
     "expectedReferences": [],
     "rubric": [
       "Removes AI writing patterns while preserving every claim, fact, and identifier."
+    ]
+  },
+  {
+    "id": "independent-clarification-choices",
+    "prompt": "Add export support. We have not decided the output format or whether to export all rows or only selected rows.",
+    "expectedSkills": [
+      "clarifying-work"
+    ],
+    "forbiddenSkills": [],
+    "expectedReferences": [],
+    "rubric": [
+      "Inspects existing export behavior and groups independent format and row-selection choices without guessing."
+    ]
+  },
+  {
+    "id": "dependent-clarification-choice",
+    "prompt": "Help specify retention. First we must decide whether archives may leave the device; only if they may, choose the cloud region.",
+    "expectedSkills": [
+      "clarifying-work"
+    ],
+    "forbiddenSkills": [],
+    "expectedReferences": [],
+    "rubric": [
+      "Resolves the local-versus-cloud prerequisite before asking for a cloud region."
+    ]
+  },
+  {
+    "id": "valid-concern-different-remedy",
+    "prompt": "Apply the valid parts of review.md to cache.py and verify the fix.",
+    "expectedSkills": [
+      "handling-review-feedback"
+    ],
+    "forbiddenSkills": [],
+    "expectedReferences": [],
+    "rubric": [
+      "Accepts the expiration defect, preserves required caching, chooses a different remedy, and verifies the boundary."
+    ]
+  },
+  {
+    "id": "scoped-fix-review",
+    "prompt": "Re-review the fix since BASE against the finding in review.md. Check any effects of the fix.",
+    "expectedSkills": [
+      "reviewing-code"
+    ],
+    "forbiddenSkills": [],
+    "expectedReferences": [],
+    "rubric": [
+      "Checks the original defect and catches the changed public return contract in its caller; broadens scope beyond the reported line."
+    ]
+  },
+  {
+    "id": "humanizer-preserves-claims",
+    "prompt": "Humanize draft.md without changing what it says.",
+    "expectedSkills": [
+      "humanizer"
+    ],
+    "forbiddenSkills": [],
+    "expectedReferences": [],
+    "rubric": [
+      "Preserves facts, ranking, simultaneity, uncertainty, code, quoted errors, URLs, and MUST wording; does not invent opinions.",
+      "Uses the lightweight scanner when available; does not load the whole catalog for a short edit."
     ]
   }
 ]

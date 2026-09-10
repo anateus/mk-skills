@@ -1,0 +1,1081 @@
+{
+  "date": "2026-09-09",
+  "baseline_commit": "954fb58fa40e345402a72784bd422f461e2efb3e",
+  "measurements": {
+    "entries": {
+      "baseline_words": 6890,
+      "candidate_words": 6647
+    },
+    "shared_guidance": {
+      "baseline_words": 1128,
+      "candidate_words": 516
+    },
+    "strict_injection": {
+      "baseline_words": 238,
+      "candidate_words": 14
+    }
+  },
+  "scanner_benchmark": {
+    "words": 1700,
+    "bytes": 9500,
+    "runs_ms": [
+      84.20741600000001,
+      34.41304200000002,
+      36.36129099999999,
+      34.42583300000002,
+      33.617082999999994
+    ],
+    "median_ms": 34.42583300000002,
+    "counts": {
+      "Humanizer.StageOpeners": 100,
+      "Humanizer.StockWords": 100
+    }
+  },
+  "method": "Explicit-catalog fixture sessions. Raw host token counters retained without normalizing their different schemas. Native plugin discovery and secure host isolation are not established.",
+  "excluded_runs": [
+    {
+      "run": "candidate-claude",
+      "reason": "Safe mode alone retained local style/plugin metadata; its Zellij probe inspected the host. Interrupted that probe and reran with explicit settings/tool restrictions and a fixture Zellij command."
+    }
+  ],
+  "runs": [
+    {
+      "case": "direct-clear-implementation",
+      "host": "codex",
+      "host_version": "codex-cli 0.153.4",
+      "profile": "selective",
+      "snapshot_sha256": "959746f4d839b14c7ba53d53250d4eb1d854c0007ff40c1fc9f29cb7779abf88",
+      "elapsed_seconds": 35.251,
+      "exit_code": 0,
+      "timed_out": false,
+      "run": "baseline-codex",
+      "model": null,
+      "artifact_root": "/tmp/mk-skills-eval-baseline-codex-20260909/direct-clear-implementation",
+      "observed_skill_reads": [
+        "implementing-work",
+        "test-driven-development",
+        "verifying-work"
+      ],
+      "observed_reference_reads": [],
+      "prose_scanner_invocations": 0,
+      "raw_usage": {
+        "input_tokens": 102452,
+        "cached_input_tokens": 80000,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 795,
+        "reasoning_output_tokens": 8
+      },
+      "behavior": "pass",
+      "notes": "Raw trace and resulting artifacts reviewed; direct CLI checks rerun where applicable."
+    },
+    {
+      "case": "humanizer-preserves-claims",
+      "host": "codex",
+      "host_version": "codex-cli 0.153.4",
+      "profile": "selective",
+      "snapshot_sha256": "959746f4d839b14c7ba53d53250d4eb1d854c0007ff40c1fc9f29cb7779abf88",
+      "elapsed_seconds": 36.441,
+      "exit_code": 0,
+      "timed_out": false,
+      "run": "baseline-codex",
+      "model": null,
+      "artifact_root": "/tmp/mk-skills-eval-baseline-codex-20260909/humanizer-preserves-claims",
+      "observed_skill_reads": [
+        "humanizer",
+        "personal-writing-style",
+        "verifying-work"
+      ],
+      "observed_reference_reads": [
+        "skills/humanizer/references/signs-of-ai-writing.md"
+      ],
+      "prose_scanner_invocations": 0,
+      "raw_usage": {
+        "input_tokens": 96318,
+        "cached_input_tokens": 66816,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 840,
+        "reasoning_output_tokens": 21
+      },
+      "behavior": "pass",
+      "notes": "Raw trace and resulting artifacts reviewed; direct CLI checks rerun where applicable."
+    },
+    {
+      "case": "interactive-architecture-grill",
+      "host": "codex",
+      "host_version": "codex-cli 0.153.4",
+      "profile": "selective",
+      "snapshot_sha256": "959746f4d839b14c7ba53d53250d4eb1d854c0007ff40c1fc9f29cb7779abf88",
+      "elapsed_seconds": 15.79,
+      "exit_code": 0,
+      "timed_out": false,
+      "run": "baseline-codex",
+      "model": null,
+      "artifact_root": "/tmp/mk-skills-eval-baseline-codex-20260909/interactive-architecture-grill",
+      "observed_skill_reads": [
+        "adversarial-refinement"
+      ],
+      "observed_reference_reads": [],
+      "prose_scanner_invocations": 0,
+      "raw_usage": {
+        "input_tokens": 57489,
+        "cached_input_tokens": 45696,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 222,
+        "reasoning_output_tokens": 0
+      },
+      "behavior": "pass",
+      "notes": "Raw trace and resulting artifacts reviewed; direct CLI checks rerun where applicable."
+    },
+    {
+      "case": "mixed-state-review",
+      "host": "codex",
+      "host_version": "codex-cli 0.153.4",
+      "profile": "selective",
+      "snapshot_sha256": "959746f4d839b14c7ba53d53250d4eb1d854c0007ff40c1fc9f29cb7779abf88",
+      "elapsed_seconds": 56.256,
+      "exit_code": 0,
+      "timed_out": false,
+      "run": "baseline-codex",
+      "model": null,
+      "artifact_root": "/tmp/mk-skills-eval-baseline-codex-20260909/mixed-state-review",
+      "observed_skill_reads": [
+        "reviewing-code",
+        "verifying-work"
+      ],
+      "observed_reference_reads": [
+        "skills/reviewing-code/references/diff-provenance.md"
+      ],
+      "prose_scanner_invocations": 0,
+      "raw_usage": {
+        "input_tokens": 126869,
+        "cached_input_tokens": 110464,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 1249,
+        "reasoning_output_tokens": 56
+      },
+      "behavior": "pass",
+      "notes": "Raw trace and resulting artifacts reviewed; direct CLI checks rerun where applicable."
+    },
+    {
+      "case": "trivial-local-typo",
+      "host": "codex",
+      "host_version": "codex-cli 0.153.4",
+      "profile": "selective",
+      "snapshot_sha256": "959746f4d839b14c7ba53d53250d4eb1d854c0007ff40c1fc9f29cb7779abf88",
+      "elapsed_seconds": 20.586,
+      "exit_code": 0,
+      "timed_out": false,
+      "run": "baseline-codex",
+      "model": null,
+      "artifact_root": "/tmp/mk-skills-eval-baseline-codex-20260909/trivial-local-typo",
+      "observed_skill_reads": [
+        "implementing-work",
+        "verifying-work"
+      ],
+      "observed_reference_reads": [],
+      "prose_scanner_invocations": 0,
+      "raw_usage": {
+        "input_tokens": 78306,
+        "cached_input_tokens": 37632,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 355,
+        "reasoning_output_tokens": 14
+      },
+      "behavior": "pass",
+      "notes": "Raw trace and resulting artifacts reviewed; direct CLI checks rerun where applicable."
+    },
+    {
+      "case": "zellij-pane-control-zero",
+      "host": "codex",
+      "host_version": "codex-cli 0.153.4",
+      "profile": "selective",
+      "snapshot_sha256": "959746f4d839b14c7ba53d53250d4eb1d854c0007ff40c1fc9f29cb7779abf88",
+      "elapsed_seconds": 21.307,
+      "exit_code": 0,
+      "timed_out": false,
+      "run": "baseline-codex",
+      "model": null,
+      "artifact_root": "/tmp/mk-skills-eval-baseline-codex-20260909/zellij-pane-control-zero",
+      "observed_skill_reads": [
+        "zellij-agent-herder"
+      ],
+      "observed_reference_reads": [
+        "skills/zellij-agent-herder/references/peer-agents.md"
+      ],
+      "prose_scanner_invocations": 0,
+      "raw_usage": {
+        "input_tokens": 85754,
+        "cached_input_tokens": 69504,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 298,
+        "reasoning_output_tokens": 19
+      },
+      "behavior": "limited",
+      "notes": "Unavailable-server fixture only. Does not prove pane creation/status waiting or consistently exercise the peer-agent reference."
+    },
+    {
+      "case": "direct-clear-implementation",
+      "host": "codex",
+      "host_version": "codex-cli 0.153.4",
+      "profile": "selective",
+      "snapshot_sha256": "bddd743dadedda5afdc876e40cbcfc855b21d30232155e371695d81778c37488",
+      "elapsed_seconds": 42.969,
+      "exit_code": 0,
+      "timed_out": false,
+      "run": "candidate-codex",
+      "model": null,
+      "artifact_root": "/tmp/mk-skills-eval-candidate-codex-20260909/direct-clear-implementation",
+      "observed_skill_reads": [
+        "implementing-work",
+        "test-driven-development",
+        "verifying-work"
+      ],
+      "observed_reference_reads": [],
+      "prose_scanner_invocations": 0,
+      "raw_usage": {
+        "input_tokens": 121765,
+        "cached_input_tokens": 99072,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 870,
+        "reasoning_output_tokens": 10
+      },
+      "behavior": "pass",
+      "notes": "Raw trace and resulting artifacts reviewed; direct CLI checks rerun where applicable."
+    },
+    {
+      "case": "humanizer-preserves-claims",
+      "host": "codex",
+      "host_version": "codex-cli 0.153.4",
+      "profile": "selective",
+      "snapshot_sha256": "bddd743dadedda5afdc876e40cbcfc855b21d30232155e371695d81778c37488",
+      "elapsed_seconds": 30.623,
+      "exit_code": 0,
+      "timed_out": false,
+      "run": "candidate-codex",
+      "model": null,
+      "artifact_root": "/tmp/mk-skills-eval-candidate-codex-20260909/humanizer-preserves-claims",
+      "observed_skill_reads": [
+        "humanizer",
+        "personal-writing-style",
+        "verifying-work"
+      ],
+      "observed_reference_reads": [],
+      "prose_scanner_invocations": 1,
+      "raw_usage": {
+        "input_tokens": 80414,
+        "cached_input_tokens": 61440,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 652,
+        "reasoning_output_tokens": 19
+      },
+      "behavior": "pass",
+      "notes": "Raw trace and resulting artifacts reviewed; direct CLI checks rerun where applicable."
+    },
+    {
+      "case": "interactive-architecture-grill",
+      "host": "codex",
+      "host_version": "codex-cli 0.153.4",
+      "profile": "selective",
+      "snapshot_sha256": "bddd743dadedda5afdc876e40cbcfc855b21d30232155e371695d81778c37488",
+      "elapsed_seconds": 17.046,
+      "exit_code": 0,
+      "timed_out": false,
+      "run": "candidate-codex",
+      "model": null,
+      "artifact_root": "/tmp/mk-skills-eval-candidate-codex-20260909/interactive-architecture-grill",
+      "observed_skill_reads": [
+        "adversarial-refinement"
+      ],
+      "observed_reference_reads": [],
+      "prose_scanner_invocations": 0,
+      "raw_usage": {
+        "input_tokens": 56206,
+        "cached_input_tokens": 36736,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 200,
+        "reasoning_output_tokens": 0
+      },
+      "behavior": "pass",
+      "notes": "Raw trace and resulting artifacts reviewed; direct CLI checks rerun where applicable."
+    },
+    {
+      "case": "mixed-state-review",
+      "host": "codex",
+      "host_version": "codex-cli 0.153.4",
+      "profile": "selective",
+      "snapshot_sha256": "bddd743dadedda5afdc876e40cbcfc855b21d30232155e371695d81778c37488",
+      "elapsed_seconds": 48.591,
+      "exit_code": 0,
+      "timed_out": false,
+      "run": "candidate-codex",
+      "model": null,
+      "artifact_root": "/tmp/mk-skills-eval-candidate-codex-20260909/mixed-state-review",
+      "observed_skill_reads": [
+        "reviewing-code",
+        "verifying-work"
+      ],
+      "observed_reference_reads": [
+        "skills/reviewing-code/references/diff-provenance.md"
+      ],
+      "prose_scanner_invocations": 0,
+      "raw_usage": {
+        "input_tokens": 130458,
+        "cached_input_tokens": 112768,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 1125,
+        "reasoning_output_tokens": 45
+      },
+      "behavior": "pass",
+      "notes": "Raw trace and resulting artifacts reviewed; direct CLI checks rerun where applicable."
+    },
+    {
+      "case": "trivial-local-typo",
+      "host": "codex",
+      "host_version": "codex-cli 0.153.4",
+      "profile": "selective",
+      "snapshot_sha256": "bddd743dadedda5afdc876e40cbcfc855b21d30232155e371695d81778c37488",
+      "elapsed_seconds": 17.451,
+      "exit_code": 0,
+      "timed_out": false,
+      "run": "candidate-codex",
+      "model": null,
+      "artifact_root": "/tmp/mk-skills-eval-candidate-codex-20260909/trivial-local-typo",
+      "observed_skill_reads": [
+        "implementing-work",
+        "verifying-work"
+      ],
+      "observed_reference_reads": [],
+      "prose_scanner_invocations": 0,
+      "raw_usage": {
+        "input_tokens": 57299,
+        "cached_input_tokens": 45440,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 252,
+        "reasoning_output_tokens": 0
+      },
+      "behavior": "pass",
+      "notes": "Raw trace and resulting artifacts reviewed; direct CLI checks rerun where applicable."
+    },
+    {
+      "case": "zellij-pane-control-zero",
+      "host": "codex",
+      "host_version": "codex-cli 0.153.4",
+      "profile": "selective",
+      "snapshot_sha256": "bddd743dadedda5afdc876e40cbcfc855b21d30232155e371695d81778c37488",
+      "elapsed_seconds": 25.56,
+      "exit_code": 0,
+      "timed_out": false,
+      "run": "candidate-codex",
+      "model": null,
+      "artifact_root": "/tmp/mk-skills-eval-candidate-codex-20260909/zellij-pane-control-zero",
+      "observed_skill_reads": [
+        "verifying-work",
+        "zellij-agent-herder"
+      ],
+      "observed_reference_reads": [
+        "skills/zellij-agent-herder/references/peer-agents.md"
+      ],
+      "prose_scanner_invocations": 0,
+      "raw_usage": {
+        "input_tokens": 119154,
+        "cached_input_tokens": 93696,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 428,
+        "reasoning_output_tokens": 45
+      },
+      "behavior": "limited",
+      "notes": "Unavailable-server fixture only. Does not prove pane creation/status waiting or consistently exercise the peer-agent reference."
+    },
+    {
+      "case": "direct-clear-implementation",
+      "host": "claude",
+      "host_version": "2.1.267 (Claude Code)",
+      "profile": "selective",
+      "snapshot_sha256": "959746f4d839b14c7ba53d53250d4eb1d854c0007ff40c1fc9f29cb7779abf88",
+      "elapsed_seconds": 72.142,
+      "exit_code": 0,
+      "timed_out": false,
+      "run": "baseline-claude",
+      "model": "claude-opus-5[1m]",
+      "artifact_root": "/tmp/mk-skills-eval-baseline-claude-20260909/direct-clear-implementation",
+      "observed_skill_reads": [
+        "implementing-work",
+        "test-driven-development"
+      ],
+      "observed_reference_reads": [],
+      "prose_scanner_invocations": 0,
+      "raw_usage": {
+        "claude-opus-5[1m]": {
+          "inputTokens": 24,
+          "outputTokens": 3980,
+          "cacheReadInputTokens": 165422,
+          "cacheCreationInputTokens": 14288,
+          "webSearchRequests": 0,
+          "costUSD": 0.29790350000000004,
+          "contextWindow": 1000000,
+          "maxOutputTokens": 64000,
+          "thinkingTokens": 631,
+          "canonicalModel": "claude-opus-5",
+          "provider": "firstParty",
+          "costBasis": "list"
+        }
+      },
+      "behavior": "pass",
+      "notes": "Raw trace and resulting artifacts reviewed; direct CLI checks rerun where applicable."
+    },
+    {
+      "case": "humanizer-preserves-claims",
+      "host": "claude",
+      "host_version": "2.1.267 (Claude Code)",
+      "profile": "selective",
+      "snapshot_sha256": "959746f4d839b14c7ba53d53250d4eb1d854c0007ff40c1fc9f29cb7779abf88",
+      "elapsed_seconds": 33.478,
+      "exit_code": 0,
+      "timed_out": false,
+      "run": "baseline-claude",
+      "model": "claude-opus-5[1m]",
+      "artifact_root": "/tmp/mk-skills-eval-baseline-claude-20260909/humanizer-preserves-claims",
+      "observed_skill_reads": [
+        "humanizer"
+      ],
+      "observed_reference_reads": [
+        "skills/humanizer/references/signs-of-ai-writing.md"
+      ],
+      "prose_scanner_invocations": 0,
+      "raw_usage": {
+        "claude-opus-5[1m]": {
+          "inputTokens": 10,
+          "outputTokens": 2031,
+          "cacheReadInputTokens": 76473,
+          "cacheCreationInputTokens": 21464,
+          "webSearchRequests": 0,
+          "costUSD": 0.249379,
+          "contextWindow": 1000000,
+          "maxOutputTokens": 64000,
+          "thinkingTokens": 986,
+          "canonicalModel": "claude-opus-5",
+          "provider": "firstParty",
+          "costBasis": "list"
+        }
+      },
+      "behavior": "pass",
+      "notes": "Raw trace and resulting artifacts reviewed; direct CLI checks rerun where applicable."
+    },
+    {
+      "case": "interactive-architecture-grill",
+      "host": "claude",
+      "host_version": "2.1.267 (Claude Code)",
+      "profile": "selective",
+      "snapshot_sha256": "959746f4d839b14c7ba53d53250d4eb1d854c0007ff40c1fc9f29cb7779abf88",
+      "elapsed_seconds": 32.237,
+      "exit_code": 0,
+      "timed_out": false,
+      "run": "baseline-claude",
+      "model": "claude-opus-5[1m]",
+      "artifact_root": "/tmp/mk-skills-eval-baseline-claude-20260909/interactive-architecture-grill",
+      "observed_skill_reads": [
+        "adversarial-refinement"
+      ],
+      "observed_reference_reads": [
+        "skills/adversarial-refinement/references/challenge-lenses.md"
+      ],
+      "prose_scanner_invocations": 0,
+      "raw_usage": {
+        "claude-opus-5[1m]": {
+          "inputTokens": 8,
+          "outputTokens": 1694,
+          "cacheReadInputTokens": 41307,
+          "cacheCreationInputTokens": 10459,
+          "webSearchRequests": 0,
+          "costUSD": 0.154696,
+          "contextWindow": 1000000,
+          "maxOutputTokens": 64000,
+          "thinkingTokens": 353,
+          "canonicalModel": "claude-opus-5",
+          "provider": "firstParty",
+          "costBasis": "list"
+        }
+      },
+      "behavior": "behavior-failure",
+      "notes": "Correct skill and interactive pacing, but unsupported queue-capacity/latency claims or a rate-to-backlog calculation with the wrong population. Baseline also fails claim grounding."
+    },
+    {
+      "case": "mixed-state-review",
+      "host": "claude",
+      "host_version": "2.1.267 (Claude Code)",
+      "profile": "selective",
+      "snapshot_sha256": "959746f4d839b14c7ba53d53250d4eb1d854c0007ff40c1fc9f29cb7779abf88",
+      "elapsed_seconds": 101.468,
+      "exit_code": 0,
+      "timed_out": false,
+      "run": "baseline-claude",
+      "model": "claude-opus-5[1m]",
+      "artifact_root": "/tmp/mk-skills-eval-baseline-claude-20260909/mixed-state-review",
+      "observed_skill_reads": [
+        "reviewing-code"
+      ],
+      "observed_reference_reads": [
+        "skills/reviewing-code/references/diff-provenance.md"
+      ],
+      "prose_scanner_invocations": 0,
+      "raw_usage": {
+        "claude-opus-5[1m]": {
+          "inputTokens": 20,
+          "outputTokens": 7443,
+          "cacheReadInputTokens": 155190,
+          "cacheCreationInputTokens": 19398,
+          "webSearchRequests": 0,
+          "costUSD": 0.41145624999999997,
+          "contextWindow": 1000000,
+          "maxOutputTokens": 64000,
+          "thinkingTokens": 2121,
+          "canonicalModel": "claude-opus-5",
+          "provider": "firstParty",
+          "costBasis": "list"
+        }
+      },
+      "behavior": "pass",
+      "notes": "Raw trace and resulting artifacts reviewed; direct CLI checks rerun where applicable."
+    },
+    {
+      "case": "trivial-local-typo",
+      "host": "claude",
+      "host_version": "2.1.267 (Claude Code)",
+      "profile": "selective",
+      "snapshot_sha256": "959746f4d839b14c7ba53d53250d4eb1d854c0007ff40c1fc9f29cb7779abf88",
+      "elapsed_seconds": 9.125,
+      "exit_code": 0,
+      "timed_out": false,
+      "run": "baseline-claude",
+      "model": "claude-opus-5[1m]",
+      "artifact_root": "/tmp/mk-skills-eval-baseline-claude-20260909/trivial-local-typo",
+      "observed_skill_reads": [],
+      "observed_reference_reads": [],
+      "prose_scanner_invocations": 0,
+      "raw_usage": {
+        "claude-opus-5[1m]": {
+          "inputTokens": 8,
+          "outputTokens": 488,
+          "cacheReadInputTokens": 38002,
+          "cacheCreationInputTokens": 7700,
+          "webSearchRequests": 0,
+          "costUSD": 0.10548475,
+          "contextWindow": 1000000,
+          "maxOutputTokens": 64000,
+          "thinkingTokens": 0,
+          "canonicalModel": "claude-opus-5",
+          "provider": "firstParty",
+          "costBasis": "list"
+        }
+      },
+      "behavior": "pass",
+      "notes": "Raw trace and resulting artifacts reviewed; direct CLI checks rerun where applicable."
+    },
+    {
+      "case": "zellij-pane-control-zero",
+      "host": "claude",
+      "host_version": "2.1.267 (Claude Code)",
+      "profile": "selective",
+      "snapshot_sha256": "959746f4d839b14c7ba53d53250d4eb1d854c0007ff40c1fc9f29cb7779abf88",
+      "elapsed_seconds": 30.834,
+      "exit_code": 0,
+      "timed_out": false,
+      "run": "baseline-claude",
+      "model": "claude-opus-5[1m]",
+      "artifact_root": "/tmp/mk-skills-eval-baseline-claude-20260909/zellij-pane-control-zero",
+      "observed_skill_reads": [
+        "zellij-agent-herder"
+      ],
+      "observed_reference_reads": [],
+      "prose_scanner_invocations": 0,
+      "raw_usage": {
+        "claude-opus-5[1m]": {
+          "inputTokens": 8,
+          "outputTokens": 2136,
+          "cacheReadInputTokens": 42870,
+          "cacheCreationInputTokens": 10621,
+          "webSearchRequests": 0,
+          "costUSD": 0.1675625,
+          "contextWindow": 1000000,
+          "maxOutputTokens": 64000,
+          "thinkingTokens": 509,
+          "canonicalModel": "claude-opus-5",
+          "provider": "firstParty",
+          "costBasis": "list"
+        }
+      },
+      "behavior": "limited",
+      "notes": "Unavailable-server fixture only. Does not prove pane creation/status waiting or consistently exercise the peer-agent reference."
+    },
+    {
+      "case": "direct-clear-implementation",
+      "host": "claude",
+      "host_version": "2.1.267 (Claude Code)",
+      "profile": "selective",
+      "snapshot_sha256": "42d74391eccaff1318ebf408b303ccd003b0b1355c7d12f0125b772b509fd730",
+      "elapsed_seconds": 57.006,
+      "exit_code": 0,
+      "timed_out": false,
+      "run": "candidate-claude-clean",
+      "model": "claude-opus-5[1m]",
+      "artifact_root": "/tmp/mk-skills-eval-candidate-claude-clean-20260909/direct-clear-implementation",
+      "observed_skill_reads": [
+        "implementing-work",
+        "test-driven-development"
+      ],
+      "observed_reference_reads": [],
+      "prose_scanner_invocations": 0,
+      "raw_usage": {
+        "claude-opus-5[1m]": {
+          "inputTokens": 18,
+          "outputTokens": 3387,
+          "cacheReadInputTokens": 113503,
+          "cacheCreationInputTokens": 12694,
+          "webSearchRequests": 0,
+          "costUSD": 0.24489525,
+          "contextWindow": 1000000,
+          "maxOutputTokens": 64000,
+          "thinkingTokens": 351,
+          "canonicalModel": "claude-opus-5",
+          "provider": "firstParty",
+          "costBasis": "list"
+        }
+      },
+      "behavior": "pass",
+      "notes": "Raw trace and resulting artifacts reviewed; direct CLI checks rerun where applicable."
+    },
+    {
+      "case": "humanizer-preserves-claims",
+      "host": "claude",
+      "host_version": "2.1.267 (Claude Code)",
+      "profile": "selective",
+      "snapshot_sha256": "42d74391eccaff1318ebf408b303ccd003b0b1355c7d12f0125b772b509fd730",
+      "elapsed_seconds": 31.092,
+      "exit_code": 0,
+      "timed_out": false,
+      "run": "candidate-claude-clean",
+      "model": "claude-opus-5[1m]",
+      "artifact_root": "/tmp/mk-skills-eval-candidate-claude-clean-20260909/humanizer-preserves-claims",
+      "observed_skill_reads": [
+        "humanizer"
+      ],
+      "observed_reference_reads": [],
+      "prose_scanner_invocations": 3,
+      "raw_usage": {
+        "claude-opus-5[1m]": {
+          "inputTokens": 12,
+          "outputTokens": 1597,
+          "cacheReadInputTokens": 63824,
+          "cacheCreationInputTokens": 9152,
+          "webSearchRequests": 0,
+          "costUSD": 0.15312325000000002,
+          "contextWindow": 1000000,
+          "maxOutputTokens": 64000,
+          "thinkingTokens": 397,
+          "canonicalModel": "claude-opus-5",
+          "provider": "firstParty",
+          "costBasis": "list"
+        }
+      },
+      "behavior": "pass",
+      "notes": "Raw trace and resulting artifacts reviewed; direct CLI checks rerun where applicable."
+    },
+    {
+      "case": "interactive-architecture-grill",
+      "host": "claude",
+      "host_version": "2.1.267 (Claude Code)",
+      "profile": "selective",
+      "snapshot_sha256": "42d74391eccaff1318ebf408b303ccd003b0b1355c7d12f0125b772b509fd730",
+      "elapsed_seconds": 24.163,
+      "exit_code": 0,
+      "timed_out": false,
+      "run": "candidate-claude-clean",
+      "model": "claude-opus-5[1m]",
+      "artifact_root": "/tmp/mk-skills-eval-candidate-claude-clean-20260909/interactive-architecture-grill",
+      "observed_skill_reads": [
+        "adversarial-refinement"
+      ],
+      "observed_reference_reads": [],
+      "prose_scanner_invocations": 0,
+      "raw_usage": {
+        "claude-opus-5[1m]": {
+          "inputTokens": 6,
+          "outputTokens": 1366,
+          "cacheReadInputTokens": 26529,
+          "cacheCreationInputTokens": 8605,
+          "webSearchRequests": 0,
+          "costUSD": 0.1252895,
+          "contextWindow": 1000000,
+          "maxOutputTokens": 64000,
+          "thinkingTokens": 229,
+          "canonicalModel": "claude-opus-5",
+          "provider": "firstParty",
+          "costBasis": "list"
+        }
+      },
+      "behavior": "behavior-failure",
+      "notes": "Correct skill and interactive pacing, but unsupported queue-capacity/latency claims or a rate-to-backlog calculation with the wrong population. Baseline also fails claim grounding."
+    },
+    {
+      "case": "mixed-state-review",
+      "host": "claude",
+      "host_version": "2.1.267 (Claude Code)",
+      "profile": "selective",
+      "snapshot_sha256": "42d74391eccaff1318ebf408b303ccd003b0b1355c7d12f0125b772b509fd730",
+      "elapsed_seconds": 82.272,
+      "exit_code": 0,
+      "timed_out": false,
+      "run": "candidate-claude-clean",
+      "model": "claude-opus-5[1m]",
+      "artifact_root": "/tmp/mk-skills-eval-candidate-claude-clean-20260909/mixed-state-review",
+      "observed_skill_reads": [
+        "reviewing-code"
+      ],
+      "observed_reference_reads": [
+        "skills/reviewing-code/references/diff-provenance.md"
+      ],
+      "prose_scanner_invocations": 0,
+      "raw_usage": {
+        "claude-opus-5[1m]": {
+          "inputTokens": 16,
+          "outputTokens": 6130,
+          "cacheReadInputTokens": 103973,
+          "cacheCreationInputTokens": 14198,
+          "webSearchRequests": 0,
+          "costUSD": 0.31835399999999997,
+          "contextWindow": 1000000,
+          "maxOutputTokens": 64000,
+          "thinkingTokens": 1696,
+          "canonicalModel": "claude-opus-5",
+          "provider": "firstParty",
+          "costBasis": "list"
+        }
+      },
+      "behavior": "pass",
+      "notes": "Raw trace and resulting artifacts reviewed; direct CLI checks rerun where applicable."
+    },
+    {
+      "case": "trivial-local-typo",
+      "host": "claude",
+      "host_version": "2.1.267 (Claude Code)",
+      "profile": "selective",
+      "snapshot_sha256": "42d74391eccaff1318ebf408b303ccd003b0b1355c7d12f0125b772b509fd730",
+      "elapsed_seconds": 9.756,
+      "exit_code": 0,
+      "timed_out": false,
+      "run": "candidate-claude-clean",
+      "model": "claude-opus-5[1m]",
+      "artifact_root": "/tmp/mk-skills-eval-candidate-claude-clean-20260909/trivial-local-typo",
+      "observed_skill_reads": [],
+      "observed_reference_reads": [],
+      "prose_scanner_invocations": 0,
+      "raw_usage": {
+        "claude-opus-5[1m]": {
+          "inputTokens": 6,
+          "outputTokens": 498,
+          "cacheReadInputTokens": 25620,
+          "cacheCreationInputTokens": 7174,
+          "webSearchRequests": 0,
+          "costUSD": 0.09418,
+          "contextWindow": 1000000,
+          "maxOutputTokens": 64000,
+          "thinkingTokens": 0,
+          "canonicalModel": "claude-opus-5",
+          "provider": "firstParty",
+          "costBasis": "list"
+        }
+      },
+      "behavior": "pass",
+      "notes": "Raw trace and resulting artifacts reviewed; direct CLI checks rerun where applicable."
+    },
+    {
+      "case": "zellij-pane-control-zero",
+      "host": "claude",
+      "host_version": "2.1.267 (Claude Code)",
+      "profile": "selective",
+      "snapshot_sha256": "42d74391eccaff1318ebf408b303ccd003b0b1355c7d12f0125b772b509fd730",
+      "elapsed_seconds": 41.755,
+      "exit_code": 0,
+      "timed_out": false,
+      "run": "candidate-claude-clean",
+      "model": "claude-opus-5[1m]",
+      "artifact_root": "/tmp/mk-skills-eval-candidate-claude-clean-20260909/zellij-pane-control-zero",
+      "observed_skill_reads": [
+        "zellij-agent-herder"
+      ],
+      "observed_reference_reads": [
+        "skills/zellij-agent-herder/references/activation-hook.md"
+      ],
+      "prose_scanner_invocations": 0,
+      "raw_usage": {
+        "claude-opus-5[1m]": {
+          "inputTokens": 10,
+          "outputTokens": 2913,
+          "cacheReadInputTokens": 55635,
+          "cacheCreationInputTokens": 11049,
+          "webSearchRequests": 0,
+          "costUSD": 0.1936775,
+          "contextWindow": 1000000,
+          "maxOutputTokens": 64000,
+          "thinkingTokens": 670,
+          "canonicalModel": "claude-opus-5",
+          "provider": "firstParty",
+          "costBasis": "list"
+        }
+      },
+      "behavior": "limited",
+      "notes": "Unavailable-server fixture only. Does not prove pane creation/status waiting or consistently exercise the peer-agent reference."
+    },
+    {
+      "case": "trivial-local-typo",
+      "host": "codex",
+      "host_version": "codex-cli 0.153.4",
+      "profile": "strict",
+      "snapshot_sha256": "42d74391eccaff1318ebf408b303ccd003b0b1355c7d12f0125b772b509fd730",
+      "elapsed_seconds": 27.852,
+      "exit_code": 0,
+      "timed_out": false,
+      "run": "strict-codex",
+      "model": null,
+      "artifact_root": "/tmp/mk-skills-eval-strict-codex-20260909/trivial-local-typo",
+      "observed_skill_reads": [
+        "humanizer",
+        "personal-writing-style",
+        "strict-mode",
+        "verifying-work"
+      ],
+      "observed_reference_reads": [],
+      "prose_scanner_invocations": 0,
+      "raw_usage": {
+        "input_tokens": 97436,
+        "cached_input_tokens": 73088,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 390,
+        "reasoning_output_tokens": 50
+      },
+      "behavior": "pass",
+      "notes": "Raw trace and resulting artifacts reviewed; direct CLI checks rerun where applicable."
+    },
+    {
+      "case": "trivial-local-typo",
+      "host": "claude",
+      "host_version": "2.1.267 (Claude Code)",
+      "profile": "strict",
+      "snapshot_sha256": "42d74391eccaff1318ebf408b303ccd003b0b1355c7d12f0125b772b509fd730",
+      "elapsed_seconds": 19.712,
+      "exit_code": 0,
+      "timed_out": false,
+      "run": "strict-claude",
+      "model": "claude-opus-5[1m]",
+      "artifact_root": "/tmp/mk-skills-eval-strict-claude-20260909/trivial-local-typo",
+      "observed_skill_reads": [
+        "strict-mode"
+      ],
+      "observed_reference_reads": [],
+      "prose_scanner_invocations": 0,
+      "raw_usage": {
+        "claude-opus-5[1m]": {
+          "inputTokens": 10,
+          "outputTokens": 982,
+          "cacheReadInputTokens": 47235,
+          "cacheCreationInputTokens": 12859,
+          "webSearchRequests": 0,
+          "costUSD": 0.16797250000000002,
+          "contextWindow": 1000000,
+          "maxOutputTokens": 64000,
+          "thinkingTokens": 179,
+          "canonicalModel": "claude-opus-5",
+          "provider": "firstParty",
+          "costBasis": "list"
+        }
+      },
+      "behavior": "pass",
+      "notes": "Raw trace and resulting artifacts reviewed; direct CLI checks rerun where applicable."
+    },
+    {
+      "case": "dependent-clarification-choice",
+      "host": "codex",
+      "host_version": "codex-cli 0.153.4",
+      "profile": "selective",
+      "snapshot_sha256": "0fc576299a51064b3aa847f4ccfb5b545ce95d1fc9f20ec437a0f88df078acb1",
+      "elapsed_seconds": 14.275,
+      "exit_code": 0,
+      "timed_out": false,
+      "run": "capabilities-codex",
+      "model": null,
+      "artifact_root": "/tmp/mk-skills-eval-capabilities-codex-20260909/dependent-clarification-choice",
+      "observed_skill_reads": [
+        "clarifying-work",
+        "specifying-work"
+      ],
+      "observed_reference_reads": [],
+      "prose_scanner_invocations": 0,
+      "raw_usage": {
+        "input_tokens": 57137,
+        "cached_input_tokens": 45312,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 182,
+        "reasoning_output_tokens": 0
+      },
+      "behavior": "pass",
+      "notes": "Raw trace and resulting artifacts reviewed; direct CLI checks rerun where applicable."
+    },
+    {
+      "case": "independent-clarification-choices",
+      "host": "codex",
+      "host_version": "codex-cli 0.153.4",
+      "profile": "selective",
+      "snapshot_sha256": "0fc576299a51064b3aa847f4ccfb5b545ce95d1fc9f20ec437a0f88df078acb1",
+      "elapsed_seconds": 14.048,
+      "exit_code": 0,
+      "timed_out": false,
+      "run": "capabilities-codex",
+      "model": null,
+      "artifact_root": "/tmp/mk-skills-eval-capabilities-codex-20260909/independent-clarification-choices",
+      "observed_skill_reads": [
+        "clarifying-work"
+      ],
+      "observed_reference_reads": [],
+      "prose_scanner_invocations": 0,
+      "raw_usage": {
+        "input_tokens": 56343,
+        "cached_input_tokens": 44928,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 217,
+        "reasoning_output_tokens": 0
+      },
+      "behavior": "pass",
+      "notes": "Raw trace and resulting artifacts reviewed; direct CLI checks rerun where applicable."
+    },
+    {
+      "case": "scoped-fix-review",
+      "host": "codex",
+      "host_version": "codex-cli 0.153.4",
+      "profile": "selective",
+      "snapshot_sha256": "0fc576299a51064b3aa847f4ccfb5b545ce95d1fc9f20ec437a0f88df078acb1",
+      "elapsed_seconds": 30.697,
+      "exit_code": 0,
+      "timed_out": false,
+      "run": "capabilities-codex",
+      "model": null,
+      "artifact_root": "/tmp/mk-skills-eval-capabilities-codex-20260909/scoped-fix-review",
+      "observed_skill_reads": [
+        "reviewing-code",
+        "verifying-work"
+      ],
+      "observed_reference_reads": [],
+      "prose_scanner_invocations": 0,
+      "raw_usage": {
+        "input_tokens": 98213,
+        "cached_input_tokens": 76928,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 628,
+        "reasoning_output_tokens": 0
+      },
+      "behavior": "pass",
+      "notes": "Raw trace and resulting artifacts reviewed; direct CLI checks rerun where applicable."
+    },
+    {
+      "case": "valid-concern-different-remedy",
+      "host": "codex",
+      "host_version": "codex-cli 0.153.4",
+      "profile": "selective",
+      "snapshot_sha256": "0fc576299a51064b3aa847f4ccfb5b545ce95d1fc9f20ec437a0f88df078acb1",
+      "elapsed_seconds": 35.875,
+      "exit_code": 0,
+      "timed_out": false,
+      "run": "capabilities-codex",
+      "model": null,
+      "artifact_root": "/tmp/mk-skills-eval-capabilities-codex-20260909/valid-concern-different-remedy",
+      "observed_skill_reads": [
+        "handling-review-feedback",
+        "implementing-work",
+        "test-driven-development",
+        "verifying-work"
+      ],
+      "observed_reference_reads": [],
+      "prose_scanner_invocations": 0,
+      "raw_usage": {
+        "input_tokens": 121237,
+        "cached_input_tokens": 107008,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 694,
+        "reasoning_output_tokens": 0
+      },
+      "behavior": "pass",
+      "notes": "Raw trace and resulting artifacts reviewed; direct CLI checks rerun where applicable."
+    },
+    {
+      "case": "interactive-architecture-grill",
+      "host": "claude",
+      "host_version": "2.1.267 (Claude Code)",
+      "profile": "selective",
+      "snapshot_sha256": "e30aeefcb1e14ccfec46d6eaccf96b23c6d06b846d08cde649ab6c81f736d7a3",
+      "elapsed_seconds": 25.996,
+      "exit_code": 0,
+      "timed_out": false,
+      "run": "grill-recheck-claude",
+      "model": "claude-opus-5[1m]",
+      "artifact_root": "/tmp/mk-skills-eval-grill-recheck-claude-20260909/interactive-architecture-grill",
+      "observed_skill_reads": [
+        "adversarial-refinement"
+      ],
+      "observed_reference_reads": [],
+      "prose_scanner_invocations": 0,
+      "raw_usage": {
+        "claude-opus-5[1m]": {
+          "inputTokens": 6,
+          "outputTokens": 1427,
+          "cacheReadInputTokens": 26530,
+          "cacheCreationInputTokens": 8018,
+          "webSearchRequests": 0,
+          "costUSD": 0.12314249999999999,
+          "contextWindow": 1000000,
+          "maxOutputTokens": 64000,
+          "thinkingTokens": 329,
+          "canonicalModel": "claude-opus-5",
+          "provider": "firstParty",
+          "costBasis": "list"
+        }
+      },
+      "behavior": "behavior-failure",
+      "notes": "Correct skill and interactive pacing, but unsupported queue-capacity/latency claims or a rate-to-backlog calculation with the wrong population. Baseline also fails claim grounding."
+    },
+    {
+      "case": "interactive-architecture-grill",
+      "host": "claude",
+      "host_version": "2.1.267 (Claude Code)",
+      "profile": "selective",
+      "snapshot_sha256": "9450ae625612f43b929e5477906215fa83f3ff8d2e53f7db9e45aebb92a9673c",
+      "elapsed_seconds": 29.402,
+      "exit_code": 0,
+      "timed_out": false,
+      "run": "grill-evidence-claude",
+      "model": "claude-opus-5[1m]",
+      "artifact_root": "/tmp/mk-skills-eval-grill-evidence-claude-20260909/interactive-architecture-grill",
+      "observed_skill_reads": [
+        "adversarial-refinement"
+      ],
+      "observed_reference_reads": [],
+      "prose_scanner_invocations": 0,
+      "raw_usage": {
+        "claude-opus-5[1m]": {
+          "inputTokens": 6,
+          "outputTokens": 1868,
+          "cacheReadInputTokens": 26552,
+          "cacheCreationInputTokens": 8352,
+          "webSearchRequests": 0,
+          "costUSD": 0.13634475,
+          "contextWindow": 1000000,
+          "maxOutputTokens": 64000,
+          "thinkingTokens": 679,
+          "canonicalModel": "claude-opus-5",
+          "provider": "firstParty",
+          "costBasis": "list"
+        }
+      },
+      "behavior": "behavior-failure",
+      "notes": "Correct skill and interactive pacing, but unsupported queue-capacity/latency claims or a rate-to-backlog calculation with the wrong population. Baseline also fails claim grounding."
+    }
+  ]
+}

@@ -1,0 +1,12 @@
+extends: existence
+message: "Review '%s' for a more specific expression in this voice."
+level: warning
+scope: ~text.frontmatter
+ignorecase: true
+tokens:
+  - delv(?:e|es|ed|ing)
+  - rich tapestry
+  - testament to
+  - paradigm shift
+  - game.chang(?:er|ing)
+  - unlock (?:the|your) (?:full )?potential

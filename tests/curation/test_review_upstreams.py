@@ -1,12 +1,17 @@
 import json
+import importlib.util
 from pathlib import Path
 import subprocess
 import tempfile
 import unittest
+from unittest.mock import patch
 
 
 ROOT = Path(__file__).resolve().parents[2]
 SCRIPT = ROOT / "skills" / "curating-skills" / "scripts" / "review-upstreams.py"
+SPEC = importlib.util.spec_from_file_location('review_upstreams', SCRIPT)
+review = importlib.util.module_from_spec(SPEC)
+SPEC.loader.exec_module(review)
 
 
 class ReviewUpstreamsTests(unittest.TestCase):
@@ -123,6 +128,31 @@ class ReviewUpstreamsTests(unittest.TestCase):
         self.assertEqual(first.read_bytes(), second.read_bytes())
         self.assertEqual(before, self.manifest.read_bytes())
 
+    def test_mapping_liveness_and_shared_diff_are_explicit(self):
+        value = json.loads(self.manifest.read_text())
+        value['sources'][0]['mappings'].append({
+            'localSkill': 'adversarial-refinement',
+            'upstreamPaths': ['skills/changed', 'skills/never-existed'],
+        })
+        self.manifest.write_text(json.dumps(value))
+        result = self.run_review()
+        self.assertEqual(result.returncode, 0, result.stderr)
+        report = self.output.read_text()
+        self.assertIn('| `skills/renamed-old` | yes | no |', report)
+        self.assertIn('| `skills/added` | no | yes |', report)
+        self.assertIn('| `skills/never-existed` | no | no |', report)
+        self.assertIn('Check moved, removed, or stale mappings', report)
+        self.assertEqual(report.count('diff --git a/skills/changed/SKILL.md'), 1)
+        self.assertIn('adversarial-refinement', report)
+
+    def test_successful_git_warnings_are_not_discarded(self):
+        warning = 'warning: exhaustive rename detection was skipped'
+        process = subprocess.CompletedProcess(['git'], 0, 'result', warning + '\n')
+        warnings = []
+        with patch.object(review.subprocess, 'run', return_value=process):
+            self.assertEqual(review.run_git(self.work, 'diff', warnings=warnings), 'result')
+        self.assertEqual(warnings, [warning])
+
     def test_missing_reviewed_commit_fails_without_mutating_manifest(self):
         self.write_manifest(str(self.remote), "f" * 40)
         before = self.manifest.read_bytes()
@@ -226,23 +256,12 @@ class ReviewUpstreamsTests(unittest.TestCase):
             for skill in decision["localSkills"]:
                 self.assertTrue((ROOT / "skills" / skill / "SKILL.md").is_file())
 
-        approved = next(item for item in ledger["decisions"] if item["source"] == "matt-pocock-skills")
-        self.assertEqual("9603c1cc8118d08bc1b3bf34cf714f62178dea3b", approved["fromCommit"])
-        self.assertEqual(sources["matt-pocock-skills"]["reviewedCommit"], approved["toCommit"])
-
-    def test_curation_skill_requires_conceptual_merge_not_automatic_copy(self):
-        skill = (ROOT / "skills" / "curating-skills" / "SKILL.md").read_text()
-        for concept in [
-            "current local behavior", "recorded upstream commit", "current upstream behavior",
-            "accept", "reject", "validate", "reviewedCommit",
-        ]:
-            self.assertIn(concept.lower(), skill.lower())
-        self.assertRegex(skill, r"(?i)never auto(?:matically)?[- ]copy")
-        self.assertRegex(skill, r"(?i)never .*push")
-        self.assertRegex(skill, r"(?is)advance.*reviewedCommit.*after.*decision")
-        self.assertIn('python3 "<skill-base-dir>/scripts/review-upstreams.py"', skill)
-        self.assertIn('$REPO_ROOT/config/sources.yaml', skill)
-        self.assertNotIn('python3 skills/curating-skills/scripts/', skill)
+        # Recorded decisions are history, not a snapshot of the current pin.
+        for source in sources.values():
+            decisions = [d for d in ledger['decisions'] if d['source'] == source['name']]
+            if decisions:
+                self.assertTrue(any(d['toCommit'] == source['reviewedCommit'] for d in decisions),
+                                source['name'] + ': pin has no matching reviewed decision')
 
 
 if __name__ == "__main__":

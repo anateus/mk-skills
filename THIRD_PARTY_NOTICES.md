@@ -48,7 +48,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 Source: https://github.com/blader/humanizer
 
-Unlike the sources above, `skills/humanizer` vendors upstream content: the full pattern catalog is kept verbatim in `references/signs-of-ai-writing.md` (with the upstream LICENSE beside it), under a condensed local SKILL.md entry point. Upstream version at review: 2.11.2.
+Unlike the sources above, `skills/humanizer` vendors upstream content: the full pattern catalog is kept verbatim in `references/signs-of-ai-writing.md` (with the upstream LICENSE beside it), under a condensed local SKILL.md entry point. Upstream version at review: 3.0.0.
 
 MIT License
 

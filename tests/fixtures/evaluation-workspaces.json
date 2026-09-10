@@ -1,0 +1,141 @@
+{
+  "direct-clear-implementation": {
+    "commits": [
+      {
+        "README.md": "# Status service\n\nRun `python3 status.py` to print the current status. It is always ready. Run `python3 -m unittest discover -s tests -v` for tests.\n\nThis is teh status service.\n",
+        "status.py": "import argparse\n\n\ndef main():\n    parser = argparse.ArgumentParser()\n    parser.parse_args()\n    print(\"status: ready\")\n\n\nif __name__ == \"__main__\":\n    main()\n",
+        "tests/test_status.py": "import subprocess\nimport sys\nimport unittest\n\nclass StatusTests(unittest.TestCase):\n    def test_text(self):\n        result = subprocess.run([sys.executable, \"status.py\"], text=True, capture_output=True)\n        self.assertEqual(result.returncode, 0)\n        self.assertEqual(result.stdout, \"status: ready\\n\")\n"
+      }
+    ]
+  },
+  "trivial-local-typo": {
+    "commits": [
+      {
+        "README.md": "# Status service\n\nRun `python3 status.py` to print the current status. It is always ready. Run `python3 -m unittest discover -s tests -v` for tests.\n\nThis is teh status service.\n",
+        "status.py": "import argparse\n\n\ndef main():\n    parser = argparse.ArgumentParser()\n    parser.parse_args()\n    print(\"status: ready\")\n\n\nif __name__ == \"__main__\":\n    main()\n",
+        "tests/test_status.py": "import subprocess\nimport sys\nimport unittest\n\nclass StatusTests(unittest.TestCase):\n    def test_text(self):\n        result = subprocess.run([sys.executable, \"status.py\"], text=True, capture_output=True)\n        self.assertEqual(result.returncode, 0)\n        self.assertEqual(result.stdout, \"status: ready\\n\")\n"
+      }
+    ]
+  },
+  "mixed-state-review": {
+    "commits": [
+      {
+        "README.md": "# Status service\n\nRun `python3 status.py` to print the current status. It is always ready. Run `python3 -m unittest discover -s tests -v` for tests.\n\nThis is teh status service.\n",
+        "status.py": "import argparse\n\n\ndef main():\n    parser = argparse.ArgumentParser()\n    parser.parse_args()\n    print(\"status: ready\")\n\n\nif __name__ == \"__main__\":\n    main()\n",
+        "tests/test_status.py": "import subprocess\nimport sys\nimport unittest\n\nclass StatusTests(unittest.TestCase):\n    def test_text(self):\n        result = subprocess.run([sys.executable, \"status.py\"], text=True, capture_output=True)\n        self.assertEqual(result.returncode, 0)\n        self.assertEqual(result.stdout, \"status: ready\\n\")\n"
+      },
+      {
+        "status.py": "import argparse\n\n\ndef main():\n    parser = argparse.ArgumentParser()\n    parser.parse_args()\n    print(\"status: waiting\")\n\n\nif __name__ == \"__main__\":\n    main()\n"
+      }
+    ],
+    "staged": {
+      "README.md": "# Status service\n\nRun `python3 status.py` to print the current status. It is always ready. Run `python3 -m unittest discover -s tests -v` for tests.\n\nThis is teh status service.\n\nThe status is ready.\n"
+    },
+    "unstaged": {
+      "status.py": "import argparse\n\n\ndef main():\n    parser = argparse.ArgumentParser()\n    parser.parse_args()\n    print(\"status: failed\")\n\n\nif __name__ == \"__main__\":\n    main()\n"
+    },
+    "untracked": {
+      "generated/status.txt": "ready\n",
+      "generate.py": "from pathlib import Path\nPath(\"generated/status.txt\").write_text(\"ready\\n\")\n",
+      "notes.md": "Generated status.txt comes from generate.py.\n"
+    }
+  },
+  "interactive-architecture-grill": {
+    "commits": [
+      {
+        "README.md": "# Proposed architecture\n\nMove a single-region task queue from durable storage to process memory to reduce request latency. Three API workers accept requests, workers restart during deploys, and users expect acknowledged tasks to run eventually. Traffic is about 30 requests per second. No queue latency has been measured.\n"
+      }
+    ]
+  },
+  "artifact-rollout-stress-test": {
+    "commits": [
+      {
+        "README.md": "# Rollout plan\n\nReplace the queue with a new broker and switch all producers Friday. Old consumers remain for one week. The new event schema renames account_id to organization_id. Rollback switches the broker URL back.\n"
+      }
+    ]
+  },
+  "zellij-pane-control-zero": {
+    "commits": [
+      {
+        "README.md": "# Terminal fixture\n\nThere is no running Zellij server in this disposable environment. Inspect helper documentation and report a concrete blocked action; do not target any real session.\n"
+      }
+    ]
+  },
+  "explicit-strict-execution": {
+    "commits": [
+      {
+        "README.md": "# Status service\n\nRun `python3 status.py` to print the current status. It is always ready. Run `python3 -m unittest discover -s tests -v` for tests.\n\nThis is teh status service.\n",
+        "status.py": "import argparse\n\n\ndef main():\n    parser = argparse.ArgumentParser()\n    parser.parse_args()\n    print(\"status: ready\")\n\n\nif __name__ == \"__main__\":\n    main()\n",
+        "tests/test_status.py": "import subprocess\nimport sys\nimport unittest\n\nclass StatusTests(unittest.TestCase):\n    def test_text(self):\n        result = subprocess.run([sys.executable, \"status.py\"], text=True, capture_output=True)\n        self.assertEqual(result.returncode, 0)\n        self.assertEqual(result.stdout, \"status: ready\\n\")\n"
+      }
+    ]
+  },
+  "ai-sounding-prose-cleanup": {
+    "commits": [
+      {
+        "README.md": "# Retries\n\nIt is worth noting that the client retries twice after a timeout. The default timeout is 4 seconds.\n"
+      }
+    ]
+  },
+  "independent-clarification-choices": {
+    "commits": [
+      {
+        "README.md": "# Table viewer\n\nThere are no exports yet. The table has row selection. CSV and JSON are supported by our consumers; neither has been chosen as the product default.\n"
+      }
+    ]
+  },
+  "dependent-clarification-choice": {
+    "commits": [
+      {
+        "README.md": "# Archive feature\n\nArchives may contain private writing. The product owner has not decided whether cloud storage is permitted. All regions have the same capabilities.\n"
+      }
+    ]
+  },
+  "valid-concern-different-remedy": {
+    "commits": [
+      {
+        "cache.py": "def get(entry, now, ttl):\n    value, created = entry\n    if now - created <= ttl:\n        return value\n    return None\n",
+        "review.md": "The cache returns a stale value exactly at expiration. Remove caching entirely to avoid this.\n",
+        "README.md": "# Cache contract\n\nReturn a cached value while its age is strictly less than ttl. At expiration return None. Fresh values must still be cached.\n"
+      }
+    ]
+  },
+  "scoped-fix-review": {
+    "commits": [
+      {
+        "client.py": "def retry_limit(value):\n    return max(1, value)\n",
+        "caller.py": "from client import retry_limit\n\ndef should_retry(attempt, value):\n    return attempt < retry_limit(value)\n",
+        "review.md": "Allow a retry limit of zero; the current clamp forces a retry.\n",
+        "README.md": "# Contract\n\nretry_limit takes an integer and returns a nonnegative integer.\n"
+      },
+      {
+        "client.py": "def retry_limit(value):\n    return {\"limit\": max(0, value)}\n"
+      }
+    ]
+  },
+  "humanizer-preserves-claims": {
+    "commits": [
+      {
+        "draft.md": "# Batch results\n\nIt is worth noting that the robust cache was the second-fastest option in this 40-request sample. Fetching and parsing ran at the same time. The gain is unmeasured in production. Clients MUST keep `cache_key` unchanged and preserve the error \"CACHE_MISS\". See [results](https://example.invalid/results?mode=robust).\n\n```python\nrobust = \"CACHE_MISS\"\n```\n"
+      }
+    ]
+  },
+  "explicit-readiness-verification": {
+    "commits": [
+      {
+        "README.md": "# Status service\n\nRun `python3 status.py` to print the current status. It is always ready. Run `python3 -m unittest discover -s tests -v` for tests.\n\nThis is teh status service.\n",
+        "status.py": "import argparse\n\n\ndef main():\n    parser = argparse.ArgumentParser()\n    parser.parse_args()\n    print(\"status: ready\")\n\n\nif __name__ == \"__main__\":\n    main()\n",
+        "tests/test_status.py": "import subprocess\nimport sys\nimport unittest\n\nclass StatusTests(unittest.TestCase):\n    def test_text(self):\n        result = subprocess.run([sys.executable, \"status.py\"], text=True, capture_output=True)\n        self.assertEqual(result.returncode, 0)\n        self.assertEqual(result.stdout, \"status: ready\\n\")\n"
+      }
+    ]
+  },
+  "casual-did-it-work-check": {
+    "commits": [
+      {
+        "README.md": "# Status service\n\nRun `python3 status.py` to print the current status. It is always ready. Run `python3 -m unittest discover -s tests -v` for tests.\n\nThis is teh status service.\n",
+        "status.py": "import argparse\n\n\ndef main():\n    parser = argparse.ArgumentParser()\n    parser.parse_args()\n    print(\"status: ready\")\n\n\nif __name__ == \"__main__\":\n    main()\n",
+        "tests/test_status.py": "import subprocess\nimport sys\nimport unittest\n\nclass StatusTests(unittest.TestCase):\n    def test_text(self):\n        result = subprocess.run([sys.executable, \"status.py\"], text=True, capture_output=True)\n        self.assertEqual(result.returncode, 0)\n        self.assertEqual(result.stdout, \"status: ready\\n\")\n"
+      }
+    ]
+  }
+}

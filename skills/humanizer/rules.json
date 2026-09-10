@@ -1,0 +1,10 @@
+{
+  "Humanizer.StageOpeners": {"section": 4},
+  "Humanizer.ChatResidue": {"section": 22},
+  "Humanizer.StockPhrases": {"section": 12},
+  "Humanizer.StockWords": {"section": 12},
+  "Humanizer.Contrasts": {"section": 1},
+  "Humanizer.Hedges": {"section": 9},
+  "Humanizer.Dashes": {"section": 8},
+  "Humanizer.Bold": {"section": 19}
+}

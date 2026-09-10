@@ -4,7 +4,7 @@ Two locators. `rg` for text/lines; `ast-grep` when the pattern is *structure* (a
 
 ## ripgrep (`rg`)
 
-Locate, then window — the goal is line numbers, not content dumps.
+Locate first, then read a narrow window around the matching line numbers.
 
 ```
 rg -n PATTERN path/                 # line numbers (feed to Read offset/limit)
@@ -18,7 +18,7 @@ rg -nU 'foo[\s\S]*?bar' file        # multiline (-U); keep patterns lazy
 rg -n --json PATTERN | jq …         # structured hits for scripting
 ```
 
-Survey pattern: `rg -l` to find the files, then `rg -n` in the one that matters, then `Read` a ±20-line window around the hit. Do not `rg` a pattern that returns thousands of lines into context — add `-l`/`-c`/`head`, or pipe to a file (see the large-outputs reference).
+Survey pattern: `rg -l` to find files, `rg -n` in the file that matters, then `Read` a ±20-line window around the hit. Bound large results with `-l`/`-c` or save them to a file; a truncated prefix cannot establish absence (see the large-outputs reference).
 
 ## ast-grep (`sg`)
 
@@ -29,9 +29,10 @@ sg run -p 'buildAssistantConfig($$$)' -l ts src/       # every call, any args
 sg run -p 'const $X = require($Y)' -l js               # a binding shape
 sg run -p 'model: { $$$ }' -l ts                        # an object-literal shape
 sg run -p 'foo($A)' --json                              # structured matches
-sg run -p '$X == null' --rewrite '$X === null' -l ts -U # structural rewrite (preview; -U/--update-all to apply)
+sg run -p '$X == null' --rewrite '$X === null' -l ts    # preview the structural rewrite
+sg run -p '$X == null' --rewrite '$X === null' -l ts -U # apply all rewrites without confirmation
 ```
 
-Use `sg` over `rg` when: the thing you want spans lines or reformats (multiline calls, object literals), when text matches would be swamped by comments/strings, or when you want a safe mechanical rewrite. Use `rg` when the target is a literal string, a log line, an identifier occurrence count, or any non-code text — it is faster and needs no grammar.
+Use `sg` for multiline structures, patterns obscured by comments or strings, and structural rewrites. Use `rg` for literal strings, log lines, identifier counts, and non-code text; it is faster and needs no grammar.
 
 Confirm the grammar covers the language (`sg run -p x -l LANG` errors if not). For odd dialects, fall back to `rg` with a tolerant multiline pattern.

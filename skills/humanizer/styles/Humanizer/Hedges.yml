@@ -1,0 +1,12 @@
+extends: existence
+message: "Check for stacked qualifiers around '%s'; preserve calibrated uncertainty."
+level: suggestion
+scope: ~text.frontmatter
+ignorecase: true
+tokens:
+  - arguably
+  - perhaps
+  - potentially
+  - generally speaking
+  - to some extent
+  - it (?:seems|appears) that

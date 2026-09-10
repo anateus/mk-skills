@@ -61,7 +61,9 @@ For a project-only skills installation without hooks, use `pnpx skills add anate
 
 ## Validate
 
-Run all repository-owned hook, skill, curation, and bundled Zellij Python/shell suites, optional plugin-schema validation, and the diff check with:
+Humanizer uses optional [Vale checks](skills/humanizer/references/prose-checks.md): install Vale 3.20+ (`brew install vale` on macOS), then run `python3 skills/humanizer/scripts/prose-check.py draft.md`. Strong cues include locations; weak cues are counts that `--details RULE` can expand. Scans are local and never rewrite files. The skill still handles short edits or a missing Vale installation through its compact checklist.
+
+Run repository-owned hook, structure, helper, curation, Humanizer, evaluation-runner, and bundled Python/shell checks, optional plugin-schema validation, and the diff check with:
 
 ```bash
 node scripts/validate.js
@@ -69,7 +71,7 @@ node scripts/validate.js
 
 Set `PLUGIN_VALIDATOR=/path/to/validate_plugin.py` to select a validator. The plugin-schema check reports whether it skipped because the validator file is absent or because PyYAML is unavailable; PyYAML is not required by installed skills. Repository-owned checks continue.
 
-Static tests do not substitute for clean-session activation evidence. Before release, follow the [skill activation forward-test guide](docs/validation/skill-activation-forward-tests.md) using the checked-in fixtures.
+Humanizer integration checks report a skip if Vale is absent. Static tests do not establish agent behavior. Use the [forward-test guide](docs/validation/skill-activation-forward-tests.md) for pinned baseline/candidate runs and native discovery checks before release.
 
 For Zellij pane-title status and auto-diff setup, read [`lifecycle-hooks.md`](skills/zellij-agent-herder/references/lifecycle-hooks.md). Those hooks are optional and independent of both host adapters above.
 

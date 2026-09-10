@@ -1,6 +1,6 @@
 ---
 name: implementing-work
-description: Route and implement approved or sufficiently clear changes in an existing codebase as coherent, verified slices. Use when the user asks to add, build, change, fix, or implement behavior from a request, specification, plan, or review feedback.
+description: Implement clear or approved changes as coherent, verified slices. Use when asked to add, build, change, or fix behavior from a request, plan, specification, or feedback.
 ---
 
 # Implementing Work
@@ -23,4 +23,4 @@ This skill does not own external lifecycle state. Commits, pull requests, tracke
 
 ## Outcome
 
-Return the slices completed, material decisions or deviations, files affected, and verification evidence. Identify remaining work precisely rather than broadening scope to absorb it.
+Report the result, relevant checks, and material deviations or remaining work. Expand detail only where it helps assess the change.

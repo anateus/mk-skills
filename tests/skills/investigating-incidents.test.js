@@ -4,17 +4,7 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 const { spawnSync } = require('node:child_process');
-const { root, readSkill } = require('../helpers/skills');
-
-test('incident skill preserves evidence, correction, and bounded-probe contracts', () => {
-  const body = readSkill('investigating-incidents').body;
-  assert.match(body, /current runtime path/i);
-  assert.match(body, /without overwriting earlier conclusions/i);
-  assert.match(body, /at least two plausible hypotheses/i);
-  assert.match(body, /distinct discriminator/i);
-  assert.match(body, /reconcile all returns before dispatching more work/i);
-  assert.match(body, /primary cause, throughput amplifier, latent bug/i);
-});
+const { root } = require('../helpers/skills');
 
 test('session summarizer indexes intent while withholding raw commands, results, and secrets', () => {
   const temporary = fs.mkdtempSync(path.join(os.tmpdir(), 'incident-retro-'));

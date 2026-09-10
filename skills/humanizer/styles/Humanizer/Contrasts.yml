@@ -1,0 +1,8 @@
+extends: existence
+message: "Keep '%s' when both sides carry information or correct a real misconception."
+level: suggestion
+scope: ~text.frontmatter
+ignorecase: true
+tokens:
+  - not (?:just|only|merely|simply)\b[^.!?\n]{1,100}\bbut
+  - rather than

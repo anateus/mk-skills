@@ -1,6 +1,6 @@
 ---
 name: reviewing-code
-description: Review a fixed code change or diff for correctness, risk, specification compliance, repository standards, and test adequacy. Use when the user asks to review, audit, or assess a diff, patch, pull request, commit range, or completed implementation before acceptance or release.
+description: Review a fixed diff, patch, pull request, commit range, or completed implementation for correctness, risk, requirements, repository standards, and test adequacy.
 ---
 
 # Reviewing Code
@@ -19,6 +19,8 @@ Inspect each axis separately so one kind of confidence does not hide another:
 4. **Executed behavior:** when the change is runnable, run it: the focused tests and the real code path with realistic input. Results reported by the implementer, a subagent, or a CI comment are claims to check, not evidence.
 
 Read enough surrounding code to validate assumptions. Prefer concrete execution paths and evidence over style speculation. Confirm the comparison point remains fixed before reporting.
+
+After a fix, compare prior findings with the fix diff and check nearby effects. Broaden review when contracts change or evidence exposes a wider problem. Record both the original comparison and fix range; unresolved defects remain open regardless of how many rounds have elapsed.
 
 ## Scale the topology
 

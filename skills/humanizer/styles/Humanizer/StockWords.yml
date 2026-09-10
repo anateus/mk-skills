@@ -1,0 +1,22 @@
+extends: existence
+message: "'%s' is a weak cue; review only in context."
+level: suggestion
+scope: ~text.frontmatter
+ignorecase: true
+tokens:
+  - robust
+  - seamless(?:ly)?
+  - holistic
+  - leverag(?:e|es|ed|ing)
+  - foster(?:s|ed|ing)?
+  - vibrant
+  - pivotal
+  - crucial
+  - landscape
+  - tapestry
+  - multifaceted
+  - nuanced
+  - additionally
+  - furthermore
+  - moreover
+  - importantly

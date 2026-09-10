@@ -1,6 +1,6 @@
 ---
 name: diagnosing-bugs
-description: Diagnose failures by reproducing, minimizing, and testing competing hypotheses before changing behavior. Use when behavior is failing, inconsistent, flaky, regressed, or unexplained and the cause is not established by evidence. Triggers on "why is this failing", "doesn't work", "flaky", "regression", "worked before".
+description: Diagnose unexplained failures, regressions, or flakiness by reproducing, minimizing, and testing competing causes before changing behavior.
 ---
 
 # Diagnosing Bugs
@@ -18,6 +18,8 @@ Build a tight feedback loop that distinguishes causes before editing. The object
 
 Keep experiments cheap and reversible. Logs, temporary assertions, history, and dependency inspection are evidence sources; none substitutes for testing a hypothesis.
 
+Capture only evidence needed for the discriminator. Redact sensitive values in commands and artifacts before sharing; this grants no additional data access.
+
 If the investigation is stuck or appears to have converged suspiciously early, optionally use `adversarial-refinement` to pressure-test the diagnosis. Competing hypotheses remain part of this base loop.
 
 ## When reproduction is unavailable
@@ -26,4 +28,4 @@ Do not invent certainty. Record a documented limitation: what was attempted, ava
 
 ## Outcome
 
-Return the reproduction, minimized evidence, tested hypothesis and discriminator, identified cause, cause-level fix, regression protection, and fresh verification—or the documented limitation when the failure cannot be reproduced or tested reliably.
+Report the cause or leading hypothesis, decisive evidence, fix, and relevant verification. Keep missing discriminators and reproduction limits visible.

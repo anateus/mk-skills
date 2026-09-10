@@ -1,17 +1,15 @@
 ---
 name: mk-skills-setup
-description: Bootstrap mk-skills' cross-cutting agent guidance into a host's always-on instructions by merging a shipped, marker-delimited block into AGENTS.md or CLAUDE.md — idempotently, dry-run by default, with a backup on apply. Use once after installing mk-skills to seed guidance (e.g. the read-discipline that pairs with data-spelunking) that individual skills assume but that only lives in a per-skill file otherwise; re-run any time to update the managed block in place.
+description: Install or refresh mk-skills' shared guidance in AGENTS.md or CLAUDE.md. Merges a managed block idempotently, previews by default, and backs up before applying.
 ---
 
 # mk-skills Setup
 
-Some guidance needs to be *always on*, not loaded per-skill — e.g. the subagent read-discipline that keeps delegated spelunking from thrashing. A `SKILL.md` only loads when its trigger fires, so cross-cutting rules like that belong in the host's persistent instructions (`AGENTS.md` for Codex/shared agents, `CLAUDE.md` for Claude Code). This skill merges the shipped block into one of those files safely.
-
-It ships the guidance in `assets/agents-guidance.md` and writes it into the target inside a marker-delimited **managed block**. Only that block is touched; everything else in the file is preserved. Re-running converges the block to whatever the skill currently ships — it never duplicates.
+Merge `assets/agents-guidance.md` into the host's persistent instructions. Only the marker-delimited managed block changes; surrounding content survives and repeated runs converge. Run the helper from this skill's directory.
 
 ## Run it
 
-Dry-run first (default — shows a unified diff, writes nothing):
+Preview the unified diff first:
 
 ```
 scripts/merge-guidance.py --into agents-global
@@ -35,15 +33,7 @@ Target selection:
 
 Run with no target to list detected candidates and whether each already holds the managed block. A missing target file is only created with `--create`, and only when its parent directory already exists (it will not mkdir a surprising tree).
 
-## Safety / idempotency
-
-- **Dry-run by default.** Nothing is written without `--apply`.
-- **Backup on apply.** The prior file is copied to `<target>.bak` before writing.
-- **Managed block only.** Content is bounded by `<!-- BEGIN mk-skills:agent-guidance … -->` / `<!-- END mk-skills:agent-guidance -->`. Re-running replaces just that region; if the block already matches, it reports "up to date" and exits 0. Hand-edits *inside* the markers are overwritten on re-run — put local additions outside them.
-
-## When you don't need it
-
-If the host's `AGENTS.md`/`CLAUDE.md` already carries equivalent guidance (e.g. you wrote the read-discipline block by hand), skip it — a dry-run will show no change and re-applying is a no-op.
+Keep local additions outside the managed markers; a later apply overwrites edits inside them. If the block already matches, the helper reports "up to date". Equivalent guidance elsewhere may make installation unnecessary, but the helper compares only its managed block.
 
 ## Extending what it ships
 

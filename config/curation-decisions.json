@@ -7,12 +7,221 @@
       "toCommit": "ed37663cc5fbef691ddfecd080dff42f7e7e350d",
       "decision": "accept",
       "disposition": "no-local-change",
-      "localSkills": ["planning-work"],
+      "localSkills": [
+        "planning-work"
+      ],
       "summary": "Upstream removed a redundant instruction to execute tickets one at a time.",
       "rationale": "Local planning-work already separates planning from implementation and therefore already embodies the change.",
       "validation": [
         "python3 -B -m unittest tests.curation.test_review_upstreams -v",
         "node scripts/validate.js"
+      ]
+    },
+    {
+      "source": "matt-pocock-skills",
+      "fromCommit": "ed37663cc5fbef691ddfecd080dff42f7e7e350d",
+      "toCommit": "3cca18b368ae95cdbdebbff572ccafa662551015",
+      "decision": "accept",
+      "disposition": "adapted",
+      "localSkills": [
+        "clarifying-work",
+        "adversarial-refinement",
+        "diagnosing-bugs",
+        "curating-skills"
+      ],
+      "summary": "Adapt dependency-aware question batches, redacted diagnostic evidence, and conditional instruction loading.",
+      "rationale": "These resolve independent decisions together and reduce repeated context while preserving evidence, user pacing, and authority. New writing-for-agents principles are adapted into maintenance without importing another broad skill.",
+      "validation": [
+        "node scripts/validate.js",
+        "python3 -B tests/humanizer/test_prose_check.py -v",
+        "python3 -B tests/evaluation/test_evaluate_skills.py -v",
+        "docs/reviews/2026-09-09-skill-tightening-review.md"
+      ]
+    },
+    {
+      "source": "matt-pocock-skills",
+      "fromCommit": "ed37663cc5fbef691ddfecd080dff42f7e7e350d",
+      "toCommit": "3cca18b368ae95cdbdebbff572ccafa662551015",
+      "decision": "accept",
+      "disposition": "no-local-change",
+      "localSkills": [
+        "planning-work",
+        "specifying-work",
+        "test-driven-development",
+        "reviewing-code",
+        "handing-off-work",
+        "implementing-work"
+      ],
+      "summary": "Retain local equivalents of editorial simplification and removal of automatic follow-on work.",
+      "rationale": "Local workflows already separate planning from execution, avoid automatic post-fix architecture handoffs, and invoke portable skill names. The wide-refactor compatibility idea existed at the old pin; its local adaptation is not attributed as a new upstream delta.",
+      "validation": [
+        "node scripts/validate.js",
+        "python3 -B tests/humanizer/test_prose_check.py -v",
+        "python3 -B tests/evaluation/test_evaluate_skills.py -v",
+        "docs/reviews/2026-09-09-skill-tightening-review.md"
+      ]
+    },
+    {
+      "source": "matt-pocock-skills",
+      "fromCommit": "ed37663cc5fbef691ddfecd080dff42f7e7e350d",
+      "toCommit": "3cca18b368ae95cdbdebbff572ccafa662551015",
+      "decision": "reject",
+      "disposition": "rejected",
+      "localSkills": [
+        "clarifying-work",
+        "adversarial-refinement",
+        "test-driven-development",
+        "implementing-work"
+      ],
+      "summary": "Reject exhaustive grilling, compulsory exploration agents or approval, host-specific Skill calls, new design dependencies, and unrelated new workflow imports.",
+      "rationale": "These add ceremony or external dependencies. Retro, wizard, wait-what, and implement-spec do not add enough distinct capability to justify their scope here.",
+      "validation": [
+        "node scripts/validate.js",
+        "python3 -B tests/humanizer/test_prose_check.py -v",
+        "python3 -B tests/evaluation/test_evaluate_skills.py -v",
+        "docs/reviews/2026-09-09-skill-tightening-review.md"
+      ]
+    },
+    {
+      "source": "superpowers",
+      "fromCommit": "d884ae04edebef577e82ff7c4e143debd0bbec99",
+      "toCommit": "b36e0829c6d0140e93cfef2ca599b1b07d4a7797",
+      "decision": "accept",
+      "disposition": "adapted",
+      "localSkills": [
+        "clarifying-work",
+        "adversarial-refinement",
+        "planning-work",
+        "test-driven-development",
+        "reviewing-code"
+      ],
+      "summary": "Adapt reversible feasibility probes, an originating spec pointer, concrete test counterexamples, and scoped re-review.",
+      "rationale": "Small empirical probes settle feasibility within existing authority. Tests should catch a real wrong change. Re-review checks the original concern and neighboring effects, broadening when a fix changes contracts.",
+      "validation": [
+        "node scripts/validate.js",
+        "python3 -B tests/humanizer/test_prose_check.py -v",
+        "python3 -B tests/evaluation/test_evaluate_skills.py -v",
+        "docs/reviews/2026-09-09-skill-tightening-review.md"
+      ]
+    },
+    {
+      "source": "superpowers",
+      "fromCommit": "d884ae04edebef577e82ff7c4e143debd0bbec99",
+      "toCommit": "b36e0829c6d0140e93cfef2ca599b1b07d4a7797",
+      "decision": "accept",
+      "disposition": "no-local-change",
+      "localSkills": [
+        "diagnosing-bugs",
+        "handling-review-feedback",
+        "verifying-work",
+        "implementing-work"
+      ],
+      "summary": "Keep existing direct verification and concise instruction style as upstream removes repeated exhortations and ungrounded performance claims.",
+      "rationale": "Local workflows already have these properties; local AgentPlan and artifact hooks already provide work identity without importing another artifact scheme.",
+      "validation": [
+        "node scripts/validate.js",
+        "python3 -B tests/humanizer/test_prose_check.py -v",
+        "python3 -B tests/evaluation/test_evaluate_skills.py -v",
+        "docs/reviews/2026-09-09-skill-tightening-review.md"
+      ]
+    },
+    {
+      "source": "superpowers",
+      "fromCommit": "d884ae04edebef577e82ff7c4e143debd0bbec99",
+      "toCommit": "b36e0829c6d0140e93cfef2ca599b1b07d4a7797",
+      "decision": "reject",
+      "disposition": "rejected",
+      "localSkills": [
+        "clarifying-work",
+        "adversarial-refinement",
+        "implementing-work",
+        "reviewing-code",
+        "test-driven-development",
+        "diagnosing-bugs"
+      ],
+      "summary": "Reject universal approval, one-way process escalation, fixed retry caps, parking unresolved defects, compulsory agent dispatch, controller verification bans, and blanket mock restrictions.",
+      "rationale": "Process remains proportional to risk and existing authorization. Public interactions may be the actual test contract. The unused find-polluter helper is not imported solely to track an upstream repair.",
+      "validation": [
+        "node scripts/validate.js",
+        "python3 -B tests/humanizer/test_prose_check.py -v",
+        "python3 -B tests/evaluation/test_evaluate_skills.py -v",
+        "docs/reviews/2026-09-09-skill-tightening-review.md"
+      ]
+    },
+    {
+      "source": "spec-kitty",
+      "fromCommit": "0a79355f821af9038d8b150b03c930f15970ef4c",
+      "toCommit": "ab4636831945d20ac06d7e9b61d832ffd9a0359b",
+      "decision": "accept",
+      "disposition": "adapted",
+      "localSkills": [
+        "verifying-work"
+      ],
+      "summary": "Replace the inert expected-artifacts override mapping with the current built-in mission manifest.",
+      "rationale": "Traced manifest_loader through MissionTemplateRepository.default(), get_expected_artifacts(), and _expected_artifacts_path() to packs/built-in/missions/software-dev/expected-artifacts.yaml. Reviewed the new 114-line manifest and its distinction between filesystem artifacts and runtime guards.",
+      "validation": [
+        "node scripts/validate.js",
+        "python3 -B tests/humanizer/test_prose_check.py -v",
+        "python3 -B tests/evaluation/test_evaluate_skills.py -v",
+        "docs/reviews/2026-09-09-skill-tightening-review.md"
+      ]
+    },
+    {
+      "source": "spec-kitty",
+      "fromCommit": "0a79355f821af9038d8b150b03c930f15970ef4c",
+      "toCommit": "ab4636831945d20ac06d7e9b61d832ffd9a0359b",
+      "decision": "reject",
+      "disposition": "rejected",
+      "localSkills": [
+        "specifying-work",
+        "planning-work",
+        "implementing-work",
+        "reviewing-code",
+        "verifying-work"
+      ],
+      "summary": "Reject mission governance APIs, selectors, forced planning/code work-package separation, and mandatory framework artifacts.",
+      "rationale": "These depend on Spec Kitty runtime contracts absent locally. Local verification proves observable behavior. The final fetched commit ab463683 fixes Windows O_BINARY in an upstream-only writer; no mapped skill changed and no local adaptation is needed.",
+      "validation": [
+        "node scripts/validate.js",
+        "python3 -B tests/humanizer/test_prose_check.py -v",
+        "python3 -B tests/evaluation/test_evaluate_skills.py -v",
+        "docs/reviews/2026-09-09-skill-tightening-review.md"
+      ]
+    },
+    {
+      "source": "humanizer",
+      "fromCommit": "e2e92e7b4b8229253ed5c8e81dc65463fdeddda5",
+      "toCommit": "9862685f575c65a8247f90369951df1b3416e3d6",
+      "decision": "accept",
+      "disposition": "adapted",
+      "localSkills": [
+        "humanizer"
+      ],
+      "summary": "Vendor the 3.0.0 catalog and adapt structural priorities, weak-cue treatment, and protection of inline code, ranking, and simultaneity.",
+      "rationale": "The local entry loads examples conditionally and uses optional Vale rules for deterministic cues. Meaning and voice remain LLM responsibilities; the catalog remains verbatim under MIT attribution.",
+      "validation": [
+        "node scripts/validate.js",
+        "python3 -B tests/humanizer/test_prose_check.py -v",
+        "python3 -B tests/evaluation/test_evaluate_skills.py -v",
+        "docs/reviews/2026-09-09-skill-tightening-review.md"
+      ]
+    },
+    {
+      "source": "humanizer",
+      "fromCommit": "e2e92e7b4b8229253ed5c8e81dc65463fdeddda5",
+      "toCommit": "9862685f575c65a8247f90369951df1b3416e3d6",
+      "decision": "reject",
+      "disposition": "rejected",
+      "localSkills": [
+        "humanizer"
+      ],
+      "summary": "Reject permission to invent personal reactions, cut supported claims, or require draft-plus-patterns-plus-final output.",
+      "rationale": "Local preservation rules take precedence. Return the final prose unless the task needs an explanation, and keep intentional stylistic choices.",
+      "validation": [
+        "node scripts/validate.js",
+        "python3 -B tests/humanizer/test_prose_check.py -v",
+        "python3 -B tests/evaluation/test_evaluate_skills.py -v",
+        "docs/reviews/2026-09-09-skill-tightening-review.md"
       ]
     }
   ]

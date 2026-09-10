@@ -18,7 +18,7 @@ python3 "<skill-base-dir>/scripts/review-upstreams.py" \
   --output /tmp/upstream-review.md
 ```
 
-Use `--cache-dir PATH` to retain fetched repositories between reviews. The report lists commits, inventory changes, mapped diffs, and affected local skills. A fetch or manifest failure stops without changing provenance.
+Use `--cache-dir PATH` to retain fetched repositories. The report lists commits, inventory, mapping liveness at both revisions, affected skills, unique diffs, and Git warnings. Trace moved or deprecated sources to their current loader before treating a quiet mapping as unchanged. Fetch or manifest failures leave provenance untouched.
 
 ## Make a three-way decision
 
@@ -31,6 +31,8 @@ For each mapped change, compare:
 Read `$REPO_ROOT/config/curation-decisions.json` before deciding. Identify the underlying idea, its benefit, and conflicts with local principles. Append an **accept** or **reject** record spanning the prior pin to the exact reviewed head. An accepted idea is adapted to local interfaces; never automatically copy upstream files. A rejected idea is still recorded so it is not reconsidered on every run.
 
 Validate affected local skills and their contract tests after adaptations. Confirm attribution remains accurate. Advance `reviewedCommit` only after every relevant change has a recorded decision and validation is complete. Pin the exact reviewed head from the bundle.
+
+Prefer distinct triggers and conditional references over repeated instructions. Test proposed removals on realistic requests in fresh sessions, withholding the intended answer and rubric. Static wording checks do not establish equivalent behavior.
 
 ## Safety boundary
 

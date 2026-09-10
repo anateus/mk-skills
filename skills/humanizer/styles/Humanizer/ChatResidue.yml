@@ -1,0 +1,11 @@
+extends: existence
+message: "Check whether '%s' belongs in the deliverable."
+level: warning
+scope: ~text.frontmatter
+ignorecase: true
+tokens:
+  - I hope this helps
+  - as an AI (?:language )?model
+  - let me know if you (?:need|want|would like)
+  - here is (?:a|the) (?:revised|rewritten|improved) version
+  - absolutely,? you(?:'re| are) (?:right|correct)
