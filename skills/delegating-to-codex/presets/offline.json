@@ -1,0 +1,27 @@
+{
+  "_comment": "Same filesystem denies as github-only, but network.enabled is false: no domain is reachable at all. Equivalent of today's default sandboxed run, plus the credential/dotfile deny list. codex-run strips keys starting with `_` or `$` before sending config to Codex.",
+  "$sandbox": "none",
+  "default_permissions": "codex-run",
+  "permissions.codex-run.extends": ":workspace",
+  "permissions.codex-run.network.enabled": false,
+  "permissions.codex-run.filesystem": {
+    "~/.ssh": "deny",
+    "~/.aws": "deny",
+    "~/.gnupg": "deny",
+    "~/.codex": "deny",
+    "~/.claude": "deny",
+    "~/.config/gh": "deny",
+    "~/.zshrc": "deny",
+    "~/.zprofile": "deny",
+    "~/.bashrc": "deny",
+    "~/.bash_profile": "deny",
+    "~/.config/fish": "deny",
+    "~/.netrc": "deny",
+    "~/.docker": "deny",
+    "~/.kube": "deny",
+    "~/Library/Keychains": "deny",
+    "~/Library/Application Support/Google/Chrome": "deny",
+    "~/Library/Cookies": "deny",
+    "~/.local/state/codex-run": "deny"
+  }
+}

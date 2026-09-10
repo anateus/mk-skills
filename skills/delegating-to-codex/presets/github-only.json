@@ -1,0 +1,35 @@
+{
+  "_comment": "Two layers: `$sandbox: none` turns off Codex's legacy sandbox modes so its native permission-profile system (default_permissions + [permissions.<name>]) actually takes effect (Codex ignores it whenever a legacy sandbox mode is set); the permissions.codex-run.* keys below are that profile, scoped to GitHub hosts plus filesystem denies for credentials and shell config. codex-run strips keys starting with `_` or `$` before sending config to Codex.",
+  "$sandbox": "none",
+  "default_permissions": "codex-run",
+  "permissions.codex-run.extends": ":workspace",
+  "permissions.codex-run.network.enabled": true,
+  "permissions.codex-run.network.domains": {
+    "github.com": "allow",
+    "api.github.com": "allow",
+    "codeload.github.com": "allow",
+    "objects.githubusercontent.com": "allow",
+    "raw.githubusercontent.com": "allow"
+  },
+  "permissions.codex-run.filesystem": {
+    "~/.ssh": "deny",
+    "~/.aws": "deny",
+    "~/.gnupg": "deny",
+    "~/.codex": "deny",
+    "~/.claude": "deny",
+    "~/.config/gh": "deny",
+    "~/.zshrc": "deny",
+    "~/.zprofile": "deny",
+    "~/.bashrc": "deny",
+    "~/.bash_profile": "deny",
+    "~/.config/fish": "deny",
+    "~/.netrc": "deny",
+    "~/.docker": "deny",
+    "~/.kube": "deny",
+    "~/Library/Keychains": "deny",
+    "~/Library/Application Support/Google/Chrome": "deny",
+    "~/Library/Cookies": "deny",
+    "~/.local/state/codex-run": "deny"
+  },
+  "features.network_proxy": true
+}

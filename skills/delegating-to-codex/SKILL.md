@@ -5,7 +5,7 @@ description: Hand an implementation or investigation task to Codex from Claude C
 
 # Delegating to Codex
 
-`codex-run` drives `codex app-server` over JSON-RPC-over-stdio instead of shelling out to `codex exec`: per-turn sandbox policy (read-only, workspace-write, danger-full-access; writable roots, network on/off), background jobs, thread resume, a raw event log per run.
+`codex-run` drives `codex app-server` over JSON-RPC-over-stdio, not `codex exec`: per-turn sandbox (read-only, workspace-write, danger-full-access, none), writable roots, network on/off, permission-profile presets, background jobs, thread resume, a raw event log per run.
 
 ## Basic usage
 
@@ -13,21 +13,22 @@ description: Hand an implementation or investigation task to Codex from Claude C
 codex-run -p prompt.md -o last.md
 ```
 
-Reads `prompt.md`, runs one turn, writes agent-message text to `last.md`, prints one line:
+Runs one turn, writes agent-message text to `last.md`, prints:
 
 ```
 exit=<rc> session=<threadId> out=<path> log=<path> job=<jobId> status=<completed|failed|interrupted>
 ```
 
-`rc`: 0 completed, 1 failed, 130 interrupted, 2 usage error, 3 protocol error. Script against this line, not the log.
+`rc`: 0 completed, 1 failed, 130 interrupted, 2 usage error, 3 protocol error.
 
 ## Flags
 
 - `-C workdir`: run directory (default `$PWD`).
 - `-m model`, `-e effort`: model, reasoning effort, omitted if unset.
-- `-s sandbox`: `read-only`, `workspace-write` (default), `danger-full-access`.
+- `-s sandbox`: `read-only`, `workspace-write` (default), `danger-full-access`, `none` (no sandbox sent; see Presets).
 - `--net`: network under read-only/workspace-write.
 - `-w path`: extra writable root under workspace-write; repeatable.
+- `-c key=value`: thread-config override (dotted key, JSON value); repeatable, applied after any preset.
 - `-r thread_id`: resume a thread (`session=` from a prior one-liner); model, sandbox, cwd can differ.
 - `-l log`: log path (default `<out-without-ext>.log`); JSON-RPC in `<out-without-ext>.events.jsonl`.
 - `-b`: background: prints `job=<id> session=pending out=... log=...`, exits 0.
@@ -36,22 +37,28 @@ exit=<rc> session=<threadId> out=<path> log=<path> job=<jobId> status=<completed
 ## Background jobs
 
 ```bash
-codex-run -p prompt.md -o out.md -b            # returns immediately, job id
-codex-run status <job|thread_id>               # one-liner, rc 3 if running
-codex-run wait <job|thread_id> [--timeout secs]   # blocks until terminal
-codex-run cancel <job|thread_id>               # SIGTERM, waits up to 15s
-codex-run list                                 # newest first
+codex-run -p prompt.md -o out.md -b
+codex-run status <job|thread_id>
+codex-run wait <job|thread_id> [--timeout secs]
+codex-run cancel <job|thread_id>
+codex-run list
 ```
 
-`status`/`wait`/`cancel` take either the `job=` id or `session=` thread id. Job files live at `~/.local/state/codex-run/jobs/<jobId>.json` (override with `CODEX_RUN_STATE_DIR`, mainly for tests): prompt, sandbox policy, thread/turn ids, status, rc, enough for a detached worker to run the turn and for later offline lookups.
+`status`/`wait`/`cancel` take a `job=` id or `session=` thread id. Job files live at `~/.local/state/codex-run/jobs/<jobId>.json` (override with `CODEX_RUN_STATE_DIR`): prompt, sandbox policy, ids, status, rc, for offline lookup.
 
 ## Sandbox
 
-Under `workspace-write`, cwd is writable by default; add roots with `-w`, network with `--net`. Both also need thread-level `config` (`thread/start`/`thread/resume`), not just per-turn policy: codex's exec tool enforces the thread's sandbox, so a turn-only root or `--net` is echoed back but ignored.
+Under `workspace-write`, cwd is writable by default; add roots with `-w`, network with `--net`. Both also need thread-level `config`: codex's exec tool enforces only the thread's sandbox, so a turn-only root or `--net` is echoed back but ignored.
 
-Codex also denies writes to the checkout's own git directory under `workspace-write`, even inside a writable root. For a linked worktree that's `.git/worktrees/<name>/`, so `git add`/`git commit` from inside Codex fail with `index.lock: Operation not permitted` (openai/codex #7071, #23661). Do not let Codex route around that with `git update-ref` or other plumbing on the shared repo; that defeats the sandbox. Either let Codex leave the tree modified and commit from the controlling agent, or pass `-s danger-full-access` deliberately.
+Codex denies writes to the checkout's own git directory under `workspace-write`; for a linked worktree that's `.git/worktrees/<name>/`, so `git add`/`git commit` from inside Codex fail with `index.lock: Operation not permitted` (openai/codex #7071, #23661). Leave the tree modified and commit from the controlling agent, or use `-s danger-full-access`.
 
-`--print-policy` prints resolved cwd, sandbox policy, and thread config as JSON, no codex touched, exit 0; offline tests check `-w`/`--net` against it. Verify `--net` with curl: `curl -sf --max-time 3 https://example.com` fails to resolve without it, `200` with it.
+`--print-policy` prints resolved cwd, sandbox policy, and thread config as JSON, no codex touched, exit 0. Verify `--net` with curl against a live host: fails without it, `200` with it.
+
+## Presets
+
+`--preset <name|path>` resolves `presets/<name>.json` (or a path) and merges into thread config before `-c`, which wins on conflicts. A preset's `$sandbox` key picks the `-s` mode when you didn't set one; codex-run strips `$`/`_` keys before sending config. Default to `--preset github-only` for delegated implementation work: sandbox `none`, a permission profile scoped to GitHub hosts, credential and dotfile denies. With no preset, `-s workspace-write` stays the bare default.
+
+nono/fence wrapping isn't compatible with Codex's sandbox and proxy yet; see [references/live-verification.md](references/live-verification.md) for the evaluation.
 
 ## Install
 

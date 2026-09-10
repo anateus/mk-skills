@@ -20,8 +20,13 @@ const STATE_DIR = process.env.CODEX_RUN_STATE_DIR
   ? path.resolve(process.env.CODEX_RUN_STATE_DIR)
   : path.join(HOME, ".local", "state", "codex-run");
 const JOBS_DIR = path.join(STATE_DIR, "jobs");
+// Skill root (skills/delegating-to-codex), so `--preset <name>` can resolve
+// against this checkout's presets/ regardless of cwd or how codex-run was
+// invoked (symlinked into ~/.local/bin, run in place, etc).
+const SKILL_DIR = path.resolve(path.dirname(SELF_PATH), "..");
+const PRESETS_DIR = path.join(SKILL_DIR, "presets");
 
-const USAGE = `codex-run -p prompt.md -o last.md [-C workdir] [-m model] [-e effort] [-s sandbox] [--net] [-w path]... [-r thread_id] [-l log] [-b] [--timeout secs]
+const USAGE = `codex-run -p prompt.md -o last.md [-C workdir] [-m model] [-e effort] [-s sandbox] [--net] [-w path]... [-c key=value]... [--preset name|path] [-r thread_id] [-l log] [-b] [--timeout secs]
 codex-run status <job|thread_id>
 codex-run wait <job|thread_id> [--timeout secs]
 codex-run cancel <job|thread_id>
@@ -247,6 +252,9 @@ function parseArgs(argv) {
     timeout: null,
     printPolicy: false,
     workerJobFile: null,
+    configOverrides: [],
+    preset: null,
+    sandboxExplicit: false,
   };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
@@ -268,12 +276,20 @@ function parseArgs(argv) {
         break;
       case "-s":
         o.sandbox = argv[++i];
+        o.sandboxExplicit = true;
         break;
       case "--net":
         o.net = true;
         break;
       case "-w":
         o.writableRoots.push(argv[++i]);
+        break;
+      case "-c":
+      case "--config":
+        o.configOverrides.push(argv[++i]);
+        break;
+      case "--preset":
+        o.preset = argv[++i];
         break;
       case "-r":
         o.resumeThread = argv[++i];
@@ -300,11 +316,17 @@ function parseArgs(argv) {
   return { sub: "run", opts: o };
 }
 
+// "none" sends no sandbox mode and no per-turn sandboxPolicy at all, so the
+// thread falls through to Codex's permission-profile system (default_permissions
+// + [permissions.<name>] in config, or supplied via -c). Codex ignores
+// default_permissions whenever a legacy sandbox mode is present, which is why
+// this has to be a distinct mode rather than a flag on top of workspace-write.
 function validSandbox(s) {
-  return s === "read-only" || s === "workspace-write" || s === "danger-full-access";
+  return s === "read-only" || s === "workspace-write" || s === "danger-full-access" || s === "none";
 }
 
 function buildSandboxPolicy(sandbox, net, writableRoots) {
+  if (sandbox === "none") return null;
   if (sandbox === "danger-full-access") return { type: "dangerFullAccess" };
   if (sandbox === "read-only") return { type: "readOnly", networkAccess: !!net };
   return {
@@ -316,16 +338,86 @@ function buildSandboxPolicy(sandbox, net, writableRoots) {
   };
 }
 
+// Resolve `--preset <name|path>` to a JSON file: a bare name (no slash)
+// resolves against this skill's presets/ directory; anything with a slash
+// is a path, resolved relative to cwd. Loaded eagerly (not lazily) so a
+// bad preset fails fast with rc 2, same as any other usage error.
+function resolvePresetPath(nameOrPath) {
+  if (nameOrPath.includes("/") || nameOrPath.includes(path.sep)) return path.resolve(nameOrPath);
+  return path.join(PRESETS_DIR, `${nameOrPath}.json`);
+}
+
+function loadPresetFile(nameOrPath) {
+  const filePath = resolvePresetPath(nameOrPath);
+  let raw;
+  try {
+    raw = fs.readFileSync(filePath, "utf8");
+  } catch (e) {
+    usageExit(`preset not found: ${nameOrPath} (resolved ${filePath}): ${e.message}`);
+  }
+  let json;
+  try {
+    json = JSON.parse(raw);
+  } catch (e) {
+    usageExit(`invalid preset JSON: ${filePath}: ${e.message}`);
+  }
+  if (!json || typeof json !== "object" || Array.isArray(json)) {
+    usageExit(`invalid preset: ${filePath} (expected a JSON object of config overrides)`);
+  }
+  return json;
+}
+
+// A preset is a plain object of dotted config keys (same shape -c produces),
+// plus two pseudo-keys codex-run consumes itself and never forwards to
+// Codex: `$sandbox` (picks the -s mode when the caller didn't pass -s) and
+// `_comment`/`$anything` (documentation, stripped). Any `$`- or `_`-prefixed
+// key is dropped from the merged config for the same reason.
+function splitPresetConfig(preset) {
+  let sandbox = null;
+  const cfg = {};
+  for (const [key, value] of Object.entries(preset)) {
+    if (key === "$sandbox") {
+      sandbox = value;
+      continue;
+    }
+    if (key.startsWith("$") || key.startsWith("_")) continue;
+    cfg[key] = value;
+  }
+  return { sandbox, cfg };
+}
+
 // The exec tool enforces the *thread's* sandbox, not the per-turn
 // sandboxPolicy (observed: turn-level writableRoots were echoed back but
 // index.lock writes were still denied). So writable roots and network go
 // in as thread-level config overrides too; the turn policy stays for
 // clients that do honor it.
-function buildThreadConfig(sandboxPolicy) {
+//
+// Merge order is preset first, then `-c` overrides, so a caller can use a
+// preset as a base and override individual keys per run. `-c key=value`
+// (same shape as codex's own -c: dotted config key, value parsed as JSON,
+// falling back to the raw string), e.g.
+//   -c features.network_proxy=true -c 'features.network_proxy.domains={"api.github.com":"allow"}'
+function buildThreadConfig(sandboxPolicy, configOverrides = [], presetConfig = null) {
   const cfg = {};
-  if (sandboxPolicy.type === "workspaceWrite") {
+  if (sandboxPolicy && sandboxPolicy.type === "workspaceWrite") {
     if (sandboxPolicy.writableRoots.length) cfg["sandbox_workspace_write.writable_roots"] = sandboxPolicy.writableRoots;
     if (sandboxPolicy.networkAccess) cfg["sandbox_workspace_write.network_access"] = true;
+  }
+  if (presetConfig) {
+    for (const [key, value] of Object.entries(presetConfig)) cfg[key] = value;
+  }
+  for (const kv of configOverrides) {
+    const eq = kv.indexOf("=");
+    if (eq <= 0) usageExit(`bad -c override (want key=value): ${kv}`);
+    const key = kv.slice(0, eq);
+    const raw = kv.slice(eq + 1);
+    let value;
+    try {
+      value = JSON.parse(raw);
+    } catch {
+      value = raw;
+    }
+    cfg[key] = value;
   }
   return Object.keys(cfg).length ? cfg : null;
 }
@@ -337,9 +429,20 @@ function buildThreadConfig(sandboxPolicy) {
 function computeEffectivePolicy(o) {
   const cwd = path.resolve(o.cwd);
   const writableRoots = o.writableRoots.map((p) => path.resolve(cwd, p));
-  const sandboxPolicy = buildSandboxPolicy(o.sandbox, o.net, writableRoots);
-  const threadConfig = buildThreadConfig(sandboxPolicy);
-  return { cwd, writableRoots, sandboxPolicy, threadConfig };
+
+  let sandbox = o.sandbox;
+  let presetConfig = null;
+  if (o.preset) {
+    const preset = loadPresetFile(o.preset);
+    const split = splitPresetConfig(preset);
+    presetConfig = split.cfg;
+    if (split.sandbox != null && !o.sandboxExplicit) sandbox = split.sandbox;
+  }
+  if (!validSandbox(sandbox)) usageExit(`invalid sandbox (from ${o.sandboxExplicit ? "-s" : "preset $sandbox"}): ${sandbox}`);
+
+  const sandboxPolicy = buildSandboxPolicy(sandbox, o.net, writableRoots);
+  const threadConfig = buildThreadConfig(sandboxPolicy, o.configOverrides || [], presetConfig);
+  return { cwd, writableRoots, sandboxPolicy, threadConfig, sandbox };
 }
 
 // ---------------------------------------------------------------------------
@@ -464,7 +567,7 @@ async function runTurn(o, job, log, logEvent) {
 
   try {
     const sandboxPolicy = o.sandboxPolicy;
-    const config = buildThreadConfig(sandboxPolicy);
+    const config = o.threadConfig ?? null;
 
     await client.send("initialize", {
       clientInfo: { name: "codex-run", title: "codex-run", version: "2.0.0" },
@@ -479,7 +582,7 @@ async function runTurn(o, job, log, logEvent) {
         cwd: o.cwd,
         model: o.model,
         approvalPolicy: "never",
-        sandbox: o.sandbox,
+        sandbox: o.sandbox === "none" ? null : o.sandbox,
         config,
       });
       threadId = (resp.thread && resp.thread.id) || o.resumeThread;
@@ -489,7 +592,7 @@ async function runTurn(o, job, log, logEvent) {
         cwd: o.cwd,
         model: o.model,
         approvalPolicy: "never",
-        sandbox: o.sandbox,
+        sandbox: o.sandbox === "none" ? null : o.sandbox,
         serviceName: "codex-run",
         ephemeral: false,
         config,
@@ -504,10 +607,10 @@ async function runTurn(o, job, log, logEvent) {
       threadId,
       input: [{ type: "text", text: o.prompt }],
       model: o.model,
-      sandboxPolicy,
       approvalPolicy: "never",
       cwd: o.cwd,
     };
+    if (sandboxPolicy) turnParams.sandboxPolicy = sandboxPolicy;
     if (o.effort) turnParams.effort = o.effort;
 
     const turnResp = await client.send("turn/start", turnParams);
@@ -613,6 +716,7 @@ async function runForeground(o) {
   if (!validSandbox(o.sandbox)) usageExit(`invalid -s sandbox: ${o.sandbox}`);
 
   const policy = computeEffectivePolicy(o);
+  o.sandbox = policy.sandbox;
 
   if (o.printPolicy) {
     console.log(
@@ -636,6 +740,7 @@ async function runForeground(o) {
   o.cwd = policy.cwd;
   o.writableRoots = policy.writableRoots;
   o.sandboxPolicy = policy.sandboxPolicy;
+  o.threadConfig = policy.threadConfig;
 
   if (!o.out) usageExit("missing -o out.md");
   o.out = path.resolve(o.out);
@@ -668,6 +773,7 @@ async function runForeground(o) {
     _promptText: o.promptText,
     _effort: o.effort || null,
     _sandboxPolicy: o.sandboxPolicy,
+    _threadConfig: o.threadConfig,
     _resumeThread: o.resumeThread || null,
   };
   writeJobAtomic(job);
@@ -698,6 +804,7 @@ async function runWorker(jobFile) {
     effort: job._effort || null,
     sandbox: job.sandbox,
     sandboxPolicy: job._sandboxPolicy,
+    threadConfig: job._threadConfig ?? null,
     resumeThread: job._resumeThread || null,
     out: job.out,
     log: job.log,

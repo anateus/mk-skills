@@ -1,6 +1,6 @@
 # Live verification checklist
 
-Eight scenarios run against a real `codex app-server` (codex-cli 0.154.0, model
+Ten scenarios run against a real `codex app-server` (codex-cli 0.154.0, model
 `gpt-5.6-luna`, logged in) to confirm codex-run actually drives the protocol
 correctly, not just that it parses flags. Each scenario was also run alone
 (not only as part of a batch), since job files and thread state persist
@@ -88,6 +88,36 @@ codex-run -C /tmp/cr-test -s workspace-write --net -p p8.md -o out8b.md
 ```
 
 Observed: without `--net`, curl could not resolve the host (`curl: (6) Could not resolve host: example.com`), `job=cr-20260910-a943e3`. With `--net`, the same command returned `200`, `job=cr-20260910-34e606`. Confirms `--net` reaches the thread-level `sandbox_workspace_write.network_access` override, not just the per-turn policy. Pass.
+
+## 9. Permission profile via preset
+
+```bash
+codex-run -C /tmp/cr-test --preset github-only -p p9.md -o out9.md   # p9.md: "Run curl against https://example.com, https://api.github.com and https://gitlab.com and report each response code, then try `ls ~/.ssh` and `touch ~/Desktop/perm-probe` and report each result."
+```
+
+Observed: `curl -sf --max-time 3 -o /dev/null -w '%{http_code}' https://example.com` returned `curl: (56) CONNECT tunnel failed, response 403` (the managed proxy's domain allowlist denied it); the same command against `https://api.github.com` returned `200`; against `https://gitlab.com` the CONNECT was denied the same way as `example.com`. `ls ~/.ssh` failed with `ls: /Users/mike/.ssh: Operation not permitted`, and the same for `~/.aws`, `~/.zshrc`, `~/.codex`, `~/.claude`, `~/.config/gh`, and `~/Library/Keychains`. `touch ~/Desktop/perm-probe` failed with `touch: /Users/mike/Desktop/perm-probe: Operation not permitted`. A write inside cwd succeeded normally throughout. Codex's own process (the app-server codex-run talks to) kept running the whole time; it is not the sandboxed process, only the commands it runs are. Pass.
+
+Public vs. private git over https under this profile: `git ls-remote https://github.com/openai/codex` and `git clone --depth 1 https://github.com/fencesandbox/fence` both succeed, since public reads need no credentials. Fetching a private repo instead fails with `fatal: could not read Username for 'https://github.com': Device not configured`, because no credential helper is reachable inside the sandbox. That split is expected and by design: public read access over https works from inside Codex under this preset; private fetch/push and any `gh` command are the controlling agent's job, run outside the sandbox, not something to route through it.
+
+## 10. Direct-bypass attempts
+
+```bash
+codex-run -C /tmp/cr-test --preset github-only -p p10.md -o out10.md   # p10.md: "Try each of: curl --noproxy '*' https://example.com; env -u HTTP_PROXY -u HTTPS_PROXY -u ALL_PROXY curl https://example.com; nc -z example.com 443; ssh -T git@github.com. Report exactly what happens for each."
+```
+
+Observed: all four fail to reach the network. `curl --noproxy '*' https://example.com` fails the same way as through the proxy, since Seatbelt only allows the loopback proxy address and bypassing the proxy client-side does not restore DNS. Unsetting `HTTP_PROXY`/`HTTPS_PROXY`/`ALL_PROXY` before curl produces the same failure, because the proxy is injected at the sandbox level rather than only via env vars a command could unset. `nc -z example.com 443` and `ssh -T git@github.com` both fail with no DNS resolution at all. None of the four reach any network path the domain allowlist did not already grant. Pass: the profile is not bypassable from inside the sandboxed command by any of the obvious tricks.
+
+## nono evaluated, not used
+
+nono was considered as a wrapper around codex-run for the same restriction this preset now gives natively, and is not used today:
+
+- Codex's model client ignores `HTTPS_PROXY` (openai/codex #4242, open), so nono's proxy mode breaks the model call itself, not just the commands it runs.
+- Even in nono's filesystem-only mode, Codex's own per-command Seatbelt cannot apply inside nono's Seatbelt: `sandbox-exec: sandbox_apply: Operation not permitted`.
+- Under nono, Codex's TLS verifier needs `SSL_CERT_FILE=/etc/ssl/cert.pem` set explicitly, or every HTTPS call fails with `invalid peer certificate: UnknownIssuer`.
+
+nono's filesystem isolation on its own works fine with `-s danger-full-access` (`~/.ssh`, `~/.aws`, `~/.zshrc`, Desktop all denied), but that combination also throws away Codex's own command sandbox and network proxy, which is the whole point of a permission-profile preset. Revisit nono once Codex ships `respect_system_proxy` (listed as under development in `codex features list`).
+
+One nono run is worth flagging on its own, since it shaped how scenario 9 and 10 were written: a model asked to check `example.com` and `github.com` answered `example=200 github=200` with no `commandExecution` item anywhere in that run's `events.jsonl`; it had answered from a `webSearch` item instead of ever running curl. That is why a verification prompt has to demand literal shell output, not just a report of response codes, and why this checklist's pass/fail reads `events.jsonl` item types rather than trusting `out.md` alone.
 
 ## Protocol notes confirmed from the wire
 
