@@ -7,7 +7,11 @@ description: Review a fixed diff, patch, pull request, commit range, or complete
 
 Review a stable change, not a moving target. Establish a fixed comparison point and record diff provenance: repository, base and head revisions or equivalent snapshots, working-tree inclusion, and any generated content excluded from inspection. Accept an optional specification when one exists.
 
-For a committed range, run `"<skill-base-dir>/scripts/review-package" BASE HEAD`; it writes a complete package under `${TMPDIR:-/tmp}` and prints only its path. The package covers committed `BASE..HEAD` only. Read [diff provenance](references/diff-provenance.md) when the review includes staged, unstaged, untracked, generated, or mixed state.
+For a committed range, run `"<skill-base-dir>/scripts/review-package" BASE HEAD`; it writes the committed diff and a Git inventory under `${TMPDIR:-/tmp}` and prints only the package path. Read [diff provenance](references/diff-provenance.md) for the coverage checker, PR comparisons, or reviews including staged, unstaged, untracked, generated, or mixed state.
+
+Use Git's changed-file inventory as the coverage baseline, including deletions and renames. Record each entry as reviewed, partial, skipped, or unreviewed, with reasons for partial or skipped coverage. Reconcile tool and peer results against it; filtered, binary-classified, failed, or truncated inputs do not count as reviewed. For a small diff, keep this in the report; use the manifest across reviewers, runs, or revisions.
+
+When using a review engine, GitHub diff loader, or live review UI, read [tool-assisted reviews](references/tool-assisted-reviews.md).
 
 ## Review axes
 
@@ -20,7 +24,7 @@ Inspect each axis separately so one kind of confidence does not hide another:
 
 Read enough surrounding code to validate assumptions. Prefer concrete execution paths and evidence over style speculation. Confirm the comparison point remains fixed before reporting.
 
-After a fix, compare prior findings with the fix diff and check nearby effects. Broaden review when contracts change or evidence exposes a wider problem. Record both the original comparison and fix range; unresolved defects remain open regardless of how many rounds have elapsed.
+After a fix, compare prior findings with the fix diff and check nearby effects. Broaden review when contracts change or evidence exposes a wider problem. Record both the original comparison and fix range; unresolved defects remain open regardless of how many rounds have elapsed. Reopen affected coverage when code or the comparison base changes, and revisit findings that depend on it. A finding disappearing from a later report does not establish a fix.
 
 ## Scale the topology
 
@@ -28,4 +32,4 @@ A small, low-risk diff can be reviewed in one pass. Use independent or parallel 
 
 ## Report
 
-Lead with actionable findings ordered by severity. Each finding identifies location, observed problem, impact, evidence, and a proportionate remedy. Separate blocking defects from risks and minor improvements. Then summarize reviewed scope, verification performed, residual uncertainty, and explicitly state when no findings were found.
+Lead with actionable findings ordered by severity. Each finding identifies location, observed problem, impact, evidence, and a proportionate remedy. Separate blocking defects from risks and minor improvements. Then summarize reviewed scope, verification performed, residual uncertainty, and explicitly state when no findings were found. Report coverage gaps and failed review work separately from code findings.
