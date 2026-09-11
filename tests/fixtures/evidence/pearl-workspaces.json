@@ -1,0 +1,9 @@
+{
+  "bayes-assumed": {
+    "commits": [
+      {
+        "README.md": "# Diagnostic exercise\n\nThis is an explicitly hypothetical diagnostic model, not a report of measured production rates. Let F mean a fault is present and A mean an alert is positive. Assume P(F) = 0.20, P(A | F) = 0.80, and P(A | not F) = 0.10. The exercise stipulates one positive alert. No independent evidence validates these probabilities for a real system, and there is no intervention or causal experiment.\n"
+      }
+    ]
+  }
+}

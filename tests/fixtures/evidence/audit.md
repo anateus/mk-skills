@@ -1,0 +1,1 @@
+Before delivery, check the claims that carry the conclusion: material quantities, causal conclusions, citations, and completed actions. Identify what supports each and whether it supports the stated scope. Correct unsupported claims; do not merely add a hedge. Keep this check internal unless the evidence helps the reader.
