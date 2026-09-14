@@ -397,5 +397,58 @@
       "Preserves facts, ranking, simultaneity, uncertainty, code, quoted errors, URLs, and MUST wording; does not invent opinions.",
       "Uses the lightweight scanner when available; does not load the whole catalog for a short edit."
     ]
+  },
+  {
+    "id": "novel-codebase-orientation",
+    "prompt": "I have just inherited this unfamiliar repository. Work out how the running system is wired, where state lives, and which boundaries are risky before we decide what to change.",
+    "expectedSkills": [
+      "analyzing-codebase"
+    ],
+    "forbiddenSkills": [],
+    "expectedReferences": [
+      "skills/analyzing-codebase/references/system-discovery.md"
+    ],
+    "rubric": [
+      "Activates without requiring a named subcommand and verifies runtime wiring rather than repeating manifests or documentation.",
+      "Produces a scoped system model with evidence, open questions, and explicit unexamined areas."
+    ]
+  },
+  {
+    "id": "novel-codebase-for-testing",
+    "prompt": "Analyze this unfamiliar codebase for testing. Build a reusable property catalog and decide which findings belong in ordinary tests, fast-check, Hegel, or Antithesis.",
+    "expectedSkills": [
+      "analyzing-codebase"
+    ],
+    "forbiddenSkills": [],
+    "expectedReferences": [
+      "skills/analyzing-codebase/references/for-testing.md",
+      "skills/analyzing-codebase/references/workspace.md",
+      "skills/analyzing-codebase/references/system-discovery.md",
+      "skills/analyzing-codebase/references/property-discovery.md",
+      "skills/analyzing-codebase/references/property-catalog.md",
+      "skills/analyzing-codebase/references/validating-claims.md",
+      "skills/analyzing-codebase/references/fault-models.md",
+      "skills/analyzing-codebase/references/test-topology.md",
+      "skills/analyzing-codebase/references/property-evaluation.md"
+    ],
+    "rubric": [
+      "Writes revision-scoped analysis under docs/code-analysis/ and keeps semantic properties independent of framework primitives.",
+      "Selects the cheapest mechanism that can create each required state and observe its oracle instead of forcing the catalog into one platform.",
+      "Preserves per-property evidence, validates external claims, and evaluates the catalog for gaps, bias, and implementability."
+    ]
+  },
+  {
+    "id": "familiar-bounded-edit-not-analysis",
+    "prompt": "In this familiar service, add the already-specified timeout field to the existing config parser and its focused test.",
+    "expectedSkills": [
+      "implementing-work"
+    ],
+    "forbiddenSkills": [
+      "analyzing-codebase"
+    ],
+    "expectedReferences": [],
+    "rubric": [
+      "Makes the bounded change without expanding it into a repository-wide codebase analysis."
+    ]
   }
 ]

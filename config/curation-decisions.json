@@ -223,6 +223,22 @@
         "python3 -B tests/evaluation/test_evaluate_skills.py -v",
         "docs/reviews/2026-09-09-skill-tightening-review.md"
       ]
+    },
+    {
+      "source": "antithesis-skills",
+      "fromCommit": "75bba77a1412e4eec65519a6d681b46bd532b3c7",
+      "toCommit": "75bba77a1412e4eec65519a6d681b46bd532b3c7",
+      "decision": "accept",
+      "disposition": "adapted",
+      "localSkills": [
+        "analyzing-codebase"
+      ],
+      "summary": "Adapt the Antithesis research workflow into the platform-neutral for-testing mode of analyzing-codebase.",
+      "rationale": "The upstream workflow provides strong system discovery, property evidence, portfolio evaluation, and claim-validation discipline. The local adaptation preserves that method while separating semantic properties from execution mechanisms so ordinary tests, property-based tools, Hegel, and Antithesis can consume the same analysis.",
+      "validation": [
+        "python3 -B -m unittest tests.curation.test_review_upstreams -v",
+        "node scripts/validate.js"
+      ]
     }
   ]
 }

@@ -192,6 +192,21 @@
           ]
         }
       ]
+    },
+    {
+      "name": "antithesis-skills",
+      "url": "https://github.com/antithesishq/antithesis-skills",
+      "branch": "main",
+      "reviewedCommit": "75bba77a1412e4eec65519a6d681b46bd532b3c7",
+      "license": "Apache-2.0",
+      "mappings": [
+        {
+          "localSkill": "analyzing-codebase",
+          "upstreamPaths": [
+            "antithesis-research"
+          ]
+        }
+      ]
     }
   ],
   "localProvenance": [

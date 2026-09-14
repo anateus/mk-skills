@@ -195,13 +195,26 @@ class ReviewUpstreamsTests(unittest.TestCase):
 
     def test_checked_in_provenance_and_notices_preserve_sources(self):
         manifest = json.loads((ROOT / "config" / "sources.yaml").read_text())
-        expected = {"matt-pocock-skills", "spec-kitty", "superpowers", "humanizer"}
+        expected = {
+            "matt-pocock-skills",
+            "spec-kitty",
+            "superpowers",
+            "humanizer",
+            "antithesis-skills",
+        }
+        expected_licenses = {
+            "matt-pocock-skills": "MIT",
+            "spec-kitty": "MIT",
+            "superpowers": "MIT",
+            "humanizer": "MIT",
+            "antithesis-skills": "Apache-2.0",
+        }
         sources = {source["name"]: source for source in manifest["sources"]}
         self.assertEqual(expected, set(sources))
         for name in expected:
             source = sources[name]
             self.assertRegex(source["reviewedCommit"], r"^[0-9a-f]{40}$")
-            self.assertEqual("MIT", source["license"])
+            self.assertEqual(expected_licenses[name], source["license"])
             self.assertTrue(source["url"].startswith("https://github.com/"))
             self.assertTrue(source["branch"])
             self.assertTrue(source["mappings"])

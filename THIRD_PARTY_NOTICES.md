@@ -1,6 +1,6 @@
 # Third-Party Notices
 
-This project conceptually adapts ideas from the following MIT-licensed projects. Their source locations and reviewed revisions are recorded in `config/sources.yaml`. These notices are retained for attribution; upstream files are not automatically copied into local skills.
+This project adapts ideas from the projects below under their respective licenses. Source locations and reviewed revisions are recorded in `config/sources.yaml`. These notices are retained for attribution; upstream files are not automatically copied into local skills.
 
 ## Matt Pocock Skills
 
@@ -71,3 +71,9 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+## Antithesis Skills
+
+Source: https://github.com/antithesishq/antithesis-skills
+
+`skills/analyzing-codebase` adapts the `antithesis-research` workflow into a platform-neutral testing-analysis mode. The upstream project is licensed under Apache License 2.0; a copy is retained at `skills/analyzing-codebase/LICENSE`.

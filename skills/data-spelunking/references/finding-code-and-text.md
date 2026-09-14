@@ -36,3 +36,9 @@ sg run -p '$X == null' --rewrite '$X === null' -l ts -U # apply all rewrites wit
 Use `sg` for multiline structures, patterns obscured by comments or strings, and structural rewrites. Use `rg` for literal strings, log lines, identifier counts, and non-code text; it is faster and needs no grammar.
 
 Confirm the grammar covers the language (`sg run -p x -l LANG` errors if not). For odd dialects, fall back to `rg` with a tolerant multiline pattern.
+
+## Code indexes and graphs
+
+Use an index when repeated multi-hop dependency or call-path questions justify its setup cost. Before relying on it, record the indexer and version, source revision, supported languages, ignored paths, generated-code policy, and whether dynamic dispatch or runtime registration is represented.
+
+Query the index narrowly, save large results outside context, and project only the nodes and edges needed for the current question. Verify consequential or surprising edges against imports, calls, entrypoints, and runtime wiring in source. A graph can establish what its indexer observed; it cannot establish completeness outside that coverage.

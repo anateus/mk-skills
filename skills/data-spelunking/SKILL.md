@@ -20,7 +20,7 @@ Return the answer, not the corpus. Locate first, then read narrow. Never allow a
 | Corpus | Start with |
 |---|---|
 | Text or logs | `rg -l` to survey, `rg -n` to locate, then line windows |
-| Source structure | `ast-grep` / `sg` for calls, definitions, and syntax shapes |
+| Source structure | `ast-grep` / `sg` for calls, definitions, and syntax shapes; query a code index only after checking its revision and language coverage |
 | CSV or TSV | `qsv headers`, then projection, filtering, or aggregation |
 | JSON or YAML | `jq` / `yq`; project or aggregate before printing |
 | NDJSON, session transcripts, huge tool output | `scripts/jsonl-extract.py` with bounded output |
@@ -33,6 +33,7 @@ Give the agent this workflow and a named findings-file path, not the raw corpus.
 
 - A first-match read (`head -1`, `[0]`) answers a different question than "what does field X contain". Enumerate the matches before concluding, and distrust an empty result until the query is shown to detect a known positive.
 - Before declaring a fact absent, state which corpus and tool boundary the search covered. Gaps are often answerable from an adjacent corpus (the tracker, docs, a different export) rather than a human.
+- Treat a generated code graph as another corpus, not ground truth. Record its indexer, source revision, language and path exclusions, query it with bounded projections, and verify consequential edges against source. Use `analyzing-codebase` when the goal is a durable system model rather than a bounded extraction.
 
 ## Load details only when needed
 

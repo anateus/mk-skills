@@ -4,7 +4,9 @@ A portable, curated software-development skill set for Codex and Claude Code. Se
 
 ## Curated skills
 
-The core set covers `clarifying-work`, `adversarial-refinement`, `specifying-work`, `planning-work`, `test-driven-development`, `diagnosing-bugs`, `investigating-incidents`, `implementing-work`, `reviewing-code`, `handling-review-feedback`, `verifying-work`, `handing-off-work`, `strict-mode`, and `curating-skills`. Supporting skills add `data-spelunking`, `humanizer`, `zellij-agent-herder`, `personal-writing-style`, `subagent-artifact-discipline`, and `mk-skills-setup`.
+The core set covers `clarifying-work`, `adversarial-refinement`, `specifying-work`, `planning-work`, `test-driven-development`, `diagnosing-bugs`, `investigating-incidents`, `implementing-work`, `reviewing-code`, `handling-review-feedback`, `verifying-work`, `handing-off-work`, `strict-mode`, and `curating-skills`. Supporting skills add `analyzing-codebase`, `data-spelunking`, `humanizer`, `zellij-agent-herder`, `personal-writing-style`, `subagent-artifact-discipline`, and `mk-skills-setup`.
+
+`analyzing-codebase` activates when work enters an unfamiliar repository or subsystem. Its `for-testing` mode produces evidence-backed system, property, and test-topology artifacts under `docs/code-analysis/` without committing the result to Antithesis, fast-check, Hegel, or a conventional test runner too early. Mode names are optional routing hints, not required invocation syntax.
 
 `zellij-agent-herder` is also included for optional pane orchestration. It and the curated workflow are bidirectionally independent: every curated skill works without zellij, and the herder works without strict mode or the curated skills. When independent tasks benefit from peers, the peer-ready plans make pairing low effort; sequential execution remains fully supported.
 
