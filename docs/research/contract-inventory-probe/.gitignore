@@ -1,0 +1,6 @@
+node_modules/
+.venv/
+__pycache__/
+payload.schema.json
+message.schema.json
+synthetic.openapi.json

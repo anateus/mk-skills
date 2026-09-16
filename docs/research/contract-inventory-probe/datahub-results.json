@@ -1,0 +1,31 @@
+{
+  "sdk": "1.7.0",
+  "openapi": {
+    "fixtureOperations": 4,
+    "fixturePaths": 3,
+    "datasetCount": 1,
+    "schemas": [
+      {
+        "urn": "urn:li:dataset:(urn:li:dataPlatform:OpenApi,synthetic.widgets,PROD)",
+        "fields": [
+          "[version=2.0].[type=object].[type=string].readValue"
+        ]
+      }
+    ],
+    "httpRequests": 0,
+    "observed": "One dataset for shared path; GET schema wins over POST; POST 201 and DELETE 204 endpoints omitted."
+  },
+  "jsonSchema": {
+    "rawSchemaPreserved": true,
+    "fields": [
+      "[version=2.0].[type=Message].[type=enum].kind",
+      "[version=2.0].[type=Message].[type=union].value",
+      "[version=2.0].[type=Message].[type=union].[type=string].value",
+      "[version=2.0].[type=Message].[type=union].[type=integer].value"
+    ],
+    "subtype": [
+      "Schema"
+    ]
+  },
+  "scope": "Real SDK sources generating metadata workunits locally; no server or UI test."
+}

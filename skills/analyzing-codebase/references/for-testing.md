@@ -45,6 +45,7 @@ Do not commit to framework primitives during discovery. First express the semant
 |---|---|
 | [workspace and provenance](workspace.md) | Always before writing artifacts |
 | [system discovery](system-discovery.md) | Building or refreshing the system model |
+| [for contracts](for-contracts.md) | Testing schemas, serialization, APIs, or boundaries across languages and repositories |
 | [property discovery](property-discovery.md) | Finding testable properties through independent lenses |
 | [property catalog](property-catalog.md) | Recording, prioritizing, and implementing properties |
 | [validating claims](validating-claims.md) | Using docs, issues, incidents, or other external claims |
@@ -56,6 +57,7 @@ Do not commit to framework primitives during discovery. First express the semant
 
 1. Initialize or inspect `docs/code-analysis/` using [workspace and provenance](workspace.md).
 2. Read [system discovery](system-discovery.md), then analyze architecture, state, concurrency, test strategy, runtime boundaries, and failure-prone paths.
+   When properties depend on schemas or boundaries, reuse or refresh the shared [contract inventory](for-contracts.md). Link contract IDs and coverage gaps to the affected properties. Distinguish declared shapes, client expectations, validation, and serialization; generated schemas alone do not establish runtime behavior.
 3. Scan for existing test hooks. Search framework configuration and imports, assertion and property definitions, generators or arbitraries, state-machine models, test helpers, fault injectors, deterministic schedulers, fakes, observability events, and internal consistency checks. Record paths, symbols, roles, and whether each hook is active. If none exist, state the search boundary and that no hooks were found.
 4. Read [property discovery](property-discovery.md) and [property catalog](property-catalog.md). Discover properties using independent attention lenses, then synthesize and investigate open questions.
 5. Read [fault models](fault-models.md) and [test topology](test-topology.md). For each property, choose the least expensive mechanism that can create the required states and observe the result. Write the minimal useful topology.
@@ -78,6 +80,7 @@ Do not commit to framework primitives during discovery. First express the semant
 - Distinguish existing, partial, and missing instrumentation. Never recommend adding a hook already present.
 - Identify surgical system-side observation points for rare, dangerous, timing-sensitive, or externally invisible states.
 - Focus on boundaries as well as algorithms: parsing, rendering, adapters, mocks, persistence, clocks, retries, recovery, and lifecycle transitions.
+- For language or implementation transitions, test conditional validation, omitted/null values, serialization, and retries at the same observation point. Compatible-looking schemas do not discharge native behavior gaps. Keep inventory coverage limits visible in the property evidence.
 - Keep execution topology minimal. Every process, dependency, container, and generated input adds cost or state space.
 - Write assumptions and open questions into artifacts rather than keeping them in conversation state.
 

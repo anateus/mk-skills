@@ -1,0 +1,8 @@
+{
+  "name": "openapi-catalog-probe",
+  "version": "0.0.0",
+  "private": true,
+  "dependencies": {
+    "@redocly/cli": "2.53.0"
+  }
+}

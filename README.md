@@ -65,9 +65,10 @@ For a project-only skills installation without hooks, use `pnpx skills add anate
 
 Humanizer uses optional [Vale checks](skills/humanizer/references/prose-checks.md): install Vale 3.20+ (`brew install vale` on macOS), then run `python3 skills/humanizer/scripts/prose-check.py draft.md`. Strong cues include locations; weak cues are counts that `--details RULE` can expand. Scans are local and never rewrite files. The skill still handles short edits or a missing Vale installation through its compact checklist.
 
-Run repository-owned hook, structure, helper, curation, Humanizer, evaluation-runner, and bundled Python/shell checks, optional plugin-schema validation, and the diff check with:
+Install the contract-inventory test dependencies once (Node 22.12+ and Python 3.9+), then run repository-owned hook, structure, helper, curation, Humanizer, evaluation-runner, and bundled Python/shell checks, optional plugin-schema validation, and the diff check:
 
 ```bash
+npm --prefix skills/analyzing-codebase/scripts/contract-inventory ci --ignore-scripts --no-audit --no-fund
 node scripts/validate.js
 ```
 

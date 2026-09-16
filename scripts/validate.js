@@ -25,6 +25,7 @@ function run(label, command, args, options = {}) {
 
 const checks = [
   ['Hook and skill tests', process.execPath, ['--test', 'tests/hooks/*.test.js', 'tests/skills/*.test.js'], { shell: true }],
+  ['Contract inventory (offline)', 'npm', ['--prefix', 'skills/analyzing-codebase/scripts/contract-inventory', 'test']],
   ['Curation tests', 'python3', ['-B', '-m', 'unittest', 'tests.curation.test_review_upstreams', '-v']],
   ['Humanizer Vale integration', 'python3', ['-B', 'tests/humanizer/test_prose_check.py', '-v']],
   ['Behavioral evaluation runner', 'python3', ['-B', 'tests/evaluation/test_evaluate_skills.py', '-v']],

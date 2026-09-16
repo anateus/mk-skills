@@ -249,7 +249,7 @@
   },
   {
     "id": "large-transcript-search",
-    "prompt": "Find where an upstream model shutdown was discussed across a 12 MB Claude Code session transcript (JSONL) and pull the relevant lines — without reading the whole file into context.",
+    "prompt": "Find where an upstream model shutdown was discussed across a 12 MB Claude Code session transcript (JSONL) and pull the relevant lines \u2014 without reading the whole file into context.",
     "expectedSkills": [
       "data-spelunking"
     ],
@@ -263,7 +263,7 @@
   },
   {
     "id": "big-csv-slice",
-    "prompt": "This CSV export has millions of rows. Which status codes appear and how often, and pull just the 5xx rows — without loading the whole file.",
+    "prompt": "This CSV export has millions of rows. Which status codes appear and how often, and pull just the 5xx rows \u2014 without loading the whole file.",
     "expectedSkills": [
       "data-spelunking"
     ],
@@ -435,6 +435,58 @@
       "Writes revision-scoped analysis under docs/code-analysis/ and keeps semantic properties independent of framework primitives.",
       "Selects the cheapest mechanism that can create each required state and observe its oracle instead of forcing the catalog into one platform.",
       "Preserves per-property evidence, validates external claims, and evaluates the catalog for gaps, bias, and implementability."
+    ]
+  },
+  {
+    "id": "polyglot-contract-inventory",
+    "prompt": "Inventory schemas, types, inbound endpoints, and outbound HTTP clients across this TypeScript monorepo and Python service. Preserve low-level client expectations and explain discovery gaps.",
+    "expectedSkills": [
+      "analyzing-codebase"
+    ],
+    "forbiddenSkills": [],
+    "expectedReferences": [
+      "skills/analyzing-codebase/references/for-contracts.md",
+      "skills/analyzing-codebase/references/contract-inventory.md",
+      "skills/analyzing-codebase/references/workspace.md"
+    ],
+    "rubric": [
+      "Uses one evidence-backed inventory with separate roots, revisions, and coverage for both languages.",
+      "Distinguishes static declarations, runtime validation, serialization, and client expectations; unresolved external APIs remain visible.",
+      "Does not execute target modules or claim that planned DataHub or language-conversion tooling is currently available."
+    ]
+  },
+  {
+    "id": "monorepo-transition-inventory",
+    "prompt": "Plan the transition away from this monorepo. Inventory its capabilities and remaining callers, map plausible replacements in Kiban and Kanban, and identify what would let us retire the first legacy path. Moving TypeScript logic to Python is acceptable.",
+    "expectedSkills": [
+      "analyzing-codebase"
+    ],
+    "forbiddenSkills": [],
+    "expectedReferences": [
+      "skills/analyzing-codebase/references/for-transitioning.md",
+      "skills/analyzing-codebase/references/for-contracts.md",
+      "skills/analyzing-codebase/references/workspace.md"
+    ],
+    "rubric": [
+      "Produces a transition inventory with proposed versus verified mappings, remaining callers, behavioral gaps, and retirement evidence.",
+      "Uses broad legacy discovery and a bounded capability pilot without implying full monorepo coverage.",
+      "A remaining caller blocks retirement; partial static coverage and compatible-looking schemas do not prove safe deletion or behavioral equivalence."
+    ]
+  },
+  {
+    "id": "testing-from-contract-inventory",
+    "prompt": "Use the existing multi-repository contract inventory to identify characterization tests before moving this Python API into TypeScript. Cover conditional validation, serialization, and retry behavior.",
+    "expectedSkills": [
+      "analyzing-codebase"
+    ],
+    "forbiddenSkills": [],
+    "expectedReferences": [
+      "skills/analyzing-codebase/references/for-testing.md",
+      "skills/analyzing-codebase/references/for-contracts.md"
+    ],
+    "rubric": [
+      "Checks inventory provenance and coverage before reusing it and links affected contracts to checkable properties.",
+      "Tests native behavior at shared observation points instead of treating a JSON Schema conversion as equivalence."
     ]
   },
   {

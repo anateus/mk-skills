@@ -1,0 +1,36 @@
+const fs = require('fs');
+const assert = require('node:assert/strict');
+const { Project } = require('ts-morph');
+const { createGenerator } = require('ts-json-schema-generator');
+const { z } = require('zod');
+const { zodToJsonSchema } = require('zod-to-json-schema');
+const project = new Project({tsConfigFilePath: 'tsconfig.json'});
+const diagnostics = project.getPreEmitDiagnostics();
+assert.equal(diagnostics.length, 0, project.formatDiagnosticsWithColorAndContext(diagnostics));
+const types = project.getSourceFileOrThrow('types.ts');
+const schemaTypes = project.getSourceFileOrThrow('schemas.ts');
+const inputType = schemaTypes.getTypeAliasOrThrow('CountInput').getType().getText();
+const outputType = schemaTypes.getTypeAliasOrThrow('CountOutput').getType().getText();
+assert.equal(inputType, 'string'); assert.equal(outputType, 'number');
+assert.equal(types.getTypeAliasOrThrow('Internal').isExported(), false);
+const schema = createGenerator({path:'types.ts',tsconfig:'tsconfig.json',type:'Payload',expose:'all'}).createSchema('Payload');
+assert.ok(schema.definitions.Node); assert.ok(schema.definitions.Internal);
+assert.ok(JSON.stringify(schema).includes('anyOf'));
+fs.writeFileSync('payload.schema.json',JSON.stringify(schema,null,2)+'\n');
+const refined = z.string().min(2).refine(value => value !== 'blocked');
+const plain = z.string().min(2);
+const refinedExport = zodToJsonSchema(refined, {name:'Value'});
+const plainExport = zodToJsonSchema(plain, {name:'Value'});
+assert.deepEqual(refinedExport, plainExport);
+assert.equal(refined.safeParse('blocked').success, false);
+assert.equal(plain.safeParse('blocked').success, true);
+const transformed = z.string().min(1).transform(value => value.length);
+const transformedExport = zodToJsonSchema(transformed, {name:'Count'});
+assert.equal(transformedExport.definitions.Count.type, 'string');
+assert.equal(typeof transformed.parse('abcd'), 'number');
+let inferred;
+try { const result = createGenerator({path:'schemas.ts',tsconfig:'tsconfig.json',type:'CountOutput'}).createSchema('CountOutput'); inferred={status:'generated',schema:result}; }
+catch (error) { inferred={status:'unsupported',message:error.message}; }
+const result = {versions:require('./package.json').dependencies,checks:{importedAliasRecursiveUnionAndGeneric:'passed',nonExportedDeclarationDiscovery:'passed',compilerResolvedZodInput:inputType,compilerResolvedZodOutput:outputType,customRefinementLostInZod3Export:true,defaultTransformExportRepresents:'input'},inferred};
+fs.writeFileSync('typescript-results.json',JSON.stringify(result,null,2)+'\n');
+console.log(JSON.stringify(result,null,2));
