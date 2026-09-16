@@ -30,7 +30,7 @@ Record whether a shape comes from a declaration, registration, client expectatio
 
 Required versus nullable fields, aliases, omitted values, extra fields, unions, recursion, numeric constraints, dates, defaults, custom validators, and transforms need explicit treatment. Python and TypeScript may disagree on these even when generated declarations look similar. An unsupported refinement or transform remains attached to the source contract; exporting a simpler schema does not discharge it.
 
-Retain source paths and symbols for original declarations. If a native schema or published specification is available, preserve it separately with version/hash and provenance. The current static helper does not execute native schema exporters. Any later isolated native export needs an inspected entrypoint and a conformance check before its output can replace a static projection.
+Retain source paths and symbols for original declarations. If a native schema or published specification is available, preserve it separately with version/hash and provenance. The helper can import explicitly selected JSON Schema 2020-12 and OpenAPI 3.1 documents, retaining source hashes and JSON pointers. It does not execute native schema exporters. Any later isolated native export needs an inspected entrypoint and a conformance check before its output can replace a static projection. [Model generation](model-generation.md) produces derived language models and a separate conversion report; it never promotes them to source of truth.
 
 ## Consumers
 

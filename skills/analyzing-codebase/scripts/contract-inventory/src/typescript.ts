@@ -1,7 +1,7 @@
 import ts from 'typescript';
 import path from 'node:path';
 import fs from 'node:fs';
-import type { AdapterResult, Evidence, JsonSchema, Operation, ScanRequest } from './types.js';
+import type { AdapterResult, Diagnostic, Evidence, JsonSchema, Operation, ScanRequest } from './types.js';
 
 const DIALECT = 'https://json-schema.org/draft/2020-12/schema';
 type Projection = { schema: JsonSchema; gaps: string[]; optional?: boolean };
@@ -27,28 +27,176 @@ function literal(node: ts.Node | undefined): string | number | boolean | null | 
   return undefined;
 }
 
+type JsonObject = Record<string, unknown>;
+interface AliasConfiguration { base?: string; paths?: Record<string, string[]>; pathsBase: string; }
+interface TypeScriptMetadata {
+  files: string[];
+  diagnostics: Diagnostic[];
+  unavailableImports: Set<string>;
+  configFor: Map<string, AliasConfiguration>;
+  packages: Map<string, Array<{ directory: string; value: JsonObject }>>;
+}
+const objectValue = (value: unknown): JsonObject | undefined => value && typeof value === 'object' && !Array.isArray(value) ? value as JsonObject : undefined;
+
+/** Metadata reads are bounded to selected-source ancestors and explicit relative extends. */
+function typescriptMetadata(request: ScanRequest): TypeScriptMetadata {
+  const root = path.resolve(request.repository.root);
+  const metadata: TypeScriptMetadata = { files: [], diagnostics: [], unavailableImports: new Set(), configFor: new Map(), packages: new Map() };
+  const consulted = new Set<string>();
+  const parsed = new Map<string, JsonObject | undefined>();
+  const configs = new Map<string, AliasConfiguration>();
+  const relative = (file: string) => path.relative(root, file).split(path.sep).join('/');
+  const diagnostic = (file: string, code: string, message: string) => metadata.diagnostics.push({ file: relative(file), line: 1, code, message });
+  function safe(file: string): boolean {
+    const rel = relative(file);
+    if (rel.startsWith('../') || path.isAbsolute(rel) || rel.split('/').includes('node_modules')) return false;
+    let current = root;
+    try { for (const part of rel.split('/')) { current = path.join(current, part); if (fs.existsSync(current) && fs.lstatSync(current).isSymbolicLink()) return false; } } catch { return false; }
+    return true;
+  }
+  function read(file: string): JsonObject | undefined {
+    if (parsed.has(file)) return parsed.get(file);
+    parsed.set(file, undefined);
+    if (!safe(file)) { diagnostic(file, 'configuration-outside-scope', 'Configuration outside repository or through symlink is not read.'); return undefined; }
+    if (!fs.existsSync(file)) { diagnostic(file, 'configuration-missing', 'Referenced configuration is missing.'); return undefined; }
+    try {
+      if (!fs.statSync(file).isFile() || fs.statSync(file).size > 512 * 1024) { diagnostic(file, 'configuration-unsupported', 'Configuration is not a regular file below the 512KiB limit.'); return undefined; }
+      consulted.add(relative(file));
+      const text = fs.readFileSync(file, 'utf8');
+      const decoded = file.endsWith('package.json') ? { config: JSON.parse(text), error: undefined } : ts.parseConfigFileTextToJson(file, text);
+      const value = objectValue(decoded.config);
+      if (decoded.error || !value) { diagnostic(file, 'configuration-malformed', 'Configuration JSON/JSONC is malformed; aliases from it are unavailable.'); return undefined; }
+      parsed.set(file, value); return value;
+    } catch { diagnostic(file, 'configuration-malformed', 'Configuration could not be read as JSON/JSONC; aliases from it are unavailable.'); return undefined; }
+  }
+  function config(file: string, ancestry: string[] = []): AliasConfiguration {
+    const cached = configs.get(file); if (cached) return cached;
+    const empty = { pathsBase: path.dirname(file) };
+    if (ancestry.includes(file) || ancestry.length >= 16) { diagnostic(file, 'configuration-cycle', 'Configuration inheritance cycles or exceeds the supported depth.'); return empty; }
+    const value = read(file); if (!value) return empty;
+    let resolved: AliasConfiguration = empty;
+    if (value.extends !== undefined) {
+      if (typeof value.extends === 'string' && value.extends.startsWith('.')) {
+        const target = path.resolve(path.dirname(file), value.extends.endsWith('.json') ? value.extends : value.extends + '.json');
+        if (safe(target)) resolved = { ...config(target, [...ancestry, file]) };
+        else diagnostic(file, 'configuration-outside-scope', 'Inherited configuration is outside repository scope or traverses a symlink.');
+      } else diagnostic(file, 'inherited-config-unsupported', 'Package or multiple-base configuration inheritance is not resolved; inherited aliases may be missing.');
+    }
+    const options = objectValue(value.compilerOptions);
+    if (options?.baseUrl !== undefined) {
+      if (typeof options.baseUrl === 'string') { resolved.base = path.resolve(path.dirname(file), options.baseUrl); if (resolved.paths) resolved.pathsBase = resolved.base; }
+      else diagnostic(file, 'configuration-unsupported', 'baseUrl must be a string.');
+    }
+    if (options?.paths !== undefined) {
+      const paths = objectValue(options.paths);
+      resolved.paths = {}; resolved.pathsBase = resolved.base ?? path.dirname(file);
+      if (!paths) diagnostic(file, 'configuration-unsupported', 'paths must be an object of string arrays.');
+      else for (const [pattern, targets] of Object.entries(paths)) {
+        if ((pattern.match(/\*/g)?.length ?? 0) > 1 || !Array.isArray(targets) || targets.some(v => typeof v !== 'string' || (v.match(/\*/g)?.length ?? 0) > 1)) diagnostic(file, 'configuration-unsupported', 'Alias patterns support at most one wildcard and string-array targets.');
+        else resolved.paths[pattern] = targets as string[];
+      }
+    }
+    configs.set(file, resolved); return resolved;
+  }
+  const packageFiles = new Set<string>();
+  for (const selected of [...new Set(request.files)].sort()) {
+    const source = path.resolve(root, selected);
+    if (!safe(source)) continue;
+    let current = path.dirname(source); let nearestConfig: string | undefined;
+    while (current === root || current.startsWith(root + path.sep)) {
+      const tsconfig = path.join(current, 'tsconfig.json');
+      if (!nearestConfig && fs.existsSync(tsconfig)) nearestConfig = tsconfig;
+      const packageFile = path.join(current, 'package.json'); if (fs.existsSync(packageFile)) packageFiles.add(packageFile);
+      if (current === root) break; current = path.dirname(current);
+    }
+    if (nearestConfig) metadata.configFor.set(source, config(nearestConfig));
+  }
+  for (const file of [...packageFiles].sort()) {
+    const value = read(file); if (!value || typeof value.name !== 'string') continue;
+    const entries = metadata.packages.get(value.name) ?? []; entries.push({ directory: path.dirname(file), value }); metadata.packages.set(value.name, entries);
+  }
+  metadata.files = [...consulted].sort(); return metadata;
+}
+
+/** Hash these metadata files alongside selected source files before and after scanning. */
+export function discoverTypeScriptConfigFiles(request: ScanRequest): string[] {
+  return typescriptMetadata(request).files;
+}
+
+function moduleResolver(request: ScanRequest, selected: Set<string>, metadata: TypeScriptMetadata): (name: string, containingFile: string) => ts.ResolvedModuleFull | undefined {
+  function candidate(base: string): string | undefined {
+    const stem = base.replace(/\.[cm]?js$/, '');
+    return [base, ...['.ts', '.tsx', '.mts', '.cts', '.d.ts'].map(ext => stem + ext), path.join(base, 'index.ts'), path.join(base, 'index.tsx')].find(file => selected.has(file));
+  }
+  function match(pattern: string, name: string): string | undefined {
+    if (!pattern.includes('*')) return pattern === name ? '' : undefined;
+    const [prefix, suffix] = pattern.split('*');
+    return name.startsWith(prefix) && name.endsWith(suffix) && name.length >= prefix.length + suffix.length ? name.slice(prefix.length, name.length - suffix.length) : undefined;
+  }
+  function exportTarget(value: unknown): string | undefined {
+    if (typeof value === 'string') return value;
+    const conditions = objectValue(value); if (!conditions) return undefined;
+    // TypeScript's types condition is preferred; unsupported custom conditions stay unresolved.
+    for (const condition of ['types', 'import', 'default']) if (conditions[condition] !== undefined) return exportTarget(conditions[condition]);
+    return undefined;
+  }
+  return (name, containingFile) => {
+    let resolved: string | undefined; let configuredTarget = false;
+    if (name.startsWith('.')) resolved = candidate(path.resolve(path.dirname(containingFile), name));
+    else {
+      const config = metadata.configFor.get(containingFile);
+      const patterns = Object.keys(config?.paths ?? {}).sort((a, b) => Number(a.includes('*')) - Number(b.includes('*')) || b.split('*')[0].length - a.split('*')[0].length || a.localeCompare(b));
+      const pattern = patterns.find(pattern => match(pattern, name) !== undefined);
+      if (pattern !== undefined) {
+        configuredTarget = true;
+        const wildcard = match(pattern, name)!;
+        for (const target of config!.paths![pattern]) { resolved = candidate(path.resolve(config!.pathsBase, target.replace('*', wildcard))); if (resolved) break; }
+      }
+      if (!resolved && config?.base) resolved = candidate(path.resolve(config.base, name));
+      if (!resolved) {
+        const parts = name.split('/'); const packageName = name.startsWith('@') ? parts.slice(0, 2).join('/') : parts[0];
+        const packages = metadata.packages.get(packageName); const subpath = parts.slice(name.startsWith('@') ? 2 : 1).join('/');
+        if (packages?.length === 1) {
+          const { directory, value } = packages[0]; const exports = objectValue(value.exports); let target: string | undefined;
+          if (value.exports !== undefined) {
+            if (exports && Object.keys(exports).some(k => k.startsWith('.'))) {
+              const requested = subpath ? `./${subpath}` : '.';
+              const keys = Object.keys(exports).sort((a,b) => Number(a.includes('*')) - Number(b.includes('*')) || b.split('*')[0].length - a.split('*')[0].length || a.localeCompare(b));
+              const key = keys.find(k => match(k, requested) !== undefined);
+              if (key !== undefined) target = exportTarget(exports[key])?.replace('*', match(key, requested)!);
+            } else if (!subpath) target = exportTarget(value.exports);
+          } else if (!subpath) target = exportTarget(value.types ?? value.typings ?? value.main);
+          if (target?.startsWith('./')) {
+            configuredTarget = true;
+            const targetPath = path.resolve(directory, target);
+            if (targetPath.startsWith(directory + path.sep)) resolved = candidate(targetPath);
+          }
+        }
+      }
+    }
+    if (!resolved && configuredTarget) metadata.unavailableImports.add(`${containingFile}\0${name}`);
+    return resolved ? { resolvedFileName: resolved, extension: resolved.endsWith('.tsx') ? ts.Extension.Tsx : resolved.endsWith('.mts') ? ts.Extension.Mts : resolved.endsWith('.cts') ? ts.Extension.Cts : ts.Extension.Ts } : undefined;
+  };
+}
+
 /** Static-only: no target imports, module evaluation, network calls, or request values. */
 export function scanTypeScript(request: ScanRequest): AdapterResult {
   const result: AdapterResult = {
     protocolVersion: 1,
-    adapter: { name: 'typescript-static', version: '0.1.0', capabilities: ['typescript-declarations', 'local-type-references', 'zod-static-subset', 'ts-rest-routes', 'fetch-axios-candidates', 'tool-registries'], limitations: ['Only selected source files are read; relative imports resolve within that set. Package and tsconfig aliases remain unresolved.', 'Static registration does not establish deployment or reachability.', 'Dynamic routes, arbitrary wrappers, refinements and serialization need review.', 'Class models, declaration merging, generic expansion and inherited fields are not fully projected.'] },
+    adapter: { name: 'typescript-static', version: '0.2.0', capabilities: ['typescript-declarations', 'local-type-references', 'selected-config-aliases', 'selected-package-exports', 'zod-static-subset', 'ts-rest-routes', 'fetch-axios-candidates', 'tool-registries'], limitations: ['Source reads stay within selected files; bounded ancestor JSON configuration supports local paths and package exports.', 'Package-based or multiple-base tsconfig inheritance and custom export conditions remain unresolved.', 'Static registration does not establish deployment or reachability.', 'Dynamic routes, arbitrary wrappers, refinements and serialization need review.', 'Class models, declaration merging, generic expansion and inherited fields are not fully projected.'] },
     declarations: [], schemas: [], operations: [], relationships: [], files: [], diagnostics: [],
   };
   const files = [...new Set(request.files)].sort();
   const selected = new Set(files.map(f => path.resolve(request.repository.root, f)));
   const options: ts.CompilerOptions = { target: ts.ScriptTarget.ESNext, module: ts.ModuleKind.NodeNext, moduleResolution: ts.ModuleResolutionKind.NodeNext, skipLibCheck: true, noEmit: true, noLib: true, types: [] };
   const host = ts.createCompilerHost(options);
-  // Bound reads to selected sources. Import resolution must not pull a monorepo's
-  // entire dependency graph or package declarations into a bounded scan.
-  host.resolveModuleNames = (names, containingFile) => names.map(name => {
-    if (!name.startsWith('.')) return undefined;
-    const base = path.resolve(path.dirname(containingFile), name);
-    const stem = base.replace(/\.[cm]?js$/, '');
-    const candidate = [base, ...['.ts', '.tsx', '.mts', '.cts', '.d.ts'].map(ext => stem + ext), path.join(base, 'index.ts')].find(file => selected.has(file));
-    return candidate ? { resolvedFileName: candidate, extension: candidate.endsWith('.tsx') ? ts.Extension.Tsx : candidate.endsWith('.mts') ? ts.Extension.Mts : candidate.endsWith('.cts') ? ts.Extension.Cts : ts.Extension.Ts } : undefined;
-  });
+  const metadata = typescriptMetadata(request);
+  const resolver = moduleResolver(request, selected, metadata);
+  // Metadata can identify a target, but never expands the selected source set.
+  host.resolveModuleNames = (names, containingFile) => names.map(name => resolver(name, containingFile));
   const program = ts.createProgram([...selected], options, host);
   const checker = program.getTypeChecker();
+  result.diagnostics.push(...metadata.diagnostics);
   const sources = program.getSourceFiles().filter(f => selected.has(path.resolve(f.fileName)));
   const relative = (n: ts.Node) => path.relative(request.repository.root, n.getSourceFile().fileName).split(path.sep).join('/');
   const evidence = (n: ts.Node, basis: Evidence['basis'] = 'declaration', symbol?: string): Evidence => ({ file: relative(n), line: n.getSourceFile().getLineAndCharacterOfPosition(n.getStart()).line + 1, basis, ...(symbol ? { symbol } : {}) });
@@ -94,6 +242,7 @@ export function scanTypeScript(request: ScanRequest): AdapterResult {
     for (const st of sf.statements) {
       if (ts.isImportDeclaration(st) && ts.isStringLiteral(st.moduleSpecifier)) {
         const mod = st.moduleSpecifier.text; const clause = st.importClause;
+        if (metadata.unavailableImports.has(`${sf.fileName}\0${mod}`)) result.diagnostics.push({ ...evidence(st), code: 'configured-target-unavailable', message: 'Configured import target is missing or outside selected sources; source scope was not expanded.' });
         if (!checker.getSymbolAtLocation(st.moduleSpecifier)) result.diagnostics.push({ ...evidence(st), code: 'unresolved-import', message: 'Import does not resolve within selected source files; imported contracts may be missing.' });
         const names = clause?.namedBindings && ts.isNamedImports(clause.namedBindings) ? clause.namedBindings.elements : [];
         if (/^zod(?:\/|$)/.test(mod)) {

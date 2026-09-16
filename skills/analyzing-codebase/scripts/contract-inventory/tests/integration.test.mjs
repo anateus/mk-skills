@@ -125,3 +125,68 @@ test('protocol boundary rejects omitted file coverage and unscoped evidence', ()
   assert.throws(() => validateResult({ ...result, files: [] }, request), /omitted/);
   assert.throws(() => validateResult({ ...result, declarations: [{ id: 'repo:decl', status: 'partial', gaps: [], evidence: [{ file: 'outside.py', line: 1 }] }] }, request), /outside/);
 });
+
+test('native OpenAPI survives import/export with multiple request and response media', t => {
+  const root = fs.mkdtempSync(path.join(tmpdir(), 'contract-native-cli-'));
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  const spec = { openapi: '3.1.0', info: { title: 'Synthetic native API', version: '1' }, paths: { '/widgets': { post: {
+    requestBody: { required: true, content: { 'application/json': { schema: { $ref: '#/components/schemas/Widget' } }, 'application/vnd.widget+json': { schema: { $ref: '#/components/schemas/Widget' } } } },
+    responses: { '201': { description: 'Created', content: { 'application/json': { schema: { $ref: '#/components/schemas/Widget' } }, 'text/plain': { schema: { type: 'string' } } } }, '204': { description: 'No content' } },
+  } } }, components: { schemas: { Widget: { type: 'object', required: ['name'], properties: { name: { type: 'string', minLength: 1 } }, additionalProperties: false } } } };
+  fs.writeFileSync(path.join(root, 'spec.json'), JSON.stringify(spec));
+  const out = path.join(root, 'out');
+  const scan = spawnSync(process.execPath, [path.join(pkg, 'dist/cli.js'), 'scan', '--root', `native=${root}`, '--artifact', 'native:spec.json', '--out', out], { encoding: 'utf8' });
+  assert.equal(scan.status, 0, scan.stderr + scan.stdout);
+  const inventory = read(path.join(out, 'inventory.json'));
+  assert.deepEqual(inventory.repositories[0].artifactFiles, ['spec.json']);
+  assert.match(inventory.repositories[0].sourceFiles[0].sha256, /^[a-f0-9]{64}$/);
+  const filenames = fs.readdirSync(path.join(out, 'openapi'));
+  assert.equal(filenames.length, 1);
+  const exported = read(path.join(out, 'openapi', filenames[0]));
+  const post = exported.paths['/widgets'].post;
+  assert.deepEqual(Object.keys(post.requestBody.content).sort(), ['application/json', 'application/vnd.widget+json']);
+  assert.equal(post.requestBody.required, true);
+  assert.deepEqual(Object.keys(post.responses['201'].content).sort(), ['application/json', 'text/plain']);
+  assert.equal(post.responses['204'].content, undefined);
+  const lint = spawnSync(path.join(pkg, 'node_modules/.bin/redocly'), ['lint', path.join(out, 'openapi', filenames[0]), '--extends', 'spec'], { encoding: 'utf8', env: { ...process.env, REDOCLY_TELEMETRY: 'off' } });
+  assert.equal(lint.status, 0, lint.stderr + lint.stdout);
+});
+
+test('CLI records alias configuration hashes and keeps resolution within selected sources', t => {
+  const root = fs.mkdtempSync(path.join(tmpdir(), 'contract-alias-integration-'));
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  fs.mkdirSync(path.join(root, 'src'));
+  fs.writeFileSync(path.join(root, 'package.json'), JSON.stringify({ name: 'test-alias' }));
+  fs.writeFileSync(path.join(root, 'tsconfig.json'), JSON.stringify({ compilerOptions: { baseUrl: '.', paths: { '@/*': ['src/*'] } } }));
+  fs.writeFileSync(path.join(root, 'src/model.ts'), 'export interface Model { name: string }');
+  fs.writeFileSync(path.join(root, 'src/use.ts'), "import type { Model } from '@/model'; export interface Use { model: Model }");
+  const out = path.join(root, 'out');
+  const run = include => spawnSync(process.execPath, [path.join(pkg, 'dist/cli.js'), 'scan', '--root', `alias=${root}`, '--include', include, '--out', out], { encoding: 'utf8' });
+  let result = run('src');
+  assert.equal(result.status, 0, result.stderr);
+  const inventory = read(path.join(out, 'inventory.json'));
+  assert.deepEqual(inventory.repositories[0].configurationFiles.map(f => f.path), ['package.json', 'tsconfig.json']);
+  assert.ok(inventory.repositories[0].configurationFiles.every(f => /^[a-f0-9]{64}$/.test(f.sha256)));
+  assert.ok(inventory.relationships.some(r => r.kind === 'references'));
+  result = run('src/use.ts');
+  assert.equal(result.status, 0, result.stderr);
+  assert.ok(read(path.join(out, 'inventory.json')).repositories[0].results[0].diagnostics.some(d => /import/.test(d.code)));
+});
+
+test('CLI generates models from native schema inventory and protects inventory ownership', t => {
+  const root = fs.mkdtempSync(path.join(tmpdir(), 'contract-generation-cli-'));
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  fs.writeFileSync(path.join(root, 'payload.json'), JSON.stringify({ $schema: 'https://json-schema.org/draft/2020-12/schema', type: 'object', properties: { name: { type: 'string' } }, required: ['name'], additionalProperties: false }));
+  const input = path.join(root, 'inventory'), out = path.join(root, 'models');
+  const scan = spawnSync(process.execPath, [path.join(pkg, 'dist/cli.js'), 'scan', '--root', `native=${root}`, '--artifact', 'native:payload.json', '--out', input], { encoding: 'utf8' });
+  assert.equal(scan.status, 0, scan.stderr);
+  const run = output => spawnSync(process.execPath, [path.join(pkg, 'dist/cli.js'), 'generate', '--input', input, '--out', output], { encoding: 'utf8' });
+  const result = run(out);
+  assert.equal(result.status, 0, result.stderr);
+  assert.equal(read(path.join(out, 'manifest.json')).kind, 'models');
+  assert.ok(fs.readdirSync(path.join(out, 'models/python')).some(file => file.endsWith('.py')));
+  assert.ok(fs.readdirSync(path.join(out, 'models/typescript')).some(file => file.endsWith('.d.ts')));
+  const before = fs.readFileSync(path.join(input, 'manifest.json'), 'utf8');
+  assert.equal(run(input).status, 1);
+  assert.equal(fs.readFileSync(path.join(input, 'manifest.json'), 'utf8'), before);
+});

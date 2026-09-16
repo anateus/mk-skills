@@ -4,7 +4,8 @@ import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { AdapterResult, Operation, Repository, ScanRequest } from './types.js';
-import { scanTypeScript } from './typescript.js';
+import { discoverTypeScriptConfigFiles, scanTypeScript } from './typescript.js';
+import { importNative } from './native.js';
 
 const packageRoot = fileURLToPath(new URL('../', import.meta.url));
 export const hash = (value: string | Buffer): string => createHash('sha256').update(value).digest('hex');
@@ -20,13 +21,15 @@ const json = (value: unknown): string => JSON.stringify(value, null, 2) + '\n';
 const excludedDirectories = new Set(['.git', '.venv', 'venv', 'node_modules', 'vendor', 'dist', 'build', '__pycache__', '.next', '.worktrees', 'docs', 'tests', '__tests__', 'fixtures', '__fixtures__', 'test', 'coverage']);
 const extensions = new Set(['.ts', '.tsx', '.mts', '.cts', '.js', '.jsx', '.mjs', '.cjs', '.py', '.go', '.rs', '.java', '.kt', '.rb', '.cs', '.php', '.proto', '.graphql', '.sql', '.cue']);
 
-export interface ScanOptions { roots: Array<{ id: string; root: string }>; includes: string[]; python: string; out: string; }
+export interface ScanOptions { roots: Array<{ id: string; root: string }>; includes: string[]; artifacts?: string[]; python: string; out: string; }
 interface Excluded { path: string; reason: string; }
 interface SourceFile { path: string; sha256: string; }
 interface RootScan {
   repository: Repository;
   scope: { includes: string[]; excludedDirectories: string[]; defaultTestExclusions: boolean };
   sourceFiles: SourceFile[];
+  configurationFiles: SourceFile[];
+  artifactFiles: string[];
   excluded: Excluded[];
   results: AdapterResult[];
 }
@@ -157,24 +160,45 @@ export function scan(options: ScanOptions): Inventory {
     if (options.includes.length && !includes.length) throw new Error(`No include scope supplied for ${target.id}`);
     const repository = { id: target.id, root, revision: git(root, ['rev-parse', 'HEAD']) || 'uncommitted' };
     const { files, excluded } = discover(root, includes, path.resolve(options.out));
-    if (!files.length) throw new Error(`No source files selected for ${target.id}; check include paths and exclusions`);
-    const sourceFiles = files.map(p => ({ path: p, sha256: hash(fs.readFileSync(path.join(root, p))) }));
+    const artifactFiles = [...new Set((options.artifacts || []).filter(a => a.startsWith(target.id + ':')).map(a => a.slice(target.id.length + 1)))].sort();
+    for (const file of artifactFiles) {
+      if (!file.endsWith('.json') || path.isAbsolute(file) || file.split(/[\\/]/).some(p => p === '..' || !p)) throw new Error('Artifacts must be repository-relative JSON file paths');
+      let cursor = root;
+      for (const part of file.split('/')) {
+        cursor = path.join(cursor, part);
+        if (fs.lstatSync(cursor).isSymbolicLink()) throw new Error('Native artifacts cannot use symlinks');
+      }
+      const stat = fs.statSync(cursor);
+      if (!stat.isFile() || stat.size > 2 * 1024 * 1024) throw new Error('Native artifact must be a regular JSON file under 2 MiB');
+    }
+    if (!files.length && !artifactFiles.length) throw new Error(`No source files selected for ${target.id}; check include paths and exclusions`);
+    const sourceFiles = [...files, ...artifactFiles].map(p => ({ path: p, sha256: hash(fs.readFileSync(path.join(root, p))) }));
+    const configurationFiles: SourceFile[] = [];
     const results: AdapterResult[] = [];
     const tsFiles = files.filter(p => /\.(?:[cm]?ts|tsx|[cm]?js|jsx)$/.test(p));
     const pyFiles = files.filter(p => p.endsWith('.py'));
     const unsupported = files.filter(p => !tsFiles.includes(p) && !pyFiles.includes(p));
     if (tsFiles.length) {
       const request: ScanRequest = { protocolVersion: 1, repository, files: tsFiles };
-      try { results.push(validateResult(scanTypeScript(request), request)); }
+      try {
+        for (const file of discoverTypeScriptConfigFiles(request)) configurationFiles.push({ path: file, sha256: hash(fs.readFileSync(path.join(root, file))) });
+        results.push(validateResult(scanTypeScript(request), request));
+      }
       catch { results.push(failure('typescript', tsFiles, 'adapter-failed', 'TypeScript adapter failed or returned an invalid result.')); }
     }
     if (pyFiles.length) results.push(python({ protocolVersion: 1, repository, files: pyFiles }, options.python));
+    if (artifactFiles.length) {
+      const request: ScanRequest = { protocolVersion: 1, repository, files: artifactFiles };
+      try { results.push(validateResult(importNative(request), request)); }
+      catch { results.push(failure('native', artifactFiles, 'adapter-failed', 'Native artifact import failed or returned an invalid result.')); }
+    }
     if (unsupported.length) results.push({ ...failure('unsupported-language', [], 'unsupported-language', 'No adapter for these source languages.'), files: unsupported.map(p => ({ path: p, status: 'unsupported' })) });
     // Hash again: a concurrent edit invalidates this scan's attribution.
-    for (const source of sourceFiles) {
+    if (tsFiles.length && JSON.stringify(discoverTypeScriptConfigFiles({ protocolVersion: 1, repository, files: tsFiles })) !== JSON.stringify(configurationFiles.map(file => file.path))) throw new Error(`TypeScript configuration changed during scan: ${target.id}`);
+    for (const source of [...sourceFiles, ...configurationFiles]) {
       if (!fs.existsSync(path.join(root, source.path)) || hash(fs.readFileSync(path.join(root, source.path))) !== source.sha256) throw new Error(`Source changed during scan: ${target.id}/${source.path}`);
     }
-    repositories.push({ repository, scope: { includes, excludedDirectories: [...excludedDirectories].sort(), defaultTestExclusions: true }, sourceFiles, excluded, results: results.map(normalizeResult) });
+    repositories.push({ repository, scope: { includes, excludedDirectories: [...excludedDirectories].sort(), defaultTestExclusions: true }, sourceFiles, configurationFiles, artifactFiles, excluded, results: results.map(normalizeResult) });
   }
   const results = repositories.flatMap(r => r.results);
   const operations = results.flatMap(r => r.operations);

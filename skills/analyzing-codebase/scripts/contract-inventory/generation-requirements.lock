@@ -1,0 +1,51 @@
+annotated-types==0.8.0
+    # via pydantic
+argcomplete==3.7.2
+    # via datamodel-code-generator
+black==26.5.1
+    # via datamodel-code-generator
+click==8.5.0
+    # via black
+datamodel-code-generator==0.81.0
+    # via -r generation-requirements.txt
+genson==1.4.0
+    # via datamodel-code-generator
+inflect==7.5.0
+    # via datamodel-code-generator
+isort==8.0.1
+    # via datamodel-code-generator
+jinja2==3.1.6
+    # via datamodel-code-generator
+markupsafe==3.0.3
+    # via jinja2
+more-itertools==11.1.0
+    # via inflect
+mypy-extensions==1.1.0
+    # via black
+packaging==26.3
+    # via black
+pathspec==1.1.1
+    # via black
+platformdirs==4.11.8
+    # via black
+pydantic==2.13.5
+    # via
+    #   -r generation-requirements.txt
+    #   datamodel-code-generator
+pydantic-core==2.46.5
+    # via pydantic
+pytokens==0.4.1
+    # via black
+pyyaml==6.0.3
+    # via datamodel-code-generator
+typeguard==4.6.0
+    # via inflect
+typing-extensions==4.16.0
+    # via
+    #   datamodel-code-generator
+    #   pydantic
+    #   pydantic-core
+    #   typeguard
+    #   typing-inspection
+typing-inspection==0.4.4
+    # via pydantic

@@ -1,0 +1,6 @@
+{
+  "name": "@fixture/types",
+  "exports": {
+    "./calls": { "types": "./src/calls/index.js", "default": "./dist/calls/index.js" }
+  }
+}

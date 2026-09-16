@@ -1,0 +1,8 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Unsupported normalization",
+    "version": "1"
+  },
+  "paths": {}
+}

@@ -1,0 +1,4 @@
+{
+  // JSONC is intentional: inherited paths resolve relative to this configuration.
+  "compilerOptions": { "baseUrl": ".", "paths": { "@/*": ["app/src/*"] } }
+}

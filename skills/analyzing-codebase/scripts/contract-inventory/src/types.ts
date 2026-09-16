@@ -12,6 +12,7 @@ export interface Evidence {
   file: string;
   line: number;
   symbol?: string;
+  pointer?: string;
   basis: 'declaration' | 'registration' | 'client-expectation' | 'runtime-validation' | 'serialization' | 'static-call';
 }
 export interface Declaration {
@@ -29,6 +30,7 @@ export interface SchemaRecord {
   id: string;
   name: string;
   role: 'input' | 'output' | 'wire' | 'declaration';
+  origin?: { kind: 'native-json-schema' | 'native-openapi'; file: string; pointer?: string };
   /** A conservative static projection; absence is preferable to fabricated constraints. */
   schema?: JsonSchema;
   dialect: string;
@@ -54,6 +56,7 @@ export interface Operation {
   mounted?: boolean;
   requestSchemaId?: string;
   requestMediaType?: string;
+  requests?: Array<{ mediaType: string; schemaId?: string; required?: boolean }>;
   responses: HttpResponse[];
   status: ExtractionStatus;
   evidence: Evidence[];

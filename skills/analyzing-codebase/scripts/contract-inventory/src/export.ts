@@ -10,15 +10,21 @@ const schemaUri = (id: string) => `https://contracts.invalid/schemas/${key(id)}.
 const methods = new Set(['get', 'put', 'post', 'delete', 'options', 'head', 'patch', 'trace']);
 
 function rewriteRefs(value: unknown, records: Map<string, SchemaRecord>, prefix?: string): unknown {
-  if (Array.isArray(value)) return value.map(item => rewriteRefs(item, records, prefix));
   if (!value || typeof value !== 'object') return value;
+  const maps = new Set(['$defs', 'definitions', 'properties', 'patternProperties', 'dependentSchemas']);
+  const arrays = new Set(['allOf', 'anyOf', 'oneOf', 'prefixItems']);
+  const singles = new Set(['items', 'contains', 'additionalProperties', 'unevaluatedProperties', 'unevaluatedItems', 'propertyNames', 'not', 'if', 'then', 'else', 'additionalItems', 'contentSchema']);
   return Object.fromEntries(Object.entries(value).map(([name, child]) => {
     if (name === '$ref' && typeof child === 'string') {
       if (records.has(child)) return [name, prefix ? `#/components/schemas/${key(child)}` : schemaUri(child)];
       if (prefix && child.startsWith('#/')) return [name, prefix + child.slice(1)];
       if (prefix && child === '#') return [name, prefix];
     }
-    return [name, rewriteRefs(child, records, prefix)];
+    if (maps.has(name) && child && typeof child === 'object' && !Array.isArray(child)) return [name, Object.fromEntries(Object.entries(child).map(([key, schema]) => [key, rewriteRefs(schema, records, prefix)]))];
+    if (arrays.has(name) && Array.isArray(child)) return [name, child.map(schema => rewriteRefs(schema, records, prefix))];
+    if (singles.has(name)) return [name, rewriteRefs(child, records, prefix)];
+    // Annotation and instance values may contain literal "$ref" keys.
+    return [name, child];
   }));
 }
 
@@ -36,8 +42,11 @@ function operationSpec(op: Operation, schemas: Map<string, SchemaRecord>): Recor
   for (const response of op.responses) {
     const content = response.mediaType && response.schemaId && schemas.has(response.schemaId)
       ? { [response.mediaType]: { schema: { $ref: `#/components/schemas/${key(response.schemaId)}` } } } : undefined;
-    responses[response.status] = { description: 'Response declared in analyzed source', ...(content ? { content } : {}) };
+    const previous = responses[response.status] as { content?: Record<string, unknown> } | undefined;
+    responses[response.status] = { description: 'Response declared in analyzed source', ...(previous?.content || content ? { content: { ...previous?.content, ...content } } : {}) };
   }
+  const requests: NonNullable<Operation['requests']> = op.requests ?? (op.requestSchemaId && op.requestMediaType ? [{ schemaId: op.requestSchemaId, mediaType: op.requestMediaType }] : []);
+  const requestContent = Object.fromEntries(requests.filter(r => r.schemaId && schemas.has(r.schemaId)).map(r => [r.mediaType, { schema: { $ref: `#/components/schemas/${key(r.schemaId!)}` } }]));
   const parameters = [...new Set([...httpPath(op)!.matchAll(/\{([^{}]+)\}/g)].map(m => m[1]))].map(name => ({ name, in: 'path', required: true, schema: {}, 'x-contract-gap': 'Parameter constraints not independently resolved by exporter' }));
   const server = validServer(op.server);
   return {
@@ -46,8 +55,7 @@ function operationSpec(op: Operation, schemas: Map<string, SchemaRecord>): Recor
     responses,
     ...(parameters.length ? { parameters } : {}),
     ...(server ? { servers: [{ url: server }] } : {}),
-    ...(op.requestSchemaId && op.requestMediaType && schemas.has(op.requestSchemaId)
-      ? { requestBody: { content: { [op.requestMediaType]: { schema: { $ref: `#/components/schemas/${key(op.requestSchemaId)}` } } } } } : {}),
+    ...(Object.keys(requestContent).length ? { requestBody: { content: requestContent, ...(requests.some(r => r.required) ? { required: true } : {}) } } : {}),
     'x-contract-id': op.id,
     'x-contract-direction': op.direction,
     'x-contract-source-path': op.path,
@@ -68,7 +76,7 @@ export function buildBundle(inventory: Inventory): Bundle {
     files.set(artifact, stringify({
       ...(rewriteRefs(record.schema, schemas) as object), $schema: record.dialect, $id: schemaUri(record.id),
       'x-contract-id': record.id, 'x-contract-role': record.role, 'x-contract-status': record.status,
-      'x-contract-gaps': record.gaps, 'x-contract-evidence': record.evidence,
+      'x-contract-gaps': record.gaps, 'x-contract-evidence': record.evidence, ...(record.origin ? { 'x-contract-origin': record.origin } : {}),
     }));
     schemaExports.push({ id: record.id, status: 'exported', artifact });
   }
@@ -97,19 +105,20 @@ export function buildBundle(inventory: Inventory): Bundle {
     delete projection.$id;
     delete projection.$schema;
     return [key(record.id), { ...projection, 'x-contract-id': record.id, 'x-contract-role': record.role,
-      'x-contract-status': record.status, 'x-contract-gaps': record.gaps, 'x-contract-evidence': record.evidence }];
+      'x-contract-status': record.status, 'x-contract-gaps': record.gaps, 'x-contract-evidence': record.evidence,
+      ...(record.origin ? { 'x-contract-origin': record.origin } : {}) }];
   }));
   for (const [group, bins] of documents) for (const [index, document] of bins.entries()) {
     const artifact = `openapi/${key(group)}-${index + 1}.json`;
     files.set(artifact, stringify({
-      openapi: '3.1.0', info: { title: 'Static contract inventory fragment', version: '0.1.0' },
+      openapi: '3.1.0', info: { title: 'Static contract inventory fragment', version: '0.2.0' },
       paths: document.paths, components: { schemas: components },
       'x-contract-complete': false, 'x-contract-analysis': 'static',
     }));
     for (const id of document.ops) operationExports.push({ id, status: 'exported', artifact });
   }
   const roots = inventory.repositories.map(root => ({
-    repository: root.repository, scope: root.scope, excluded: root.excluded,
+    repository: root.repository, scope: root.scope, excluded: root.excluded, configurationFiles: root.configurationFiles, artifactFiles: root.artifactFiles,
     files: root.sourceFiles.map(source => ({ ...source, status: root.results.flatMap(r => r.files).find(f => f.path === source.path)?.status })),
     adapters: root.results.map(r => r.adapter), diagnostics: root.results.flatMap(r => r.diagnostics),
     counts: { files: root.sourceFiles.length, declarations: root.results.reduce((n, r) => n + r.declarations.length, 0), operations: root.results.reduce((n, r) => n + r.operations.length, 0) },
@@ -120,12 +129,12 @@ export function buildBundle(inventory: Inventory): Bundle {
   files.set('coverage.json', stringify(coverage));
   const provenance = inventory.repositories.map(r => `  - id: ${JSON.stringify(r.repository.id)}\n    system_path: ${JSON.stringify(r.repository.root)}\n    commit: ${JSON.stringify(r.repository.revision)}`).join('\n');
   const rows = roots.map(root => `| ${root.repository.id} | ${root.counts.files} | ${root.counts.declarations} | ${root.counts.operations} |`).join('\n');
-  files.set('summary.md', `---\nanalysis: static\ncomplete: false\nrepositories:\n${provenance}\nexternal_references: []\n---\n\n# Contract inventory\n\nThis is a partial static inventory of the selected source files. It does not establish deployed behavior, complete consumer coverage, or readiness to retire a capability.\n\n| Repository | Selected source files | Declarations | Boundary candidates |\n| --- | --- | --- | --- |\n${rows}\n\nRead [coverage.json](coverage.json) for exclusions, unsupported constructs, failures, and export omissions. [inventory.json](inventory.json) retains evidence, relationships, and conversion gaps. Source hashes describe the analyzed working tree. Type and schema matches do not establish behavioral equivalence.\n\nGenerated HTTP documents are contract fragments; verify server locations, mounting, and provider evidence before using them to drive requests. Keep reviewed annotations and transition decisions outside this generated directory.\n`);
+  files.set('summary.md', `---\nanalysis: static\ncomplete: false\nrepositories:\n${provenance}\nexternal_references: []\n---\n\n# Contract inventory\n\nThis is a partial static inventory of the selected input files. It does not establish deployed behavior, complete consumer coverage, or readiness to retire a capability.\n\n| Repository | Selected input files | Declarations | Boundary candidates |\n| --- | --- | --- | --- |\n${rows}\n\nRead [coverage.json](coverage.json) for exclusions, unsupported constructs, failures, and export omissions. [inventory.json](inventory.json) retains evidence, relationships, and conversion gaps. Source hashes describe the analyzed working tree. Type and schema matches do not establish behavioral equivalence.\n\nGenerated HTTP documents are contract fragments; verify server locations, mounting, and provider evidence before using them to drive requests. Keep reviewed annotations and transition decisions outside this generated directory.\n`);
   return { files, failed, coverage };
 }
 
 /** Replace only a directory previously owned by this tool; leave failed attempts separate. */
-export function writeBundle(bundle: Bundle, requestedOut: string): string {
+export function writeBundle(bundle: Bundle, requestedOut: string, kind: 'inventory' | 'models' = 'inventory'): string {
   const out = path.resolve(requestedOut);
   let destination = out;
   const marker = 'manifest.json';
@@ -138,6 +147,7 @@ export function writeBundle(bundle: Bundle, requestedOut: string): string {
         if (!fs.lstatSync(path.join(out, marker)).isSymbolicLink()) manifest = JSON.parse(fs.readFileSync(path.join(out, marker), 'utf8'));
       } catch { /* unowned */ }
       if (manifest?.generator !== '@mk-skills/contract-inventory') throw new Error('Refusing to replace a nonempty output directory not owned by contract-inventory');
+      if ((manifest.kind ?? 'inventory') !== kind) throw new Error('Refusing to replace output owned by another contract-inventory command');
       const expected = new Set<string>([...manifest.files, marker]);
       const unmanaged: string[] = [];
       function check(relative: string): void {
@@ -154,7 +164,7 @@ export function writeBundle(bundle: Bundle, requestedOut: string): string {
       }
       check('');
       if (unmanaged.length) throw new Error('Output contains unmanaged files; move annotations outside the generated directory before refreshing');
-      if (bundle.failed) destination = path.join(out, 'attempts', hash(bundle.files.get('inventory.json')!).slice(0, 24));
+      if (bundle.failed) destination = path.join(out, 'attempts', hash(stringify([...bundle.files])).slice(0, 24));
     }
   }
   fs.mkdirSync(path.dirname(destination), { recursive: true });
@@ -164,7 +174,7 @@ export function writeBundle(bundle: Bundle, requestedOut: string): string {
     for (const [relative, content] of bundle.files) {
       const filename = path.join(stage, relative); fs.mkdirSync(path.dirname(filename), { recursive: true }); fs.writeFileSync(filename, content);
     }
-    fs.writeFileSync(path.join(stage, marker), stringify({ generator: '@mk-skills/contract-inventory', version: '0.1.0', files: [...bundle.files.keys()].sort() }));
+    fs.writeFileSync(path.join(stage, marker), stringify({ generator: '@mk-skills/contract-inventory', version: '0.2.0', kind, files: [...bundle.files.keys()].sort() }));
     if (destination === out && fs.existsSync(path.join(out, 'attempts'))) fs.cpSync(path.join(out, 'attempts'), path.join(stage, 'attempts'), { recursive: true, dereference: false });
     if (fs.existsSync(destination)) fs.renameSync(destination, backup);
     try { fs.renameSync(stage, destination); }

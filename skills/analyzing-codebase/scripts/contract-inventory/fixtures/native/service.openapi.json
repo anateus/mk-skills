@@ -1,0 +1,124 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Synthetic native API",
+    "version": "1"
+  },
+  "servers": [
+    {
+      "url": "https://service.example.test/api"
+    }
+  ],
+  "paths": {
+    "/payments": {
+      "post": {
+        "requestBody": {
+          "$ref": "#/components/requestBodies/Payment"
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Receipt"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Receipt"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/Receipt"
+          }
+        }
+      }
+    },
+    "/payments/{id}": {
+      "delete": {
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Removed"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Receipt": {
+        "type": "object",
+        "properties": {
+          "accepted": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "accepted"
+        ]
+      },
+      "Never": false
+    },
+    "requestBodies": {
+      "Payment": {
+        "required": true,
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "shared.schema.json"
+            }
+          },
+          "application/vnd.payment+json": {
+            "schema": {
+              "$ref": "shared.schema.json"
+            }
+          }
+        }
+      }
+    },
+    "responses": {
+      "Receipt": {
+        "description": "Receipt",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Receipt"
+            }
+          }
+        }
+      }
+    }
+  }
+}
