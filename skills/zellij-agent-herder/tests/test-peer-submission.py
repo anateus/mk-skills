@@ -6,6 +6,7 @@ import os
 from pathlib import Path
 import pty
 import select
+import shlex
 import shutil
 import subprocess
 import struct
@@ -146,8 +147,13 @@ class NativeComposerTests(unittest.TestCase):
             state = path / "state.json"
             fixture = path / "composer.py"
             fixture.write_text(COMPOSER)
+            shell = path / "composer-shell"
+            shell.write_text('#!/bin/sh\nexec ' + shlex.join(
+                [shutil.which("python3"), str(fixture), str(state)]) + '\n')
+            shell.chmod(0o755)
             config = path / "config.kdl"
-            config.write_text('show_startup_tips false\nshow_release_notes false\n')
+            config.write_text('show_startup_tips false\nshow_release_notes false\n' +
+                              'default_shell "' + str(shell) + '"\n')
             session = "peer-submission-test-" + str(os.getpid())
             env = {"PATH": os.environ["PATH"], "TERM": "xterm-256color",
                    "HOME": temp, "SHELL": "/bin/sh",
@@ -182,28 +188,14 @@ class NativeComposerTests(unittest.TestCase):
                     except (FileNotFoundError, json.JSONDecodeError):
                         pass
                     time.sleep(0.05)
-                panes = subprocess.run([binary, "--session", session, "action",
-                                        "list-panes", "-j"], env=env,
-                                       capture_output=True, text=True, timeout=5)
                 self.fail("owned synthetic composer did not acknowledge input: " +
-                          panes.stdout + panes.stderr +
+                          "process status=" + str(proc.poll()) + "; " +
                           terminal_output[:1200].decode(errors="replace"))
             try:
-                deadline = time.monotonic() + 10
-                while time.monotonic() < deadline:
-                    listed = subprocess.run([binary, "--session", session, "action",
-                                             "list-panes", "-j"], env=env,
-                                            capture_output=True, text=True, timeout=5)
-                    if listed.returncode == 0:
-                        break
-                    time.sleep(0.05)
-                spawned = subprocess.run([binary, "--session", session, "action",
-                                          "new-pane", "--name", "synthetic-peer", "--",
-                                          shutil.which("python3"), str(fixture), str(state)],
-                                         env=env, capture_output=True, text=True, timeout=5)
-                self.assertEqual(spawned.returncode, 0, spawned.stderr)
+                # The owned composer signals readiness; querying an initializing
+                # server can block before it can handle list-panes requests.
                 snapshot(lambda value: True)
-                result = subprocess.run(["bash", str(HELPER), "ask", "synthetic-peer",
+                result = subprocess.run(["bash", str(HELPER), "ask", "terminal_0",
                                          "First line\n第二行"], env=env,
                                         capture_output=True, text=True, timeout=10)
                 self.assertEqual(result.returncode, 0, result.stderr)
@@ -213,7 +205,7 @@ class NativeComposerTests(unittest.TestCase):
                 self.assertEqual(value["draft"], "")
                 # A known negative proves the fixture detects immediate raw Enter.
                 subprocess.run([binary, "--session", session, "action", "write",
-                                "-p", "terminal_1", *map(str, b"raw burst\r")],
+                                "-p", "terminal_0", *map(str, b"raw burst\r")],
                                env=env, check=True, capture_output=True)
                 value = snapshot(lambda value: value["draft"] == "raw burst\n")
                 self.assertEqual(len(value["accepted"]), 1)
