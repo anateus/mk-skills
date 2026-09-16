@@ -4,7 +4,11 @@
 
 Record `BASE` before implementation or peer dispatch and keep the resolved base and head SHAs with the review. Use the full `BASE..HEAD` range. `HEAD~1` covers only the final commit and silently truncates multi-commit work. Before reporting, verify the comparison point and head have not moved.
 
-Generate a stable package with `scripts/review-package BASE HEAD`. Declare excluded or generated content explicitly.
+For a committed range, run `"<skill-base-dir>/scripts/review-package" BASE HEAD`; it writes the committed diff and a Git inventory under `${TMPDIR:-/tmp}` and prints only the package path. Declare excluded or generated content explicitly.
+
+## Coverage bookkeeping
+
+Use Git's changed-file inventory as the coverage baseline, including deletions and renames. Record each entry as reviewed, partial, skipped, or unreviewed, with reasons for partial or skipped coverage. Reconcile tool and peer results against it; filtered, binary-classified, failed, or truncated inputs do not count as reviewed. For a small diff, keep this in the report; use the manifest across reviewers, runs, or revisions.
 
 ## Coverage manifest
 
