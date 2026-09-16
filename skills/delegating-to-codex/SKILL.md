@@ -1,11 +1,11 @@
 ---
 name: delegating-to-codex
-description: Hand an implementation or investigation task to Codex from Claude Code or another harness, running it against the real `codex app-server` (not `codex exec`) for per-turn sandbox control, background jobs, and thread resume. Use when asked to delegate work to Codex, run something in Codex, or run a task in the background while continuing other work. Triggers on "hand this to codex", "run this in codex", "delegate to codex", background delegation, or needing a resumable Codex thread.
+description: Delegate implementation or investigation to Codex, primarily from Claude Code or another non-Codex harness, through `codex app-server`. Within Codex, use when a separate CLI-controlled job, resumable thread, or explicit run configuration is needed beyond available native delegation. Generic background or parallel work alone does not call for this skill.
 ---
 
 # Delegating to Codex
 
-`codex-run` drives `codex app-server` over JSON-RPC-over-stdio, not `codex exec`: per-turn sandbox (read-only, workspace-write, danger-full-access, none), writable roots, network on/off, permission-profile presets, background jobs, thread resume, a raw event log per run.
+Primarily for non-Codex harnesses. Within Codex, prefer native delegation when available; use `codex-run` for jobs needing persistent status, thread resume, or explicit configuration. It drives `codex app-server` over stdio, not `codex exec`.
 
 ## Basic usage
 
