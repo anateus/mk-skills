@@ -33,8 +33,9 @@ Verified against a recent **zellij 0.45.0 development build containing [zellij-o
 | spawn pane | `pane spawn` | `zj_spawn -d right --cwd DIR -n NAME -- CMD` |
 | grouped spawn | — | `zj_spawn_grouped Peers -n NAME --cwd DIR -- CMD` |
 | read pane | `pane read` | `_zj dump-screen -p <id> --full` (plain, never `-a/--ansi`) |
-| send text | `pane send` | `_zj write-chars -p <id> "text"` |
-| send Enter | — | `_zj write -p <id> 13` (Codex composers may need it twice) |
+| submit peer prompt | `pane send` | `bash scripts/zellij-peer.sh ask <id> "text"`, then `read` to confirm acknowledgement |
+| paste without submitting | — | `_zj paste -p <id> -- "text"` (native bracketed paste) |
+| send Enter after inspection | — | `_zj write -p <id> 13` (one press; do not blindly repeat) |
 | rename/title | — | `_zj rename-pane -p <id> "<title>"` |
 | close pane | `pane close` | `_zj close-pane -p <id>` |
 | switch tab | — | `_zj go-to-tab-name <name>` (⚠ steals an attached client's view) |

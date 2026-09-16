@@ -45,7 +45,7 @@ bash "<skill-base-dir>/scripts/zj.sh" zj_spawn -n worker -- bash
 | read pane | `_zj dump-screen -p <id> --full` |
 | spawn | `zj_spawn -d right --cwd DIR -n NAME -- CMD` |
 | grouped spawn | `zj_spawn_grouped Peers -n NAME --cwd DIR -- CMD` |
-| send text / Enter | `_zj write-chars -p <id> "text"`; `_zj write -p <id> 13` |
+| submit a peer prompt | `bash scripts/zellij-peer.sh ask <id> "text"`, then `read` to verify transcript or working acknowledgement |
 | close | `zj_close_pane <id>` |
 | wait for text | `zj_wait_output <id> <match> <timeout> [--regex]` |
 | wait for exit | `zj_wait_exit <id> <timeout>` |

@@ -18,7 +18,7 @@ Sharp edges of driving zellij headlessly, and how each surfaces.
 
 ## Sending input
 
-- **Prompt visible but not submitted.** If you `write-chars` and the text sits in the composer unsent, the Enter didn't register. Send `write -p <id> 13` again. Codex composers often need it twice (`PEER_DOUBLE_ENTER=1`).
+- **Prompt visible but not submitted.** Use `zellij-peer.sh ask`, which pastes through the native bracketed-paste action, pauses for rendering, and sends one Enter. Verify transcript or working acknowledgement with `read` before waiting for idle. If the intended text clearly remains in a ready composer after settling, send one additional Enter; never blindly repeat Enter or repaste an uncertain prompt. `PEER_DOUBLE_ENTER=1` is rejected.
 
 ## Naming & ids
 

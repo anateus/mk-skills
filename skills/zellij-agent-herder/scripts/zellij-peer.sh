@@ -43,8 +43,18 @@ for line in sys.stdin:
     echo "$id" ;;                             # adaptive spawn; breadcrumb after real id
   ask)
     name="${1:-}"; prompt="${2:-}"; [ -n "$name" ] && [ -n "$prompt" ] || usage
-    id="$(zj_resolve_id "$name")"; _zj write-chars -p "$id" "$prompt"; _zj write -p "$id" 13
-    [ "${PEER_DOUBLE_ENTER:-0}" = "1" ] && _zj write -p "$id" 13 || true ;;
+    if [ "${PEER_DOUBLE_ENTER:-0}" = "1" ]; then
+      echo "PEER_DOUBLE_ENTER is unsupported: verify the draft before retrying Enter; never resend an uncertain prompt." >&2
+      exit 2
+    fi
+    id="$(zj_resolve_id "$name")"
+    # Raw character bursts can consume Enter as a pasted newline in a composer.
+    # Native paste honors the pane's bracketed-paste mode; fail before Enter if
+    # this action is unavailable. Let the editor render, then submit once.
+    _zj paste -p "$id" -- "$prompt"
+    sleep 0.25
+    _zj write -p "$id" 13
+    echo "Input sent once. Verify visible transcript or working acknowledgement with read before waiting for idle; CLI success is not acknowledgement." >&2 ;;
   wait)
     name="${1:-}"; shift || usage; status="idle"; timeout=300
     while [ $# -gt 0 ]; do case "$1" in --status) status="$2"; shift 2;; --timeout) timeout="$2"; shift 2;; *) shift;; esac; done

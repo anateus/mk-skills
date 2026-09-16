@@ -31,6 +31,7 @@ const checks = [
   ['Behavioral evaluation runner', 'python3', ['-B', 'tests/evaluation/test_evaluate_skills.py', '-v']],
   ['Zellij pane identity', 'python3', ['-B', 'skills/zellij-agent-herder/tests/test-pane-identity.py', '-v']],
   ['Zellij adaptive spawn', 'bash', ['skills/zellij-agent-herder/tests/test-zj-spawn.sh']],
+  ['Zellij peer submission', 'python3', ['-B', 'skills/zellij-agent-herder/tests/test-peer-submission.py']],
   ['Zellij Hunk placement', 'python3', ['-B', 'skills/zellij-agent-herder/tests/test-hunk-placement.py', '-v']],
   ['Zellij Hunk stream', 'bash', ['skills/zellij-agent-herder/tests/test-hunk-stream.sh']],
   ['Zellij hook installer', 'bash', ['skills/zellij-agent-herder/tests/test-install-hooks.sh']],
