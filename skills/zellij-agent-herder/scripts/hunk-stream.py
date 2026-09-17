@@ -279,9 +279,10 @@ def grouped_tab_placement(
     tab_name = parent.get("tab_name")
     if not isinstance(tab_name, str) or not tab_name:
         return None
-    origin_match = re.fullmatch(r"(.+) - (?:Peers|Reviews) [0-9]+", tab_name)
+    origin_match = re.fullmatch(r"(.+) - (?:(?:󱙺 )?Peers|(?: )?Reviews) #?[0-9]+", tab_name)
     base = origin_match.group(1) if origin_match else tab_name
-    pattern = re.compile(r"^" + re.escape(base) + rf" - {re.escape(kind)} ([0-9]+)$")
+    icon = {"Peers": "󱙺", "Reviews": ""}[kind]
+    pattern = re.compile(r"^" + re.escape(base) + rf" - (?:{icon} )?{re.escape(kind)} #?([0-9]+)$")
     groups: dict[int, dict[str, Any]] = {}
     for item in items:
         match = pattern.fullmatch(str(item.get("tab_name") or ""))
@@ -326,7 +327,7 @@ def spawn_hunk(request: dict[str, Any]) -> tuple[str, int]:
     else:
         tab_id = None
         tab_name = (
-            f"{placement['base']} - Reviews {placement['number']}"
+            f"{placement['base']} -  Reviews #{placement['number']}"
             if placement else review_tab_title(request)
         )
         args = [

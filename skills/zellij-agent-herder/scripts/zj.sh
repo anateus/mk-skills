@@ -177,9 +177,10 @@ parent = next((item for item in items if item.get("id") == origin), None)
 if parent is None:
     raise SystemExit("zj_spawn_grouped: origin pane not found: " + origin)
 tab_name = str(parent.get("tab_name") or "")
-match = re.fullmatch(r"(.+) - (?:Peers|Reviews) [0-9]+", tab_name)
+match = re.fullmatch(r"(.+) - (?:(?:󱙺 )?Peers|(?: )?Reviews) #?[0-9]+", tab_name)
 base = match.group(1) if match else (tab_name or "tab")
-pattern = re.compile(r"^" + re.escape(base) + r" - " + re.escape(kind) + r" ([0-9]+)$")
+icon = {"Peers": "󱙺", "Reviews": ""}[kind]
+pattern = re.compile(r"^" + re.escape(base) + rf" - (?:{icon} )?{re.escape(kind)} #?([0-9]+)$")
 groups = {}
 for item in items:
     name = str(item.get("tab_name") or "")
@@ -211,7 +212,9 @@ print(json.dumps({"base": base, "number": number if reuse else number + 1,
   number="$(printf '%s' "$placement" | python3 -c 'import json,sys; print(json.load(sys.stdin)["number"])')"
   reuse="$(printf '%s' "$placement" | python3 -c 'import json,sys; print(1 if json.load(sys.stdin)["reuse"] else 0)')"
   tab_id="$(printf '%s' "$placement" | python3 -c 'import json,sys; v=json.load(sys.stdin)["tab_id"]; print("" if v is None else v)')"
-  local target_tab="$tab_id" tab_name="$base - $kind $number" output
+  local icon="󱙺"
+  [ "$kind" != Reviews ] || icon=""
+  local target_tab="$tab_id" tab_name="$base - $icon $kind #$number" output
   local -a args
   if [ "$reuse" = 1 ]; then
     args=(new-pane --no-focus --tab-id "$target_tab")

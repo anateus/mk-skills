@@ -52,7 +52,7 @@ Verified against a recent **zellij 0.45.0 development build containing [zellij-o
 
 Go through `zj_spawn` so background automation consistently preserves client focus and applies the crowded-tab policy.
 
-`zj_spawn_grouped` derives the base from the originating tab, including when the origin is already a `- Peers N` or `- Reviews N` tab. It reuses the highest matching group below four visible panes. A full group creates the next numbered background tab. Visible means non-plugin, not suppressed, and not floating. `zj_spawn_tab` is retained as a wrapper for grouped Peers placement.
+`zj_spawn_grouped` derives the base from the originating tab, including when the origin is already a `- 󱙺 Peers #N` or `-  Reviews #N` tab. It reuses the highest matching group below four visible panes. A full group creates the next numbered background tab. Visible means non-plugin, not suppressed, and not floating. `zj_spawn_tab` is retained as a wrapper for grouped Peers placement.
 
 ## Native blocking waits (zellij ≥ 0.44)
 

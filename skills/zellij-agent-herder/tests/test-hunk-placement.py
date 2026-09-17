@@ -19,7 +19,7 @@ class HunkPlacementTests(unittest.TestCase):
     def test_origin_tab_base_preserved_verbatim(self):
         items = [
             {"id": 1, "tab_id": 7, "tab_name": "󰚩 Bots #1"},
-            {"id": 10, "tab_id": 12, "tab_name": "󰚩 Bots #1 - Peers 1"},
+            {"id": 10, "tab_id": 12, "tab_name": "󰚩 Bots #1 - 󱙺 Peers #1"},
         ]
         self.assertEqual(
             hunk_stream.grouped_tab_placement(items, "terminal_1", "Peers"),
@@ -30,10 +30,10 @@ class HunkPlacementTests(unittest.TestCase):
         items = [
             {"id": 1, "tab_id": 7, "tab_name": "󰚩 Bots #1"},
             {"id": 2, "tab_id": 7, "tab_name": "󰚩 Bots #1"},
-            {"id": 10, "tab_id": 12, "tab_name": "󰚩 Bots #1 - Peers 1"},
-            {"id": 11, "tab_id": 12, "tab_name": "󰚩 Bots #1 - Peers 1"},
-            {"id": 12, "tab_id": 12, "tab_name": "󰚩 Bots #1 - Peers 1", "is_floating": True},
-            {"id": 20, "tab_id": 15, "tab_name": "󰚩 Bots #1 - Peers 2"},
+            {"id": 10, "tab_id": 12, "tab_name": "󰚩 Bots #1 - 󱙺 Peers #1"},
+            {"id": 11, "tab_id": 12, "tab_name": "󰚩 Bots #1 - 󱙺 Peers #1"},
+            {"id": 12, "tab_id": 12, "tab_name": "󰚩 Bots #1 - 󱙺 Peers #1", "is_floating": True},
+            {"id": 20, "tab_id": 15, "tab_name": "󰚩 Bots #1 - 󱙺 Peers #2"},
         ]
         self.assertEqual(
             hunk_stream.grouped_tab_placement(items, "terminal_1", "Peers"),
@@ -44,7 +44,7 @@ class HunkPlacementTests(unittest.TestCase):
         items = [
             {"id": 1, "tab_id": 7, "tab_name": "Bots"},
             *[
-                {"id": number, "tab_id": 12, "tab_name": "Bots - Reviews 1"}
+                {"id": number, "tab_id": 12, "tab_name": "Bots -  Reviews #1"}
                 for number in range(10, 14)
             ],
         ]
@@ -95,12 +95,12 @@ class HunkPlacementTests(unittest.TestCase):
     def test_spawn_reuses_newest_review_group_below_four_panes(self):
         initial = [
             {"id": 1, "tab_id": 7, "tab_name": "Bots", "is_plugin": False},
-            {"id": 10, "tab_id": 12, "tab_name": "Bots - Reviews 1", "is_plugin": False},
-            {"id": 11, "tab_id": 12, "tab_name": "Bots - Reviews 1", "is_plugin": False},
+            {"id": 10, "tab_id": 12, "tab_name": "Bots -  Reviews #1", "is_plugin": False},
+            {"id": 11, "tab_id": 12, "tab_name": "Bots -  Reviews #1", "is_plugin": False},
         ]
         after = [
             *initial,
-            {"id": 20, "tab_id": 12, "tab_name": "Bots - Reviews 1", "is_plugin": False},
+            {"id": 20, "tab_id": 12, "tab_name": "Bots -  Reviews #1", "is_plugin": False},
         ]
         commands = []
 

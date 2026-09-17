@@ -18,7 +18,7 @@ For delegation choice, Claude Code's built-in Agent-tool usually suffices for di
 - The hierarchy is session → tabs → panes. Address a pane by `(session, pane_id)`; pane IDs are not stable global identifiers.
 - Target a session with `zellij --session <name> action <command>` or `$ZELLIJ_SESSION_NAME`. Helpers default `ZJ_SESSION` to that name.
 - `--name`/`-n` sets a title, not an address. Resolve a name with `zj_resolve_id`.
-- Spawn panes through `zj_spawn` or `zj_spawn_grouped`. Grouped peer and review panes use background tabs named `<origin tab> - Peers N` or `<origin tab> - Reviews N`, with up to four visible panes per tab. Both helpers use native `--no-focus` and preserve attached-client focus.
+- Spawn panes through `zj_spawn` or `zj_spawn_grouped`. Grouped peer and review panes use background tabs named `<origin tab> - 󱙺 Peers #N` or `<origin tab> -  Reviews #N`, with up to four visible panes per tab. Both helpers use native `--no-focus` and preserve attached-client focus.
 - Before fan-out, capture one fixed branch-point `BASE`. Never substitute advancing `main` or current `HEAD`; doing so produces incomplete or misleading aggregate diffs.
 
 ## Load helpers

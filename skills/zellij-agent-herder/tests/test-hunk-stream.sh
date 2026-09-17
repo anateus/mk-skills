@@ -200,7 +200,7 @@ panes = {pane["id"]: pane for pane in json.load(open(sys.argv[1]))}
 clients = json.load(open(sys.argv[2]))
 parent, watcher = panes["terminal_1"], panes[sys.argv[3]]
 assert watcher["tab_id"] != parent["tab_id"], (parent, watcher)
-assert watcher["tab_name"] == "Agent - Reviews 1", watcher
+assert watcher["tab_name"] == "Agent -  Reviews #1", watcher
 assert watcher["title"] == "🦀 ▸ 🌿 ▸ 🔍", watcher
 assert clients == [{"client_id": 1, "focused_pane": "terminal_9"}], clients
 PY
