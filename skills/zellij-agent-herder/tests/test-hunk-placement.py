@@ -3,6 +3,9 @@
 
 import importlib.util
 import contextlib
+import json
+import os
+import tempfile
 import unittest
 from pathlib import Path
 from unittest import mock
@@ -152,12 +155,17 @@ class HunkPlacementTests(unittest.TestCase):
         def locked_state(_cache, _key):
             yield state
 
+        @contextlib.contextmanager
+        def spawn_lock():
+            yield
+
         commands = []
         with mock.patch.object(hunk_stream, "canonical_path", return_value="/repo"), \
              mock.patch.object(hunk_stream, "git_common_dir", return_value="/repo/.git"), \
              mock.patch.object(hunk_stream, "diff_signature", return_value="signature"), \
              mock.patch.object(hunk_stream, "stream_key", return_value="key"), \
              mock.patch.object(hunk_stream, "locked_state", side_effect=locked_state), \
+             mock.patch.object(hunk_stream, "spawn_lock", side_effect=spawn_lock), \
              mock.patch.object(hunk_stream, "pane_exists", return_value=True), \
              mock.patch.object(hunk_stream, "spawn_hunk", return_value=("terminal_10", 12)), \
              mock.patch.object(hunk_stream, "zellij", side_effect=lambda _s, args: commands.append(args) or ""):
@@ -169,6 +177,56 @@ class HunkPlacementTests(unittest.TestCase):
         self.assertIn(["close-pane", "-p", "terminal_9"], commands)
         self.assertTrue(state["dedicated_tab"])
         self.assertEqual(state["tab_id"], 12)
+
+    def test_prune_removes_dead_state_and_lock_but_keeps_live_state(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            streams = Path(temporary) / "zellij-agent-herder" / "streams"
+            streams.mkdir(parents=True)
+            dead = streams / "dead.json"
+            dead.write_text(json.dumps({"session": "dead", "pane_id": "terminal_9"}))
+            dead_lock = streams / "dead.lock"
+            dead_lock.touch()
+            orphan_lock = streams / "orphan.lock"
+            orphan_lock.touch()
+            live = streams / "live.json"
+            live.write_text(json.dumps({"session": "live", "pane_id": "terminal_1"}))
+            live_lock = streams / "live.lock"
+            live_lock.touch()
+            with mock.patch.object(hunk_stream, "cache_root", return_value=temporary), \
+                 mock.patch.object(hunk_stream, "zellij_session_status", return_value=({"live"}, {"dead"})), \
+                 mock.patch.object(hunk_stream, "panes", return_value=[{"id": 1}]):
+                hunk_stream.prune_stream_states("live")
+            self.assertFalse(dead.exists())
+            self.assertFalse(dead_lock.exists())
+            self.assertFalse(orphan_lock.exists())
+            self.assertTrue(live.exists())
+            self.assertTrue(live_lock.exists())
+
+    def test_ensure_refuses_new_stream_at_session_cap(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            streams = Path(temporary) / "zellij-agent-herder" / "streams"
+            streams.mkdir(parents=True)
+            for number in range(4):
+                (streams / f"active-{number}.json").write_text(json.dumps({
+                    "session": "s", "pane_id": f"terminal_{number}", "complete": False,
+                }))
+            with mock.patch.dict(os.environ, {}, clear=False):
+                os.environ.pop("ZAH_MAX_ACTIVE_STREAMS", None)
+                with mock.patch.object(hunk_stream, "cache_root", return_value=temporary), \
+                     mock.patch.object(hunk_stream, "git_common_dir", return_value="/repo/.git"), \
+                     mock.patch.object(hunk_stream, "stream_key", return_value="new"), \
+                     mock.patch.object(hunk_stream, "diff_signature", return_value="signature"), \
+                     mock.patch.object(hunk_stream, "prune_stream_states"), \
+                     mock.patch.object(hunk_stream, "panes", return_value=[
+                         {"id": number} for number in range(4)
+                     ]), \
+                     mock.patch.object(hunk_stream, "pane_exists", return_value=False), \
+                     mock.patch.object(hunk_stream, "spawn_hunk") as spawn:
+                    pane = hunk_stream.ensure_stream(
+                        "s", "terminal_1", "/repo", "base", "worktree", "review", False,
+                    )
+            self.assertEqual(pane, "")
+            spawn.assert_not_called()
 
 
 if __name__ == "__main__":

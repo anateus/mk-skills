@@ -23,6 +23,9 @@ STATE_FIELDS = (
     "root", "common_dir", "base", "kind", "label", "signature",
     "dismissed_signature", "complete", "dedicated_tab",
 )
+# One review group exposes four tiled panes; keep the same bound across groups.
+DEFAULT_MAX_ACTIVE_STREAMS = 4
+MAX_ACTIVE_STREAMS_ENV = "ZAH_MAX_ACTIVE_STREAMS"
 
 
 def canonical_path(path: str) -> str:
@@ -130,6 +133,198 @@ def locked_state(cache_dir: str, key: str) -> Iterator[dict[str, Any]]:
 
 def cache_root() -> str:
     return os.environ.get("XDG_CACHE_HOME", os.path.expanduser("~/.cache"))
+
+
+def streams_dir() -> str:
+    return os.path.join(canonical_path(cache_root()), "zellij-agent-herder", "streams")
+
+
+@contextlib.contextmanager
+def spawn_lock() -> Iterator[None]:
+    """Serialize the cap check and pane creation across concurrent hooks."""
+    directory = streams_dir()
+    os.makedirs(directory, exist_ok=True)
+    with open(os.path.join(directory, ".spawn.lock"), "a+b") as lock_file:
+        fcntl.flock(lock_file, fcntl.LOCK_EX)
+        yield
+
+
+def stream_state_paths() -> list[str]:
+    try:
+        names = os.listdir(streams_dir())
+    except FileNotFoundError:
+        return []
+    return [
+        os.path.join(streams_dir(), name)
+        for name in names
+        if name.endswith(".json")
+    ]
+
+
+def read_stream_state(path: str) -> dict[str, Any] | None:
+    try:
+        with open(path, encoding="utf-8") as source:
+            value = json.load(source)
+    except (OSError, ValueError, TypeError):
+        return None
+    return value if isinstance(value, dict) else None
+
+
+def zellij_session_status() -> tuple[set[str], set[str]] | None:
+    """Return active and exited sessions, or None when the CLI cannot answer."""
+    try:
+        result = subprocess.run(
+            ["zellij", "list-sessions", "--no-formatting"],
+            check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
+        )
+    except (OSError, subprocess.CalledProcessError):
+        return None
+    active: set[str] = set()
+    exited: set[str] = set()
+    for line in result.stdout.splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        name = line.split(" [", 1)[0]
+        if "(EXITED" in line:
+            exited.add(name)
+        else:
+            active.add(name)
+    return active, exited
+
+
+def remove_stream_state(path: str) -> None:
+    """Remove a stale state and an idle companion lock, without disturbing a writer."""
+    lock_path = os.path.splitext(path)[0] + ".lock"
+    try:
+        with open(lock_path, "a+b") as lock_file:
+            try:
+                fcntl.flock(lock_file, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            except BlockingIOError:
+                return
+            try:
+                os.unlink(path)
+            except FileNotFoundError:
+                pass
+            try:
+                os.unlink(lock_path)
+            except FileNotFoundError:
+                pass
+    except OSError:
+        return
+
+
+def remove_orphan_locks(exclude_key: str | None = None) -> None:
+    try:
+        names = os.listdir(streams_dir())
+    except FileNotFoundError:
+        return
+    for name in names:
+        if not name.endswith(".lock"):
+            continue
+        if name == ".spawn.lock":
+            continue
+        key = name[:-5]
+        if key == exclude_key or os.path.exists(os.path.join(streams_dir(), f"{key}.json")):
+            continue
+        path = os.path.join(streams_dir(), name)
+        try:
+            with open(path, "a+b") as lock_file:
+                fcntl.flock(lock_file, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                os.unlink(path)
+        except (BlockingIOError, FileNotFoundError, OSError):
+            continue
+
+
+def prune_stream_states(session: str, exclude_key: str | None = None) -> None:
+    """Drop state for panes that no longer exist, including dead sessions."""
+    paths = stream_state_paths()
+    remove_orphan_locks(exclude_key)
+    if not paths:
+        return
+    records: list[tuple[str, str, str]] = []
+    for path in paths:
+        key = os.path.basename(path)[:-5]
+        if key == exclude_key:
+            continue
+        state = read_stream_state(path)
+        if not state:
+            continue
+        state_session = state.get("session")
+        pane = state.get("pane_id")
+        if (
+            not state.get("complete")
+            and isinstance(state_session, str)
+            and isinstance(pane, str)
+            and pane
+        ):
+            records.append((path, state_session, pane))
+
+    if not records:
+        return
+    status = zellij_session_status()
+    panes_by_session: dict[str, set[str] | None] = {}
+    for path, state_session, pane in records:
+        stale = False
+        if status is not None:
+            active, exited = status
+            if state_session not in active:
+                stale = True
+            elif state_session not in panes_by_session:
+                try:
+                    panes_by_session[state_session] = set(pane_id(item) for item in panes(state_session))
+                except (OSError, subprocess.CalledProcessError, ValueError, TypeError, json.JSONDecodeError):
+                    panes_by_session[state_session] = None
+            if panes_by_session.get(state_session) is not None:
+                stale = pane not in panes_by_session[state_session]
+        elif state_session == session:
+            if state_session not in panes_by_session:
+                try:
+                    panes_by_session[state_session] = set(pane_id(item) for item in panes(state_session))
+                except (OSError, subprocess.CalledProcessError, ValueError, TypeError, json.JSONDecodeError):
+                    panes_by_session[state_session] = None
+            if panes_by_session.get(state_session) is not None:
+                stale = pane not in panes_by_session[state_session]
+        if stale:
+            remove_stream_state(path)
+    remove_orphan_locks(exclude_key)
+
+
+def max_active_streams() -> int:
+    value = os.environ.get(MAX_ACTIVE_STREAMS_ENV)
+    if value is None:
+        return DEFAULT_MAX_ACTIVE_STREAMS
+    try:
+        parsed = int(value)
+    except ValueError:
+        return DEFAULT_MAX_ACTIVE_STREAMS
+    return parsed if parsed > 0 else DEFAULT_MAX_ACTIVE_STREAMS
+
+
+def active_stream_count(
+    session: str, exclude_key: str | None = None,
+) -> int | None:
+    """Count live, incomplete review panes; None means pane inventory was unavailable."""
+    states = []
+    for path in stream_state_paths():
+        key = os.path.basename(path)[:-5]
+        if key == exclude_key:
+            continue
+        state = read_stream_state(path)
+        if (
+            state
+            and state.get("session") == session
+            and state.get("pane_id")
+            and not state.get("complete")
+        ):
+            states.append(state)
+    if not states:
+        return 0
+    try:
+        live_panes = {pane_id(item) for item in panes(session)}
+    except (OSError, subprocess.CalledProcessError, ValueError, TypeError, json.JSONDecodeError):
+        return None
+    return sum(state["pane_id"] in live_panes for state in states)
 
 
 def review_title(session: str, parent: str) -> str:
@@ -379,38 +574,58 @@ def ensure_stream(
     }
     key = stream_key(session, parent, common_dir, {"root": root, "kind": kind})
     signature = diff_signature(root, base)
-    with locked_state(cache_root(), key) as state:
-        present = pane_exists(session, state.get("pane_id"))
-        if (
-            present
-            and request_matches(state, request)
-            and state.get("dedicated_tab") is True
-        ):
-            state["signature"] = signature
-            zellij(
-                session,
-                ["rename-pane", "-p", str(state["pane_id"]), review_title(session, parent)],
-            )
-            return str(state["pane_id"])
-        if state.get("pane_id") and not present:
-            if state.get("signature") == signature and not explicit:
-                state["dismissed_signature"] = signature
+    prune_stream_states(session, exclude_key=key)
+    with spawn_lock():
+        state_path = os.path.join(streams_dir(), f"{key}.json")
+        existing = read_stream_state(state_path)
+        if existing is None and not os.path.exists(state_path):
+            active = active_stream_count(session)
+            if active is None or active >= max_active_streams():
                 return ""
-        if state.get("dismissed_signature") == signature and not explicit:
-            return ""
-        if present:
-            zellij(session, ["close-pane", "-p", str(state["pane_id"])])
-        generation = int(state.get("generation") or 0) + 1
-        spawned, tab_id = spawn_hunk(request)
-        state.clear()
-        state.update(empty_state(key))
-        state.update(request)
-        state.update(
-            generation=generation, pane_id=spawned, tab_id=tab_id,
-            signature=signature, dismissed_signature=None, complete=False,
-            dedicated_tab=True,
-        )
-        return spawned
+        elif (
+            existing
+            and not existing.get("pane_id")
+            and not existing.get("generation")
+        ):
+            active = active_stream_count(session)
+            if active is None or active >= max_active_streams():
+                remove_stream_state(state_path)
+                return ""
+        with locked_state(cache_root(), key) as state:
+            present = pane_exists(session, state.get("pane_id"))
+            if (
+                present
+                and request_matches(state, request)
+                and state.get("dedicated_tab") is True
+            ):
+                state["signature"] = signature
+                zellij(
+                    session,
+                    ["rename-pane", "-p", str(state["pane_id"]), review_title(session, parent)],
+                )
+                return str(state["pane_id"])
+            if state.get("pane_id") and not present:
+                if state.get("signature") == signature and not explicit:
+                    state["dismissed_signature"] = signature
+                    return ""
+            if state.get("dismissed_signature") == signature and not explicit:
+                return ""
+            if present:
+                zellij(session, ["close-pane", "-p", str(state["pane_id"])])
+            active = active_stream_count(session, exclude_key=key)
+            if active is None or active >= max_active_streams():
+                return ""
+            generation = int(state.get("generation") or 0) + 1
+            spawned, tab_id = spawn_hunk(request)
+            state.clear()
+            state.update(empty_state(key))
+            state.update(request)
+            state.update(
+                generation=generation, pane_id=spawned, tab_id=tab_id,
+                signature=signature, dismissed_signature=None, complete=False,
+                dedicated_tab=True,
+            )
+            return spawned
 
 
 def mark_children_complete(session: str, child_ids: list[str]) -> None:
