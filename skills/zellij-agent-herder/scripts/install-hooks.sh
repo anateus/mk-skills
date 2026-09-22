@@ -42,11 +42,11 @@ configure_host() {
   local hooks_dir="$root/hooks"
   if [ "$ACTION" = install ]; then
     mkdir -p "$hooks_dir"
-    for script in zellij-agent-status.sh hunk-autodiff.sh zellij-origin.sh pane-identity.py hunk-stream.py; do
+    for script in zellij-agent-status.sh hunk-autodiff.sh zellij-origin.sh pane-identity.py hunk-stream.py hunk-watch.py; do
       ln -sfn "$SRC/$script" "$hooks_dir/$script"
     done
   else
-    for script in zellij-agent-status.sh hunk-autodiff.sh zellij-origin.sh pane-identity.py hunk-stream.py; do
+    for script in zellij-agent-status.sh hunk-autodiff.sh zellij-origin.sh pane-identity.py hunk-stream.py hunk-watch.py; do
       rm -f "$hooks_dir/$script"
     done
     [ -f "$config" ] || return 0

@@ -116,7 +116,7 @@ test('unified validator runs repository checks and supports optional plugin vali
   const skills = source.indexOf('tests/skills/*.test.js');
   const curation = source.indexOf('tests.curation.test_review_upstreams');
   const zellijCommands = [
-    'test-pane-identity.py', 'test-hunk-placement.py', 'test-hunk-stream.sh',
+    'test-pane-identity.py', 'test-hunk-placement.py', 'test-hunk-stream.sh', 'test-hunk-lifecycle.py',
     'test-install-hooks.sh', 'test-shared-agent-config.sh',
   ].map((name) => source.indexOf(name));
   const artifactInstaller = source.indexOf('skills/subagent-artifact-discipline/tests/test-install-hooks.sh');

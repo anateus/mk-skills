@@ -33,6 +33,7 @@ const checks = [
   ['Zellij adaptive spawn', 'bash', ['skills/zellij-agent-herder/tests/test-zj-spawn.sh']],
   ['Zellij peer submission', 'python3', ['-B', 'skills/zellij-agent-herder/tests/test-peer-submission.py']],
   ['Zellij Hunk placement', 'python3', ['-B', 'skills/zellij-agent-herder/tests/test-hunk-placement.py', '-v']],
+  ['Zellij Hunk lifecycle', 'python3', ['-B', 'skills/zellij-agent-herder/tests/test-hunk-lifecycle.py', '-v']],
   ['Zellij Hunk stream', 'bash', ['skills/zellij-agent-herder/tests/test-hunk-stream.sh']],
   ['Zellij hook installer', 'bash', ['skills/zellij-agent-herder/tests/test-install-hooks.sh']],
   ['Zellij shared agent config', 'bash', ['skills/zellij-agent-herder/tests/test-shared-agent-config.sh']],

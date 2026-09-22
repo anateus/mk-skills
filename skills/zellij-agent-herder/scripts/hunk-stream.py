@@ -23,7 +23,7 @@ STATE_FIELDS = (
     "root", "common_dir", "base", "kind", "label", "signature",
     "dismissed_signature", "complete", "dedicated_tab",
 )
-# One review group exposes four tiled panes; keep the same bound across groups.
+# Bound managed review processes across all sessions sharing this cache.
 DEFAULT_MAX_ACTIVE_STREAMS = 4
 MAX_ACTIVE_STREAMS_ENV = "ZAH_MAX_ACTIVE_STREAMS"
 
@@ -175,9 +175,9 @@ def zellij_session_status() -> tuple[set[str], set[str]] | None:
     try:
         result = subprocess.run(
             ["zellij", "list-sessions", "--no-formatting"],
-            check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
+            check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, timeout=5,
         )
-    except (OSError, subprocess.CalledProcessError):
+    except (OSError, subprocess.SubprocessError):
         return None
     active: set[str] = set()
     exited: set[str] = set()
@@ -273,7 +273,7 @@ def prune_stream_states(session: str, exclude_key: str | None = None) -> None:
             elif state_session not in panes_by_session:
                 try:
                     panes_by_session[state_session] = set(pane_id(item) for item in panes(state_session))
-                except (OSError, subprocess.CalledProcessError, ValueError, TypeError, json.JSONDecodeError):
+                except (OSError, subprocess.SubprocessError, ValueError, TypeError, json.JSONDecodeError):
                     panes_by_session[state_session] = None
             if panes_by_session.get(state_session) is not None:
                 stale = pane not in panes_by_session[state_session]
@@ -281,11 +281,11 @@ def prune_stream_states(session: str, exclude_key: str | None = None) -> None:
             if state_session not in panes_by_session:
                 try:
                     panes_by_session[state_session] = set(pane_id(item) for item in panes(state_session))
-                except (OSError, subprocess.CalledProcessError, ValueError, TypeError, json.JSONDecodeError):
+                except (OSError, subprocess.SubprocessError, ValueError, TypeError, json.JSONDecodeError):
                     panes_by_session[state_session] = None
             if panes_by_session.get(state_session) is not None:
                 stale = pane not in panes_by_session[state_session]
-        if stale:
+        if stale and status is not None and state_session not in status[0]:
             remove_stream_state(path)
     remove_orphan_locks(exclude_key)
 
@@ -303,28 +303,58 @@ def max_active_streams() -> int:
 
 def active_stream_count(
     session: str, exclude_key: str | None = None,
+    exclude_pane: tuple[str, str] | None = None,
 ) -> int | None:
-    """Count live, incomplete review panes; None means pane inventory was unavailable."""
-    states = []
+    """Count all managed panes and locked supervisor leases, failing closed.
+
+    Completed streams still consume resources until their pane actually closes.
+    An unknown inventory is not evidence that a process has stopped.
+    """
+    identities: set[tuple[str, str]] = set()
+    sessions = {session}
     for path in stream_state_paths():
-        key = os.path.basename(path)[:-5]
-        if key == exclude_key:
+        if os.path.basename(path)[:-5] == exclude_key:
             continue
         state = read_stream_state(path)
-        if (
-            state
-            and state.get("session") == session
-            and state.get("pane_id")
-            and not state.get("complete")
-        ):
-            states.append(state)
-    if not states:
-        return 0
+        if state is None:
+            return None
+        if state.get("pane_id"):
+            if not isinstance(state.get("session"), str):
+                return None
+            identities.add((state["session"], str(state["pane_id"])))
+            sessions.add(state["session"])
+    status = zellij_session_status()
+    live: set[tuple[str, str]] = set()
+    for name in sessions:
+        if status is not None and name != session and name not in status[0]:
+            continue
+        try:
+            inventory = {pane_id(item) for item in panes(name)}
+        except (OSError, subprocess.SubprocessError, ValueError, TypeError):
+            return None
+        live.update(identity for identity in identities if identity[0] == name and identity[1] in inventory)
+    # A lease outlives stale/missing stream state and remains counted until the
+    # supervisor has reaped its child. Unlocked files are harmless tombstones.
+    directory = os.path.join(streams_dir(), "processes")
     try:
-        live_panes = {pane_id(item) for item in panes(session)}
-    except (OSError, subprocess.CalledProcessError, ValueError, TypeError, json.JSONDecodeError):
-        return None
-    return sum(state["pane_id"] in live_panes for state in states)
+        names = os.listdir(directory)
+    except FileNotFoundError:
+        names = []
+    for name in names:
+        if not name.endswith(".lease"):
+            continue
+        try:
+            with open(os.path.join(directory, name), "r+") as lease:
+                try:
+                    fcntl.flock(lease, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                except BlockingIOError:
+                    record = json.load(lease)
+                    live.add((record["session"], record["pane_id"]))
+        except (OSError, ValueError, KeyError, TypeError):
+            return None
+    if exclude_pane is not None:
+        live.discard(exclude_pane)
+    return len(live)
 
 
 def review_title(session: str, parent: str) -> str:
@@ -428,7 +458,7 @@ def edit_payload(payload: dict[str, Any]) -> str:
 def zellij(session: str, args: list[str]) -> str:
     result = subprocess.run(
         ["zellij", "--session", session, "action", *args],
-        check=True, stdout=subprocess.PIPE, text=True,
+        check=True, stdout=subprocess.PIPE, text=True, timeout=5,
     )
     return result.stdout.strip()
 
@@ -441,7 +471,12 @@ def panes(session: str) -> list[dict[str, Any]]:
             items.extend(entry if isinstance(entry, list) else [entry])
     else:
         items = value
-    return [item for item in items if isinstance(item, dict)]
+    if not isinstance(items, list) or any(
+        not isinstance(item, dict) or not isinstance(item.get("id"), (str, int))
+        for item in items
+    ):
+        raise ValueError("invalid Zellij pane inventory")
+    return items
 
 
 def pane_id(pane: dict[str, Any]) -> str:
@@ -504,6 +539,23 @@ def grouped_tab_placement(
     }
 
 
+def watch_command(request: dict[str, Any]) -> list[str]:
+    # Carry lifecycle settings through Zellij server environments, not origin pane IDs.
+    settings = [f"XDG_CACHE_HOME={canonical_path(cache_root())}"]
+    names = (
+        "PATH", MAX_ACTIVE_STREAMS_ENV, "ZAH_HUNK_RSS_MIB",
+        "ZAH_HUNK_SAMPLE_SECONDS", "ZAH_HUNK_PRESSURE_SAMPLES",
+        "ZAH_HUNK_RESUME_GRACE_SECONDS", "ZAH_HUNK_RECYCLE",
+        "ZAH_HUNK_MAX_AGE_SECONDS", "ZAH_HUNK_RESTART_DELAY_SECONDS",
+        "ZAH_HUNK_MAX_RESTARTS", "ZAH_HUNK_STOP_GRACE_SECONDS",
+    )
+    settings.extend(f"{name}={os.environ.get(name, os.defpath if name == 'PATH' else '')}" for name in names)
+    return [
+        "env", *settings, sys.executable, os.path.join(os.path.dirname(os.path.abspath(__file__)), "hunk-watch.py"),
+        "--session", request["session"], "--base", request["base"],
+    ]
+
+
 def spawn_hunk(request: dict[str, Any]) -> tuple[str, int]:
     session = request["session"]
     parent = normalize_parent(request["parent_pane"])
@@ -515,7 +567,7 @@ def spawn_hunk(request: dict[str, Any]) -> tuple[str, int]:
         tab_id = placement["tab_id"]
         args = [
             "new-pane", "--no-focus", "--tab-id", str(tab_id), "--cwd", request["root"], "--",
-            "hunk", "diff", request["base"], "--watch",
+            *watch_command(request),
         ]
         zellij(session, args)
         returned = str(tab_id)
@@ -527,7 +579,7 @@ def spawn_hunk(request: dict[str, Any]) -> tuple[str, int]:
         )
         args = [
             "new-tab", "--no-focus", "--cwd", request["root"],
-            "--name", tab_name, "--", "hunk", "diff", request["base"], "--watch",
+            "--name", tab_name, "--", *watch_command(request),
         ]
         output = zellij(session, args).splitlines()
         returned = output[-1] if output else ""

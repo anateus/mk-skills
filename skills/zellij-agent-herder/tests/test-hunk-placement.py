@@ -88,7 +88,8 @@ class HunkPlacementTests(unittest.TestCase):
         self.assertIn("--no-focus", new_tab)
         self.assertEqual(new_tab[new_tab.index("--cwd") + 1], "/repo")
         self.assertEqual(new_tab[new_tab.index("--name") + 1], "🔍 review")
-        self.assertEqual(new_tab[-5:], ["--", "hunk", "diff", "base", "--watch"])
+        self.assertEqual(new_tab[new_tab.index("--") + 1:], hunk_stream.watch_command(request))
+        self.assertEqual(new_tab[-4:], ["--session", "s", "--base", "base"])
         self.assertFalse(any(command[0] == "new-pane" for command in commands))
         self.assertFalse(any(command[0] in {"move-pane", "stack-panes"} for command in commands))
         self.assertIn(
@@ -166,6 +167,8 @@ class HunkPlacementTests(unittest.TestCase):
              mock.patch.object(hunk_stream, "stream_key", return_value="key"), \
              mock.patch.object(hunk_stream, "locked_state", side_effect=locked_state), \
              mock.patch.object(hunk_stream, "spawn_lock", side_effect=spawn_lock), \
+             mock.patch.object(hunk_stream, "active_stream_count", return_value=0), \
+             mock.patch.object(hunk_stream, "prune_stream_states"), \
              mock.patch.object(hunk_stream, "pane_exists", return_value=True), \
              mock.patch.object(hunk_stream, "spawn_hunk", return_value=("terminal_10", 12)), \
              mock.patch.object(hunk_stream, "zellij", side_effect=lambda _s, args: commands.append(args) or ""):
@@ -202,13 +205,13 @@ class HunkPlacementTests(unittest.TestCase):
             self.assertTrue(live.exists())
             self.assertTrue(live_lock.exists())
 
-    def test_ensure_refuses_new_stream_at_session_cap(self):
+    def test_ensure_refuses_new_stream_at_global_cap(self):
         with tempfile.TemporaryDirectory() as temporary:
             streams = Path(temporary) / "zellij-agent-herder" / "streams"
             streams.mkdir(parents=True)
             for number in range(4):
                 (streams / f"active-{number}.json").write_text(json.dumps({
-                    "session": "s", "pane_id": f"terminal_{number}", "complete": False,
+                    "session": "s" if number == 0 else "other", "pane_id": f"terminal_{number}", "complete": False,
                 }))
             with mock.patch.dict(os.environ, {}, clear=False):
                 os.environ.pop("ZAH_MAX_ACTIVE_STREAMS", None)
@@ -217,6 +220,7 @@ class HunkPlacementTests(unittest.TestCase):
                      mock.patch.object(hunk_stream, "stream_key", return_value="new"), \
                      mock.patch.object(hunk_stream, "diff_signature", return_value="signature"), \
                      mock.patch.object(hunk_stream, "prune_stream_states"), \
+                     mock.patch.object(hunk_stream, "zellij_session_status", return_value=({"s", "other"}, set())), \
                      mock.patch.object(hunk_stream, "panes", return_value=[
                          {"id": number} for number in range(4)
                      ]), \

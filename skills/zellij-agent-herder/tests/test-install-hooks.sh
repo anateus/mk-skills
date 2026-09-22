@@ -17,10 +17,11 @@ test ! -e "$PRISTINE_CODEX"
 
 ORPHAN_CLAUDE="$TMP/orphan-claude"
 mkdir -p "$ORPHAN_CLAUDE/hooks"
-touch "$ORPHAN_CLAUDE/hooks/zellij-agent-status.sh" "$ORPHAN_CLAUDE/hooks/hunk-stream.py" "$ORPHAN_CLAUDE/hooks/unrelated.sh"
+touch "$ORPHAN_CLAUDE/hooks/zellij-agent-status.sh" "$ORPHAN_CLAUDE/hooks/hunk-stream.py" "$ORPHAN_CLAUDE/hooks/hunk-watch.py" "$ORPHAN_CLAUDE/hooks/unrelated.sh"
 CLAUDE_CONFIG_DIR="$ORPHAN_CLAUDE" CODEX_CONFIG_DIR="$PRISTINE_CODEX" bash "$INSTALLER" --uninstall --claude
 test ! -e "$ORPHAN_CLAUDE/hooks/zellij-agent-status.sh"
 test ! -e "$ORPHAN_CLAUDE/hooks/hunk-stream.py"
+test ! -e "$ORPHAN_CLAUDE/hooks/hunk-watch.py"
 test -e "$ORPHAN_CLAUDE/hooks/unrelated.sh"
 test ! -e "$ORPHAN_CLAUDE/settings.json"
 
@@ -54,7 +55,7 @@ test -x "$CODEX/hooks/zellij-origin.sh"
 test -x "$CODEX/hooks/pane-identity.py"
 test -x "$CODEX/hooks/hunk-stream.py"
 test -r "$CODEX/hooks/hunk-stream.py"
-for script in zellij-agent-status.sh hunk-autodiff.sh zellij-origin.sh pane-identity.py hunk-stream.py; do
+for script in zellij-agent-status.sh hunk-autodiff.sh zellij-origin.sh pane-identity.py hunk-stream.py hunk-watch.py; do
   test -L "$CLAUDE/hooks/$script"
   test -L "$CODEX/hooks/$script"
   test "$(readlink "$CLAUDE/hooks/$script")" = "$ROOT/scripts/$script"
@@ -125,6 +126,7 @@ for root in "$CLAUDE" "$CODEX"; do
   test ! -e "$root/hooks/zellij-origin.sh"
   test ! -e "$root/hooks/pane-identity.py"
   test ! -e "$root/hooks/hunk-stream.py"
+  test ! -e "$root/hooks/hunk-watch.py"
   test -e "$root/hooks/unrelated.sh"
 done
 echo "uninstall preservation: PASS"

@@ -254,7 +254,7 @@ rollup_new_panes="$(( $(awk '/new-pane/{n++} END{print n+0}' "$ZELLIJ_LOG") - ro
 grep -q "close-pane -p $P7" "$ZELLIJ_LOG"
 grep -q "close-pane -p $P8" "$ZELLIJ_LOG"
 last_new="$(grep -E 'new-tab|new-pane' "$ZELLIJ_LOG" | tail -1)"
-case "$last_new" in *"hunk diff $BASE --watch"*) ;; *) exit 1 ;; esac
+case "$last_new" in *"hunk-watch.py --session s --base $BASE"*) ;; *) exit 1 ;; esac
 python3 - "$XDG_CACHE_HOME" "$P7" "$P8" <<'PY'
 import glob, json, os, sys
 states = [json.load(open(path)) for path in glob.glob(os.path.join(sys.argv[1], "zellij-agent-herder", "streams", "*.json"))]
@@ -300,6 +300,9 @@ grep -q "close-pane -p $P6" "$ZELLIJ_LOG"
 echo 'public helper routing/reopen/rollup: PASS'
 
 # Hook adapters retain the top-level pane even when later events run elsewhere.
+# This routing fixture intentionally keeps several synthetic sessions open.
+# Cross-session admission and the default limit are checked in lifecycle/placement tests.
+export ZAH_MAX_ACTIVE_STREAMS=32
 export ZELLIJ_SESSION_NAME=claude-s ZELLIJ_PANE_ID=1
 printf '%s\n' '{"hook_event_name":"SessionStart","session_id":"claude-session","cwd":"'$T'/repo"}' | bash "$ORIGIN"
 python3 - "$XDG_CACHE_HOME/zellij-agent-herder/origins/claude-claude-session.json" <<'PY'
