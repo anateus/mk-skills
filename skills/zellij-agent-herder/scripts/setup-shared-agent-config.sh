@@ -100,7 +100,13 @@ Verify from the inside, not the surface. Treat manifests, dependencies, design d
 </important>
 
 <important if="you are about to save a memory, recall past context, or decide which memory system to use">
-Use Hindsight with the shared `claude_code` bank as the primary cross-session memory system when its host integration is available. Treat local file-based memory as a fallback, and do not split writes across both systems by default. Hindsight may be exposed through lifecycle hooks rather than interactive tools, so rely only on capabilities available in the current host.
+Use Hindsight with the shared `claude_code` bank for durable cross-harness knowledge when its integration is available. Outside Jcode, use it as the primary cross-session memory system and keep local file-based memory as a fallback. Rely only on capabilities available in the current host.
+
+In Jcode, keep native automatic memory enabled for fine-grained recall and use Hindsight as a coarser, explicit cross-harness knowledge base. Before substantial work, search its knowledge pages, list the pages, and read relevant ones. Promote verified decisions, stable preferences, reusable findings, and corrections at meaningful milestones, not every turn. Keep a short native summary with the Hindsight page or document ID when it will help later recall. Do not mirror every automatic memory or import either system's internal database into the other.
+
+Keep linked facts consistent: when correcting a fact, update both known copies through their supported tools, preserve provenance, and identify what the correction supersedes. Do not copy a stale native fact back into Hindsight merely because it was recalled, or treat repetition across both stores as independent evidence. If one write fails, report the pending update rather than claiming synchronization. A Hindsight recall does not itself require another write.
+
+Keep the existing Jcode startup and session-retention hooks as a secondary recovery layer. They are not a two-way memory synchronizer, and their observer output does not enter Jcode's prompt. Explicit recall and milestone writes remain necessary. Do not replace existing hook commands when adding another integration. Account, provider, secret, and customer-data restrictions apply to both stores and their background inference routes.
 </important>
 
 <important if="you are inside a Zellij session and have just finished a coding task with changes to review">

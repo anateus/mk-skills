@@ -106,6 +106,12 @@ grep -q 'claude_code' "$CANONICAL"
 grep -q 'work stream' "$CANONICAL"
 grep -q 'Hunk' "$CANONICAL"
 grep -q 'hunk skill path' "$CANONICAL"
+grep -Fq 'In Jcode, keep native automatic memory enabled' "$CANONICAL"
+grep -Fq 'coarser, explicit cross-harness knowledge base' "$CANONICAL"
+grep -Fq 'page or document ID' "$CANONICAL"
+grep -Fq 'Do not mirror every automatic memory' "$CANONICAL"
+grep -Fq 'update both known copies' "$CANONICAL"
+grep -Fq 'not a two-way memory synchronizer' "$CANONICAL"
 if grep -Eqi 'Fable|Opus|lower power model|MCP tools' "$CANONICAL"; then exit 1; fi
 echo 'shared guidance: PASS'
 
