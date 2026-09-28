@@ -29,6 +29,7 @@ const checks = [
   ['Curation tests', 'python3', ['-B', '-m', 'unittest', 'tests.curation.test_review_upstreams', '-v']],
   ['Humanizer Vale integration', 'python3', ['-B', 'tests/humanizer/test_prose_check.py', '-v']],
   ['Behavioral evaluation runner', 'python3', ['-B', 'tests/evaluation/test_evaluate_skills.py', '-v']],
+  ['PR comment collector', 'python3', ['-B', 'tests/learning/test_collect_pr_comments.py', '-v']],
   ['Zellij pane identity', 'python3', ['-B', 'skills/zellij-agent-herder/tests/test-pane-identity.py', '-v']],
   ['Zellij adaptive spawn', 'bash', ['skills/zellij-agent-herder/tests/test-zj-spawn.sh']],
   ['Zellij peer submission', 'python3', ['-B', 'skills/zellij-agent-herder/tests/test-peer-submission.py']],

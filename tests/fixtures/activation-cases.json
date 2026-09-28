@@ -496,11 +496,36 @@
       "implementing-work"
     ],
     "forbiddenSkills": [
-      "analyzing-codebase"
+      "analyzing-codebase",
+      "learning-from-mistakes"
     ],
     "expectedReferences": [],
     "rubric": [
-      "Makes the bounded change without expanding it into a repository-wide codebase analysis."
+      "Makes the bounded change without expanding it into a repository-wide codebase analysis or retrospective."
+    ]
+  },
+  {
+    "id": "learn-from-pr-feedback",
+    "prompt": "Collect comments posted on my PRs in the last 14 days and derive lessons for my engineering skills. Keep the supplied P2-and-above ratings; don't re-review them.",
+    "expectedSkills": ["learning-from-mistakes"],
+    "forbiddenSkills": ["reviewing-code"],
+    "expectedReferences": ["skills/learning-from-mistakes/references/pr-reviews.md"],
+    "rubric": [
+      "Defines the posting-time window and repository scope and collects conversation, inline, and review-body comments with pagination.",
+      "Preserves explicit priorities, excludes empty priority sections, and links duplicate summaries to original findings.",
+      "Maps repeated mechanisms to existing skills without claiming missed invocations from PR comments alone or editing skills without authorization."
+    ]
+  },
+  {
+    "id": "learn-from-agent-sessions",
+    "prompt": "Analyze these selected Claude, Codex, and Jcode session exports for repeated avoidable mistakes and suggest improvements to my skills. Some failed commands are intentional red tests and some logs are truncated.",
+    "expectedSkills": ["learning-from-mistakes"],
+    "forbiddenSkills": [],
+    "expectedReferences": ["skills/learning-from-mistakes/references/sessions.md"],
+    "rubric": [
+      "Extracts bounded chronological evidence with session/event references and explicit gaps, without replaying transcript commands.",
+      "Distinguishes intentional red tests, environment failures, recovery, and unsupported completion claims using information available at the time.",
+      "Keeps invocation unknown when logs are incomplete and does not claim dedicated session adapters exist."
     ]
   }
 ]

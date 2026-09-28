@@ -4,7 +4,9 @@ A portable, curated software-development skill set for Codex and Claude Code. Se
 
 ## Curated skills
 
-The core set covers `clarifying-work`, `adversarial-refinement`, `specifying-work`, `planning-work`, `test-driven-development`, `diagnosing-bugs`, `investigating-incidents`, `implementing-work`, `reviewing-code`, `handling-review-feedback`, `verifying-work`, `handing-off-work`, `strict-mode`, and `curating-skills`. Supporting skills add `analyzing-codebase`, `data-spelunking`, `humanizer`, `zellij-agent-herder`, `personal-writing-style`, `subagent-artifact-discipline`, and `mk-skills-setup`.
+The core set covers `clarifying-work`, `adversarial-refinement`, `specifying-work`, `planning-work`, `test-driven-development`, `diagnosing-bugs`, `investigating-incidents`, `implementing-work`, `reviewing-code`, `handling-review-feedback`, `verifying-work`, `handing-off-work`, `strict-mode`, and `curating-skills`. Supporting skills add `analyzing-codebase`, `data-spelunking`, `learning-from-mistakes`, `humanizer`, `zellij-agent-herder`, `personal-writing-style`, `subagent-artifact-discipline`, and `mk-skills-setup`.
+
+[`learning-from-mistakes`](skills/learning-from-mistakes/SKILL.md) turns PR feedback and coding-agent session evidence into focused skill or workflow improvements. It includes a paginated GitHub comment collector and guidance for preserving ratings, deduplicating summaries, and distinguishing observed failures from inferred causes. Claude, Codex, Jcode, and other session formats have an analysis workflow and an extension point for future collectors.
 
 `analyzing-codebase` activates when work enters an unfamiliar repository or subsystem. Its `for-testing` mode produces evidence-backed system, property, and test-topology artifacts under `docs/code-analysis/` without committing the result to Antithesis, fast-check, Hegel, or a conventional test runner too early. Mode names are optional routing hints, not required invocation syntax.
 
