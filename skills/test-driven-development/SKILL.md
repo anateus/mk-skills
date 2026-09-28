@@ -20,9 +20,15 @@ Prefer public seams over private calls, snapshots without meaningful assertions,
 
 Name the wrong production change each test would catch. For agent instructions, evaluate behavior on realistic requests; wording checks prove only structural contracts. Interaction assertions are useful when the interaction itself is the contract.
 
+For an important claim, choose a plausible incorrect implementation and confirm the assertion distinguishes it. Use independent, distinguishable identifiers and values. Recovery tests should observe a new successful result after the fault clears; handler success, an old result, or a count without identity may not establish recovery. Use bounded waiting at the observation point for asynchronous results.
+
+For collections or multiple consumers, leave one member broken while the others succeed. Check whether aggregation hides the missing behavior. For configuration with a behavioral seam, test rendered defaults, supported overrides, and committed environment inputs as appropriate.
+
 ## Proportional alternatives
 
 Use the cycle when it provides useful behavioral confidence. For a mechanical rename with unchanged behavior, generated file update, configuration-only change, or another case with no valuable test seam, use the nearest reliable evidence instead: compiler or reference checks, generator reproducibility, configuration validation, or focused smoke tests. Explain the chosen seam or the reason an alternative is higher value.
+
+Decide whether a useful test seam exists from the behavior, not the file type. A configuration-only change can alter routing, permissions, initialization, exposure, or persistent state and may need a render, contract, or local integration test.
 
 Existing untested code is not itself an exception when the requested behavior can be characterized safely.
 

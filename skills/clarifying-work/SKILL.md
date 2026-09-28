@@ -33,6 +33,8 @@ Check only the dimensions relevant to the request:
 
 For changes spanning boundaries, produce a compact integration map: affected producers and consumers, contracts that change, state or control flow between them, and open risks. The map is an aid when warranted, not a required artifact.
 
+For a cross-boundary change, establish the effective configuration after defaults and overrides, the resource owner, supported input variants, and prerequisites already available in each environment. Check the current consumer path rather than assuming the path from an older plan still applies. During ownership transfers or staged rollout, identify which component owns the resource at each step and whether intermediate states work.
+
 ## Outcome
 
 Report what the evidence settled and any decision still needed. Preserve the user's scope.

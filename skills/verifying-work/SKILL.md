@@ -19,6 +19,12 @@ Scale breadth to impact, but never scale away the direct check. If verification 
 
 Evidence expires when code, inputs, configuration, or environment relevant to the claim changes. Re-run the affected check after such changes.
 
+## Regression protection
+
+When claiming regression protection, trace the check from its source and generated artifacts through the documented command, test discovery, and CI selection. Run the real entrypoint from committed inputs. A directly executed test doesn't establish that the normal workflow selects it. Required checks should fail visibly when their script, bundle, or prerequisites are missing.
+
+For configuration changes, exercise the committed configuration or its rendered output against the consumer contract. A synthetic fixture establishes only the behavior represented by that fixture. Check relevant environment inputs and workflow path filters so production configuration can't change outside the claimed coverage.
+
 ## Sweep integrity
 
 A check that cannot fail is not evidence. Before claiming a custom search found nothing, prove detection with a disposable positive fixture exercising the same search boundary. Never plant data in the real corpus. Check errors and enumerate all occurrences. Run an available end-to-end check instead of deferring it to a manual step.

@@ -17,6 +17,12 @@ Route the work through the smallest set of applicable skills, then deliver coher
 
 If evidence invalidates the plan, update the route rather than forcing the planned edit. Report material deviations and unresolved limitations.
 
+## Lifecycle and shared runners
+
+When code acquires resources, changes shared state, retries work, or adds recovery, identify ownership and the relevant transitions before implementing cleanup. Cover partial setup, interruption, repeat execution, and simultaneous primary and cleanup failures. Attempt cleanup for all acquired resources, preserve the primary failure, and report secondary failures. Verify ownership before releasing shared claims.
+
+When several slices need the same runner or resource lifecycle, reuse a tested helper where practical. Land the runner, generation steps, and required automated selection with the behavior they protect, or state the dependency and incomplete protection explicitly.
+
 ## Ownership boundary
 
 This skill does not own external lifecycle state. Commits, pull requests, trackers, worktrees, releases, and peer execution follow explicit user or repository policy. Their presence does not replace implementation verification.
