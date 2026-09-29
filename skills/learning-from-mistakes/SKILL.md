@@ -22,7 +22,7 @@ For large corpora, locate records before reading narrow excerpts. Use `data-spel
 2. Group by failure mechanism and the earliest useful intervention: clarification, specification, implementation, testing, verification, or shared tooling. Keep representative links and counterexamples. Repeated comments on related work aren't independent defect-rate measurements.
 3. Compare each proposed lesson with the relevant current skill and, when available, the version used during the work. Distinguish missing guidance, a missed trigger, insufficient execution, and an inadequate check. Without session evidence, skill invocation remains unknown.
 4. Prefer a narrow amendment to an existing skill or a shared tested helper. Add a skill when the work has a distinct recurring trigger and reusable procedure. Avoid turning one incident into a universal checklist.
-5. Give each proposed change a concrete evaluation case and observable success condition. Test that the changed behavior catches the failure mechanism; matching instruction wording doesn't establish improvement.
+5. Give each proposed change a concrete evaluation case and observable success condition. Use realistic synthetic inputs in the existing evaluation harness, with the expected findings withheld. Grade whether execution recovers the missing behavior or finding and preserves unresolved gaps, not whether the response repeats instruction wording. Separate fixture and structural test results from evaluated agent behavior.
 
 ## Deliver and promote
 

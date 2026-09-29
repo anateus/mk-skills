@@ -19,6 +19,8 @@ Scale breadth to impact, but never scale away the direct check. If verification 
 
 Evidence expires when code, inputs, configuration, or environment relevant to the claim changes. Re-run the affected check after such changes.
 
+Synthesis and subagent handoff must not strengthen evidence. Carry reviewer caveats and open verification gaps forward until a direct check resolves each one. Distinguish a producer emitting success from a consumer accepting it, such as successful checks versus branch protection permitting a merge. A coordinator must not label acceptance as verified or acceptance-aligned from a weaker proxy; retain the narrower result and unresolved consumer check.
+
 ## Regression protection
 
 When claiming regression protection, trace the check from its source and generated artifacts through the documented command, test discovery, and CI selection. Run the real entrypoint from committed inputs. A directly executed test doesn't establish that the normal workflow selects it. Required checks should fail visibly when their script, bundle, or prerequisites are missing.

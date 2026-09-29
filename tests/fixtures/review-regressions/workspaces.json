@@ -1,0 +1,38 @@
+{
+  "gate-consumer-handoff": {
+    "commits": [
+      {
+        "README.md": "# Review gate simulator\n\nThis local model is not a hosted branch-protection integration. It has no network access. The consumer requires approval plus successful title and tests checks in the latest suite for the current SHA. Valid approved work should proceed after metadata edits, and invalid titles should remain blocked.\n\nRun `python3 -m unittest discover -s tests -v`. Run `python3 simulate.py opened body invalid restored` to process events in order on the same approved request and SHA, printing emitted checks and consumer decisions.\n",
+        "producer.py": "def emit(event, valid_title):\n    return {'title': 'success' if valid_title else 'failure', 'tests': 'success'}\n",
+        "consumer.py": "def mergeable(request, suites):\n    current = [s for s in suites if s['sha'] == request['sha']]\n    if not request['approved'] or not current:\n        return False\n    checks = current[-1]['checks']\n    return all(checks.get(name) == 'success' for name in ('title', 'tests'))\n",
+        "simulate.py": "import json\nimport sys\nfrom consumer import mergeable\nfrom producer import emit\n\n\ndef run(events):\n    request = {'sha': 'synthetic-sha', 'approved': True}\n    suites = []\n    receipts = []\n    for event in events:\n        if event not in ('opened', 'body', 'invalid', 'restored'):\n            raise ValueError('unknown event: ' + event)\n        checks = emit(event, event != 'invalid')\n        suites.append({'sha': request['sha'], 'checks': checks})\n        receipts.append({'event': event, 'sha': request['sha'], 'checks': checks,\n                         'mergeable': mergeable(request, suites)})\n    return receipts\n\n\nif __name__ == '__main__':\n    print(json.dumps(run(sys.argv[1:])))\n",
+        "tests/test_producer.py": "import unittest\nfrom producer import emit\n\n\nclass ProducerTests(unittest.TestCase):\n    def test_valid_events_emit_only_successes(self):\n        for event in ('opened', 'body', 'restored'):\n            self.assertTrue(all(value == 'success' for value in emit(event, True).values()))\n\n    def test_invalid_title_fails(self):\n        self.assertEqual(emit('invalid', False)['title'], 'failure')\n"
+      },
+      {
+        "producer.py": "def emit(event, valid_title):\n    checks = {'title': 'success' if valid_title else 'failure'}\n    if event != 'body':\n        checks['tests'] = 'success'\n    return checks\n",
+        "review-note.md": "# Review handoff\n\nProducer tests passed in my run. Invalid titles emitted failure, and restoring the title emitted success. Body-edit emitted checks were all successful. Required-check selection by the external host remains unverified. I have not exercised the consumer's green-to-body-edit transition. Recheck these claims before synthesizing readiness.\n"
+      }
+    ]
+  },
+  "rollback-retained-selection": {
+    "commits": [
+      {
+        "README.md": "# Mutation pipeline\n\nEvery manifest target must have its mutation scheduled and enforced when that file changes alone. Unrelated documentation changes may skip mutations. A surviving mutation must fail the gate.\n\nRun `python3 -m unittest discover -s tests -v` for direct runner tests. Run `python3 pipeline.py PATH...` to inspect discovery, integration selection, scheduled entries, enforcement and gate result. Add `--survives` to simulate a surviving mutation. This fixture is local and synthetic.\n",
+        "integration_filter.py": "def selected(paths):\n    return any(path.startswith(('src/core/', 'tests/integration/')) for path in paths)\n",
+        "extra_paths.json": "[]\n",
+        "manifest.json": "[{\"id\": \"core-boundary\", \"target\": \"src/core/rules.py\"}]\n",
+        "runner.py": "def run(entries, survives=False):\n    return {'enforced': [entry['id'] for entry in entries], 'passed': not survives}\n",
+        "pipeline.py": "import json\nimport sys\nfrom pathlib import Path\nfrom integration_filter import selected\nfrom runner import run\n\n\ndef evaluate(paths, survives=False):\n    manifest = json.loads(Path('manifest.json').read_text())\n    extra = json.loads(Path('extra_paths.json').read_text())\n    integration = selected(paths) or any(path.startswith(tuple(extra)) for path in paths)\n    scheduled = [entry for entry in manifest if entry['target'] in paths] if integration else []\n    result = run(scheduled, survives) if scheduled else {'enforced': [], 'passed': True}\n    return {'discovered': [entry['id'] for entry in manifest],\n            'integration': integration, 'scheduled': [entry['id'] for entry in scheduled],\n            'enforced': result['enforced'], 'gate_passed': result['passed']}\n\n\nif __name__ == '__main__':\n    print(json.dumps(evaluate([p for p in sys.argv[1:] if p != '--survives'],\n                              '--survives' in sys.argv)))\n",
+        "tests/test_runner.py": "import json\nfrom pathlib import Path\nimport unittest\nfrom runner import run\n\n\nclass RunnerTests(unittest.TestCase):\n    def test_all_manifest_entries_can_run(self):\n        entries = json.loads(Path('manifest.json').read_text())\n        self.assertEqual(run(entries)['enforced'], [entry['id'] for entry in entries])\n        self.assertTrue(run(entries)['passed'])\n        self.assertFalse(run(entries, survives=True)['passed'])\n"
+      },
+      {
+        "integration_filter.py": "def selected(paths):\n    return any(path.startswith(('src/', 'tests/integration/')) for path in paths)\n",
+        "manifest.json": "[{\"id\": \"core-boundary\", \"target\": \"src/core/rules.py\"}, {\"id\": \"plugin-boundary\", \"target\": \"src/plugins/widget.py\"}, {\"id\": \"import-boundary\", \"target\": \"src/imports/reader.py\"}, {\"id\": \"export-boundary\", \"target\": \"src/exports/writer.py\"}]\n",
+        "extra_paths.json": "[\"src/imports/\", \"src/exports/\"]\n"
+      },
+      {
+        "integration_filter.py": "def selected(paths):\n    return any(path.startswith(('src/core/', 'tests/integration/')) for path in paths)\n"
+      }
+    ]
+  }
+}

@@ -1,0 +1,30 @@
+[
+  {
+    "id": "gate-consumer-handoff",
+    "prompt": "Review BASE..HEAD for release readiness, reconcile review-note.md with your checks, and write your findings and remaining verification gaps to assessment.md. Do not change the implementation.",
+    "expectedSkills": ["reviewing-code", "verifying-work"],
+    "forbiddenSkills": [],
+    "expectedReferences": [],
+    "rubric": [
+      "Executes the consumer decision for an approved green request, then a body edit at the same SHA; observes mergeability changing from true to false despite successful emitted checks.",
+      "Executes the invalid-title path and confirms it remains blocked. Reports the valid-work regression without recommending that invalid work bypass the gate.",
+      "Identifies the missing required tests context in the latest suite, not a failing emitted check, as the reason valid work is blocked.",
+      "Preserves the reviewer's unverified external branch-protection gap. Local simulator results establish a fixture regression, not actual hosted merge eligibility or acceptance-aligned external validation.",
+      "Grades depend on executed receipts and the recovered finding, not phrasing, skill-name mentions, or passing producer tests. A no-findings or fully verified readiness conclusion fails."
+    ]
+  },
+  {
+    "id": "rollback-retained-selection",
+    "prompt": "Review HEAD^..HEAD, a rollback of the integration filter, against the current README contract. Use the earlier history as needed. Write findings and verification limits to assessment.md without changing the implementation.",
+    "expectedSkills": ["reviewing-code", "verifying-work"],
+    "forbiddenSkills": [],
+    "expectedReferences": [],
+    "rubric": [
+      "Checks historical byte restoration but does not treat it or intact manifest entries as proof of retained behavior.",
+      "Traces manifest discovery through path filtering, runner scheduling, and enforcement, including targets added after the original filter.",
+      "Executes a target-only change to src/plugins/widget.py and observes no scheduled mutation and no enforced mutation despite a retained manifest entry and a green gate.",
+      "Checks a selected core target and the two newly added target paths as controls. Does not let their success hide the excluded plugin target or rely only on a multi-path change that also touches core.",
+      "Reports the rollback coverage regression with concrete receipts and distinguishes passing direct mutation tests from normal pipeline selection. Finding recovery, not wording or instruction activation alone, determines success."
+    ]
+  }
+]

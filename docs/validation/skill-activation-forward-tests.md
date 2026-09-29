@@ -37,6 +37,20 @@ Grade the response and actual artifacts against the withheld rubric. Record fals
 
 Give graders relevant tool receipts before asking them to judge completed actions. Compute mechanical quantities such as word counts directly. Include planted failures and valid conditional answers to check the grader, score support separately from usefulness, and preserve original grades alongside review corrections. The [evidence discipline study](../reviews/2026-09-10-evidence-discipline-results.md) records why these checks matter.
 
+## Consumer review regressions
+
+Two synthetic cases in `tests/fixtures/review-regressions/` exercise a gate's valid-work path and a rollback's retained mutation coverage. The gate case also supplies a reviewer handoff with an unresolved external-consumer check. Both contain runnable local code, historical commits, and passing producer or direct-runner tests that miss the regression.
+
+```bash
+python3 scripts/evaluate-skills.py --host codex --model MODEL \
+  --cases tests/fixtures/review-regressions/cases.json \
+  --fixtures tests/fixtures/review-regressions/workspaces.json \
+  --case gate-consumer-handoff --case rollback-retained-selection \
+  --output "$JCODE_SCRATCH_DIR/review-candidate"
+```
+
+Use the same cases, fixtures, model, and options with `--source /path/to/baseline-checkout` for comparison. Grade the withheld rubrics against executed receipts and findings, including preserved verification gaps. Do not award credit for repeating skill wording. The gate simulator defines its own selection policy; it is not evidence of a hosted provider's branch-protection behavior. `python3 -m unittest discover -s tests/evaluation -v` checks fixture ground truth against working historical controls and the evaluation runner, not LLM behavior or improvement. Report unrun agent evaluations as unrun.
+
 ## Native host discovery
 
 The catalog harness separates instruction behavior from installation. Also test native discovery before release:
