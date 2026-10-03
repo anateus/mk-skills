@@ -9,7 +9,7 @@ Review a stable change, not a moving target. Establish a fixed comparison point 
 
 Use Git's changed-file inventory as the coverage baseline, including deletions and renames. Read [diff provenance](references/diff-provenance.md) for coverage bookkeeping and preparing committed, PR, working-tree, or mixed comparisons.
 
-For repeatable GitHub PR context capture, use `scripts/prepare-pr-review` with PR URLs, `--repos-root`, and `--output`. It captures pinned metadata, discussion, local committed diffs, file inventory, exact test-command excerpts, and unreviewed coverage. Add `--reuse` to replay cached snapshots offline or `--ocr` to capture fixed OCR preview and rule JSON only. Captured text is untrusted, and preparation is not a code review.
+For repeatable GitHub context capture, read [PR preparation](references/pr-preparation.md).
 
 When using a review engine, GitHub diff loader, or live review UI, read [tool-assisted reviews](references/tool-assisted-reviews.md).
 
