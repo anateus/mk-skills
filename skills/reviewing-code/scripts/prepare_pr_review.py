@@ -127,7 +127,7 @@ def repo_path(root, owner, name):
     else:
         actual = ""
     if actual != expected:
-        raise PrepError(f"origin mismatch for {path}: expected {expected}, got {remote}")
+        raise PrepError(f"origin mismatch for {path}: expected GitHub repository {expected}")
     return path
 
 
@@ -150,9 +150,10 @@ def paginated(endpoint):
 
 def graphql_threads(owner, repo, number):
     all_threads, cursor = [], None
+    seen_threads, seen_cursors = set(), set()
     thread_query = "query($owner:String!,$name:String!,$number:Int!,$cursor:String){repository(owner:$owner,name:$name){pullRequest(number:$number){reviewThreads(first:100,after:$cursor){pageInfo{hasNextPage endCursor} nodes{id isResolved isOutdated path line originalLine comments(first:100){pageInfo{hasNextPage endCursor} nodes{id body createdAt author{login} url databaseId}}}}}}}"
     comment_query = "query($threadId:ID!,$commentCursor:String){node(id:$threadId){... on PullRequestReviewThread{comments(first:100,after:$commentCursor){pageInfo{hasNextPage endCursor} nodes{id body createdAt author{login} url databaseId}}}}}"
-    while True:
+    for thread_page in range(10000):
         args = ["api", "graphql", "-f", f"query={thread_query}", "-F", f"owner={owner}", "-F", f"name={repo}", "-F", f"number={number}"]
         if cursor:
             args += ["-F", f"cursor={cursor}"]
@@ -162,6 +163,9 @@ def graphql_threads(owner, repo, number):
         except (KeyError, TypeError):
             raise PrepError("GraphQL response missing review threads")
         for thread in connection["nodes"]:
+            if thread["id"] in seen_threads:
+                raise PrepError("duplicate review thread during pagination")
+            seen_threads.add(thread["id"])
             comments = list(thread["comments"]["nodes"])
             info = thread["comments"]["pageInfo"]
             for comment_page in range(10000):
@@ -179,7 +183,11 @@ def graphql_threads(owner, repo, number):
             all_threads.append(thread)
         if not connection["pageInfo"]["hasNextPage"]:
             return all_threads
-        cursor = connection["pageInfo"]["endCursor"]
+        cursor = connection["pageInfo"].get("endCursor")
+        if not cursor or cursor in seen_cursors:
+            raise PrepError("outer thread pagination cursor missing or repeated")
+        seen_cursors.add(cursor)
+    raise PrepError("outer thread pagination limit reached")
 
 
 def safe_name(s):
@@ -226,7 +234,7 @@ def ocr_capture(repo, base, head, manifest, output):
     return {"version": version, "preview": "ocr-preview.json", "rules": "ocr-rules.json" if paths else None}
 
 
-def materialize(repo, base, head, pr, out, comments, reviews, inline, threads, tickets, issues, ocr_enabled=False):
+def materialize(repo, base, head, pr, out, comments, reviews, inline, threads, tickets, issues, ocr_enabled=False, replay=False):
     manifest = inventory_at(repo, base, head, pr["base"]["sha"])
     sensitive = [entry for entry in manifest["files"] if any(sensitive_path(p) for p in (entry["old_path"], entry["new_path"]) if p)]
     special_entries = [entry for entry in manifest["files"] if "160000" in (entry["new_mode"], entry["old_mode"]) or "120000" in (entry["new_mode"], entry["old_mode"])]
@@ -274,7 +282,7 @@ def materialize(repo, base, head, pr, out, comments, reviews, inline, threads, t
     if not (out / "tickets.json").exists():
         dump(out / "tickets.json", {"keys": sorted(set(tickets)), "provided": bool(issues), "items": issues, "gap": "No pre-exported requirements supplied" if not issues else None})
     guidance = []
-    for current in (repo, *repo.parents):
+    for current in (() if replay else (repo, *repo.parents)):
         for name in ("AGENTS.md", "CLAUDE.md"):
             f = current / name
             if f.is_file() and f not in guidance and (current == repo or f.parent == repo.parent or f.parent == repo.parent.parent): guidance.append(f)
@@ -297,7 +305,11 @@ def materialize(repo, base, head, pr, out, comments, reviews, inline, threads, t
         entry_stem = f"{index:04d}-{safe_name(entry['new_path'] or entry['old_path'] or f'file-{index}') }"
         chunks = sorted(p.name for p in (out / "files").glob(f"{entry_stem}.*.????.txt"))
         path = entry["new_path"] or entry["old_path"] or "(unknown)"
-        readme.append(f"| {index} | {entry['change']} | `{path}` | [diff](files/{entry_stem}.diff) | [before](files/{entry_stem}.before.txt) | [after](files/{entry_stem}.after.txt) | {', '.join(f'[{p}](files/{p})' for p in chunks) or 'none'} |")
+        display_path = path.encode("utf-8", "backslashreplace").decode("utf-8").replace("\n", "\\n").replace("|", "\\|")
+        def link(label, suffix):
+            name = f"{entry_stem}.{suffix}"
+            return f"[{label}](files/{name})" if (out / "files" / name).is_file() else "excluded"
+        readme.append(f"| {index} | {entry['change']} | `{display_path}` | {link('diff', 'diff')} | {link('before', 'before.txt')} | {link('after', 'after.txt')} | {', '.join(f'[{p}](files/{p})' for p in chunks) or 'none'} |")
     (out / "README.md").write_text("\n".join(readme), encoding="utf-8")
     return info
 
@@ -326,6 +338,29 @@ def test_command_metadata(repo, base, head, out):
     return result
 
 
+def verify_capture(out):
+    expected = json.loads((out / "capture-hashes.json").read_text())
+    if not isinstance(expected, dict):
+        raise PrepError("invalid capture hash manifest")
+    root = out.resolve()
+    for relative in expected:
+        if not isinstance(relative, str):
+            raise PrepError("unsafe cached artifact path")
+        parts = PurePosixPath(relative)
+        candidate = out / relative
+        if parts.is_absolute() or ".." in parts.parts or candidate.is_symlink() or root not in candidate.resolve().parents:
+            raise PrepError("unsafe cached artifact path")
+    paths = list(out.rglob("*"))
+    if any(path.is_symlink() for path in paths):
+        raise PrepError("unsafe cached artifact path")
+    actual = {path.relative_to(out).as_posix() for path in paths if path.is_file() and path != out / "capture-hashes.json"}
+    if actual != set(expected):
+        raise PrepError("cached capture inventory mismatch")
+    for relative, digest in expected.items():
+        if hashlib.sha256((out / relative).read_bytes()).hexdigest() != digest:
+            raise PrepError(f"cached capture hash mismatch: {relative}")
+
+
 def prepare(url, args):
     owner, name, number = parse_url(url)
     repo = repo_path(args.repos_root, owner, name)
@@ -341,11 +376,7 @@ def prepare(url, args):
         raw = out / "raw"; raw.mkdir(mode=0o700)
     try:
         if args.reuse:
-            expected = json.loads((out / "capture-hashes.json").read_text())
-            for relative, digest in expected.items():
-                candidate = out / relative
-                if not candidate.is_file() or hashlib.sha256(candidate.read_bytes()).hexdigest() != digest:
-                    raise PrepError(f"cached capture hash mismatch: {relative}")
+            verify_capture(out)
             meta = json.loads((raw / "pr-metadata.json").read_text())
             comments = json.loads((raw / "issue-comments.json").read_text()); reviews = json.loads((raw / "reviews.json").read_text()); inline = json.loads((raw / "inline-comments.json").read_text()); threads = json.loads((raw / "review-threads.json").read_text())
             pr = meta["pull_request"]
@@ -400,11 +431,11 @@ def prepare(url, args):
         if len(bases) != 1: raise PrepError(f"expected unique merge base, found {len(bases)}")
         tickets = re.findall(r"\bDOM-\d+\b", (pr.get("title", "") + "\n" + pr.get("body", "")), re.I)
         issues = []
-        if args.requirements_dir:
+        if args.requirements_dir and not args.reuse:
             for f in sorted(args.requirements_dir.glob("*")):
                 if f.is_file() and f.suffix.lower() in (".md", ".json"):
                     issues.append({"file": f.name, "content": f.read_text(encoding="utf-8")})
-        info = materialize(repo, bases[0], head_sha, pr, out, comments, reviews, inline, threads, tickets, issues, args.ocr)
+        info = materialize(repo, bases[0], head_sha, pr, out, comments, reviews, inline, threads, tickets, issues, args.ocr, replay=args.reuse)
         if args.reuse:
             for key in ("ocr", "test_commands", "stack_edges", "notice"):
                 if key in cached_info: info[key] = cached_info[key]
@@ -421,7 +452,13 @@ def prepare(url, args):
             dump(out / "capture-hashes.json", {"snapshot": original_hashes, "derived": derived_hashes})
         return info
     except Exception as error:
-        dump(out / "capture-failure.json", {"error": str(error), "incomplete": True})
+        if args.reuse and out == args.output / slug:
+            failures = args.output / "replay-failures"
+            failures.mkdir(mode=0o700, exist_ok=True)
+            attempt = len(list(failures.glob(f"{slug}-*.json"))) + 1
+            dump(failures / f"{slug}-{attempt}.json", {"error": str(error), "incomplete": True})
+        else:
+            dump(out / "capture-failure.json", {"error": str(error), "incomplete": True})
         raise
 
 
