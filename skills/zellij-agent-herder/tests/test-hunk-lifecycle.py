@@ -301,7 +301,9 @@ print([99999, 99999, 0, 99999, 99999, 99999][min(count, 5)])
         self.wait_for(lambda: len(self.children()) == 1)
         child = self.children()[0]
         self.assertEqual(child["args"], ["diff", base, "--watch"])
-        self.assertEqual(child["cwd"], str(repo))
+        # The pane's cwd is the canonicalized root, so compare resolved paths; a
+        # symlinked TMPDIR (for example /tmp on macOS) would otherwise differ.
+        self.assertEqual(child["cwd"], os.path.realpath(str(repo)))
         self.inventory.write_text('[{"id":1,"tab_id":1}]')
         self.wait_for(lambda: self.state(child["pid"]) == "")
         self.assertEqual(len(self.children()), 1)
