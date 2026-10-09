@@ -12,6 +12,8 @@ _ZJ_SESSION_EXPLICIT=0
 if [ -n "${ZJ_SESSION:-}" ] && [ "${ZJ_SESSION:-}" != "${ZELLIJ_SESSION_NAME:-}" ]; then
   _ZJ_SESSION_EXPLICIT=1
 fi
+# Remember the caller's own socket directory so re-resolving can restore it.
+_ZJ_SOCKET_DIR_ORIG="${ZELLIJ_SOCKET_DIR:-}"
 ZJ_IDENTITY_SCRIPT="${ZAH_IDENTITY_SCRIPT:-${ZJ_IDENTITY_SCRIPT:-}}"
 
 # Resolve pane-identity.py when the caller did not supply its installed/source path.
@@ -67,8 +69,22 @@ _zj() {  # run a zellij action against the target session
 # <socket dir>/contract_version_1). Resolution is best-effort: on any failure the
 # caller falls back to the requested session name and the inherited environment.
 _zj_target() {
-  [ -n "${_ZJ_TARGET_DONE:-}" ] && return 0
+  # Re-resolve whenever the target changes; a cached result must never outlive the
+  # session and explicitness it was computed for.
+  local key="${_ZJ_SESSION_EXPLICIT:-0}:${ZJ_SESSION:-}"
+  if [ -n "${_ZJ_TARGET_DONE:-}" ] && [ "${_ZJ_TARGET_KEY:-}" = "$key" ]; then
+    return 0
+  fi
   _ZJ_TARGET_DONE=1
+  _ZJ_TARGET_KEY="$key"
+  # Drop any previous resolution so a changed target cannot reuse a stale directory.
+  if [ -n "${_ZJ_SOCKET_DIR_ORIG:-}" ]; then
+    _ZJ_SOCKET_DIR="$_ZJ_SOCKET_DIR_ORIG"
+    export ZELLIJ_SOCKET_DIR="$_ZJ_SOCKET_DIR_ORIG"
+  else
+    _ZJ_SOCKET_DIR=""
+    unset ZELLIJ_SOCKET_DIR 2>/dev/null || true
+  fi
   # Tell the controller whether this target was chosen deliberately, so its own
   # zellij calls apply the same no-substitution rule.
   if [ "${_ZJ_SESSION_EXPLICIT:-0}" = 1 ]; then

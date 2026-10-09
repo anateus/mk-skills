@@ -6,7 +6,11 @@ ORIGIN="$ROOT_DIR/skills/zellij-agent-herder/scripts/zellij-origin.sh"
 AUTODIFF="$ROOT_DIR/skills/zellij-agent-herder/scripts/hunk-autodiff.sh"
 STATUS="$ROOT_DIR/skills/zellij-agent-herder/scripts/zellij-agent-status.sh"
 ZJ="$ROOT_DIR/skills/zellij-agent-herder/scripts/zj.sh"
-T="$(mktemp -d)"; trap 'rm -rf "$T"' EXIT
+T="$(mktemp -d)"
+# Short base under /tmp: an AF_UNIX socket path is limited to ~104 bytes, and the
+# macOS per-user temp directory alone can exceed that with this layout.
+RESOLVE_ROOT="/tmp/zah-resolve-$$"
+trap 'rm -rf "$T" "$RESOLVE_ROOT"' EXIT
 export HOME="$T/home" XDG_CACHE_HOME="$T/cache"; mkdir -p "$HOME"
 # Pin the socket directory so session resolution never probes the host's real Zellij.
 export ZELLIJ_SOCKET_DIR="$T/zellij-sockets"; mkdir -p "$ZELLIJ_SOCKET_DIR"
@@ -300,6 +304,22 @@ A2="$(zj_watch_session "$T/repo/." "$BASE" helper-session "$R1" "$P6")"
 grep -q "close-pane -p $R1" "$ZELLIJ_LOG"
 grep -q "close-pane -p $P6" "$ZELLIJ_LOG"
 echo 'public helper routing/reopen/rollup: PASS'
+
+# Resolution is recomputed when the target changes: a cached socket directory must
+# not outlive the session it was resolved for.
+mkdir -p "$RESOLVE_ROOT/zellij-$(id -u)/contract_version_1"
+python3 -c 'import socket, sys; socket.socket(socket.AF_UNIX, socket.SOCK_STREAM).bind(sys.argv[1])' \
+  "$RESOLVE_ROOT/zellij-$(id -u)/contract_version_1/resolve-live"
+env -u ZELLIJ_SOCKET_DIR TMPDIR="$RESOLVE_ROOT" ZJ_SESSION=resolve-live ZELLIJ_PANE_ID=20 bash -c '
+  source "$1"
+  _zj_target
+  [ -n "${_ZJ_SOCKET_DIR:-}" ] || { echo "resolution did not find the live session" >&2; exit 1; }
+  ZJ_SESSION=resolve-other
+  _ZJ_SESSION_EXPLICIT=1
+  _zj_target
+  [ -z "${_ZJ_SOCKET_DIR:-}" ] || { echo "stale socket dir reused: $_ZJ_SOCKET_DIR" >&2; exit 1; }
+' bash "$ZJ"
+echo 'resolution re-runs on target change: PASS'
 
 # Hook adapters retain the top-level pane even when later events run elsewhere.
 # This routing fixture intentionally keeps several synthetic sessions open.
