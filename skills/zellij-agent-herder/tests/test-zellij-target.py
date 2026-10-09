@@ -118,6 +118,17 @@ class ZellijTargetTests(unittest.TestCase):
             # A live requested session still gets its socket directory.
             self.assertEqual(hunk_stream.resolve_target("live-a", "1"), (str(self.sockets), "live-a"))
 
+    def test_explicit_session_is_never_substituted(self):
+        self.make_session(self.sockets, "live-a")
+        self.assertEqual(
+            hunk_stream.resolve_target("stale-name", "1", explicit=True), (None, "stale-name"),
+        )
+        # An explicit live session still resolves to its socket directory.
+        self.assertEqual(
+            hunk_stream.resolve_target("live-a", "1", explicit=True),
+            (str(self.sockets), "live-a"),
+        )
+
     def test_zellij_passes_resolved_socket_dir(self):
         self.make_session(self.sockets, "live-a")
         calls = []

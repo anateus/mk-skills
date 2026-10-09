@@ -205,6 +205,24 @@ class HunkPlacementTests(unittest.TestCase):
             self.assertTrue(live.exists())
             self.assertTrue(live_lock.exists())
 
+    def test_prune_keeps_state_for_socket_live_session_missing_from_list_sessions(self):
+        # `list-sessions` marks the ambient ZELLIJ_SESSION_NAME as current even when
+        # no server exists for it, so a reachable session can be absent from its
+        # active set. Pruning only drops state for sessions it believes are gone, so
+        # the socket inventory must mark this one live or its stream is deleted.
+        with tempfile.TemporaryDirectory() as temporary:
+            streams = Path(temporary) / "zellij-agent-herder" / "streams"
+            streams.mkdir(parents=True)
+            live = streams / "live.json"
+            live.write_text(json.dumps({"session": "live", "pane_id": "terminal_1"}))
+            with mock.patch.object(hunk_stream, "cache_root", return_value=temporary), \
+                 mock.patch.object(hunk_stream, "zellij_session_status", return_value=({"ambient"}, set())), \
+                 mock.patch.object(hunk_stream, "socket_dirs", return_value=["/sockets"]), \
+                 mock.patch.object(hunk_stream, "live_sessions", return_value=["live"]), \
+                 mock.patch.object(hunk_stream, "panes", return_value=[{"id": 1}]):
+                hunk_stream.prune_stream_states("ambient")
+            self.assertTrue(live.exists())
+
     def test_ensure_refuses_new_stream_at_global_cap(self):
         with tempfile.TemporaryDirectory() as temporary:
             streams = Path(temporary) / "zellij-agent-herder" / "streams"

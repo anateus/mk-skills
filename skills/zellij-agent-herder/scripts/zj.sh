@@ -5,6 +5,13 @@
 # Target session: set ZJ_SESSION, else falls back to $ZELLIJ_SESSION_NAME.
 
 ZJ_SESSION="${ZJ_SESSION:-${ZELLIJ_SESSION_NAME:-}}"
+# The ambient Zellij session name can be stale, so it is resolved against live
+# sockets. A ZJ_SESSION that differs from it is a deliberate target and is never
+# substituted.
+_ZJ_SESSION_EXPLICIT=0
+if [ -n "${ZJ_SESSION:-}" ] && [ "${ZJ_SESSION:-}" != "${ZELLIJ_SESSION_NAME:-}" ]; then
+  _ZJ_SESSION_EXPLICIT=1
+fi
 ZJ_IDENTITY_SCRIPT="${ZAH_IDENTITY_SCRIPT:-${ZJ_IDENTITY_SCRIPT:-}}"
 
 # Resolve pane-identity.py when the caller did not supply its installed/source path.
@@ -64,8 +71,9 @@ _zj_target() {
   _ZJ_TARGET_DONE=1
   command -v zellij >/dev/null 2>&1 || return 0
   [ -f "$_ZJ_HUNK_STREAM" ] || return 0
-  local resolved dir session
-  resolved="$(python3 "$_ZJ_HUNK_STREAM" resolve --session "${ZJ_SESSION:-}" --pane "${ZELLIJ_PANE_ID:-}" 2>/dev/null)" || return 0
+  local resolved dir session explicit=""
+  [ "${_ZJ_SESSION_EXPLICIT:-0}" = 1 ] && explicit="--explicit-session"
+  resolved="$(python3 "$_ZJ_HUNK_STREAM" resolve --session "${ZJ_SESSION:-}" --pane "${ZELLIJ_PANE_ID:-}" $explicit 2>/dev/null)" || return 0
   dir="$(printf '%s\n' "$resolved" | sed -n 's/^socket_dir=//p')"
   session="$(printf '%s\n' "$resolved" | sed -n 's/^session=//p')"
   [ -n "$session" ] && ZJ_SESSION="$session"

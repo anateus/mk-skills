@@ -23,11 +23,11 @@ python3 "<skill-base-dir>/scripts/hunk-stream.py" resolve --session "$ZJ_SESSION
 # session=<resolved name>
 ```
 
-Resolution order: the requested session wherever a live socket exists; else, when the process is inside Zellij (`$ZELLIJ` is set), the sole live session, or the one live session whose pane list contains `ZELLIJ_PANE_ID`; else no change. It never guesses between several candidates, and it never adopts another session outside Zellij. An explicit `ZELLIJ_SOCKET_DIR` is authoritative and suppresses the other probe locations. `hunk-stream.py` applies the same resolution to its own `zellij` calls, so it works when invoked directly.
+Resolution order: the requested session wherever a live socket exists; else, when the process is inside Zellij (`$ZELLIJ` is set) and the name came from `$ZELLIJ_SESSION_NAME` rather than a deliberate override, the sole live session, or the one live session whose pane list contains `ZELLIJ_PANE_ID`; else no change. A `ZJ_SESSION` that differs from the ambient `$ZELLIJ_SESSION_NAME` is a deliberate target and is never substituted, and neither is a session requested from outside Zellij. It never guesses between several candidates. An explicit `ZELLIJ_SOCKET_DIR` is authoritative and suppresses the other probe locations. `hunk-stream.py` applies the same resolution to its own `zellij` calls, so it works when invoked directly.
 
 | Helper | Signature → result |
 |---|---|
-| `hunk-stream.py resolve` | `resolve [--session NAME] [--pane ID]` → prints `socket_dir=` and `session=` for the resolved target. |
+| `hunk-stream.py resolve` | `resolve [--session NAME] [--pane ID] [--explicit-session]` → prints `socket_dir=` and `session=` for the resolved target. `--explicit-session` forbids substitution. |
 
 ## `zj.sh` helper signatures
 

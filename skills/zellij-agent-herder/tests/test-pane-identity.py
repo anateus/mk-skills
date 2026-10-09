@@ -19,7 +19,12 @@ class PaneIdentityTests(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
-        self.env = {**os.environ, "XDG_CACHE_HOME": self.temp.name}
+        self.env = {
+            **os.environ,
+            "XDG_CACHE_HOME": self.temp.name,
+            # Pin the socket directory so session resolution never probes the host.
+            "ZELLIJ_SOCKET_DIR": os.path.join(self.temp.name, "zellij-sockets"),
+        }
         self.bin = Path(self.temp.name) / "bin"
         self.bin.mkdir()
         self.log = Path(self.temp.name) / "zellij.log"

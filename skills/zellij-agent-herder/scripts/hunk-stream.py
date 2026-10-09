@@ -264,11 +264,16 @@ def prune_stream_states(session: str, exclude_key: str | None = None) -> None:
     if not records:
         return
     status = zellij_session_status()
+    # Liveness is a socket fact, but `list-sessions` marks the ambient
+    # ZELLIJ_SESSION_NAME as current even when no server exists for it. Union the
+    # socket inventory in so a reachable stream is never pruned.
+    active: set[str] | None = None
+    if status is not None:
+        active = status[0] | {name for directory in socket_dirs() for name in live_sessions(directory)}
     panes_by_session: dict[str, set[str] | None] = {}
     for path, state_session, pane in records:
         stale = False
-        if status is not None:
-            active, exited = status
+        if active is not None:
             if state_session not in active:
                 stale = True
             elif state_session not in panes_by_session:
@@ -286,7 +291,7 @@ def prune_stream_states(session: str, exclude_key: str | None = None) -> None:
                     panes_by_session[state_session] = None
             if panes_by_session.get(state_session) is not None:
                 stale = pane not in panes_by_session[state_session]
-        if stale and status is not None and state_session not in status[0]:
+        if stale and active is not None and state_session not in active:
             remove_stream_state(path)
     remove_orphan_locks(exclude_key)
 
@@ -545,22 +550,23 @@ def session_pane_ids(socket_dir: str, session: str) -> set[str]:
     return ids
 
 
-def resolve_target(session: str, pane: str | None) -> tuple[str | None, str]:
+def resolve_target(session: str, pane: str | None, explicit: bool = False) -> tuple[str | None, str]:
     """Resolve (socket_dir, session) for the requested Zellij session.
 
     Prefers the requested session wherever a live socket exists. When that name is
     stale (a long-lived host process can outlive its session) and this process is
     inside Zellij, adopts the single live session that owns ZELLIJ_PANE_ID, else the
-    sole live session. Never guesses between several candidates; falls back to the
-    requested name with no socket dir.
+    sole live session. An explicitly requested session is never substituted, and
+    neither is one requested from outside Zellij. Never guesses between several
+    candidates; falls back to the requested name with no socket dir.
     """
     directories = socket_dirs()
     for directory in directories:
         if session and session in live_sessions(directory):
             return directory, session
-    # Recovery only makes sense inside a pane, where ZELLIJ_PANE_ID is meaningful.
-    # A caller outside Zellij (or a synthetic harness) gets its requested name back.
-    if "ZELLIJ" not in os.environ:
+    # Recovery only makes sense inside a pane, where ZELLIJ_PANE_ID is meaningful,
+    # and only for an environment-derived name the caller did not choose.
+    if explicit or "ZELLIJ" not in os.environ:
         return None, session
     live = [(directory, name) for directory in directories for name in live_sessions(directory)]
     if not live:
@@ -881,6 +887,7 @@ def main() -> None:
     resolve = commands.add_parser("resolve")
     resolve.add_argument("--session", default="")
     resolve.add_argument("--pane")
+    resolve.add_argument("--explicit-session", action="store_true")
     args = parser.parse_args()
     if args.command == "signature":
         print(diff_signature(args.root, args.base))
@@ -901,7 +908,7 @@ def main() -> None:
             args.child_pane,
         ))
     elif args.command == "resolve":
-        socket_dir, session = resolve_target(args.session, args.pane)
+        socket_dir, session = resolve_target(args.session, args.pane, args.explicit_session)
         print(f"socket_dir={socket_dir or ''}")
         print(f"session={session or ''}")
     else:
