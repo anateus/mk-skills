@@ -278,7 +278,7 @@ def prune_stream_states(session: str, exclude_key: str | None = None) -> None:
                 stale = True
             elif state_session not in panes_by_session:
                 try:
-                    panes_by_session[state_session] = set(pane_id(item) for item in panes(state_session))
+                    panes_by_session[state_session] = set(pane_id(item) for item in panes(state_session, quiet=True))
                 except (OSError, subprocess.SubprocessError, ValueError, TypeError, json.JSONDecodeError):
                     panes_by_session[state_session] = None
             if panes_by_session.get(state_session) is not None:
@@ -286,7 +286,7 @@ def prune_stream_states(session: str, exclude_key: str | None = None) -> None:
         elif state_session == session:
             if state_session not in panes_by_session:
                 try:
-                    panes_by_session[state_session] = set(pane_id(item) for item in panes(state_session))
+                    panes_by_session[state_session] = set(pane_id(item) for item in panes(state_session, quiet=True))
                 except (OSError, subprocess.SubprocessError, ValueError, TypeError, json.JSONDecodeError):
                     panes_by_session[state_session] = None
             if panes_by_session.get(state_session) is not None:
@@ -335,7 +335,7 @@ def active_stream_count(
         if status is not None and name != session and name not in status[0]:
             continue
         try:
-            inventory = {pane_id(item) for item in panes(name)}
+            inventory = {pane_id(item) for item in panes(name, quiet=True)}
         except (OSError, subprocess.SubprocessError, ValueError, TypeError):
             return None
         live.update(identity for identity in identities if identity[0] == name and identity[1] in inventory)
@@ -461,13 +461,18 @@ def edit_payload(payload: dict[str, Any]) -> str:
     return ensure_stream(session, parent, root, base, "worktree", None, False)
 
 
-def _zellij_raw(session: str, args: list[str], socket_dir: str | None = None) -> str:
+def _zellij_raw(
+    session: str, args: list[str], socket_dir: str | None = None, quiet: bool = False,
+) -> str:
     env = dict(os.environ)
     if socket_dir:
         env["ZELLIJ_SOCKET_DIR"] = socket_dir
     result = subprocess.run(
         ["zellij", "--session", session, "action", *args],
         check=True, stdout=subprocess.PIPE, text=True, timeout=5, env=env,
+        # Best-effort probes must not leak Zellij's diagnostics into the caller's
+        # output; a real failure still raises and is handled by the caller.
+        stderr=subprocess.PIPE if quiet else None,
     )
     return result.stdout.strip()
 
@@ -530,7 +535,7 @@ def live_sessions(socket_dir: str) -> list[str]:
 
 def session_pane_ids(socket_dir: str, session: str) -> set[str]:
     try:
-        value = json.loads(_zellij_raw(session, ["list-panes", "-j"], socket_dir))
+        value = json.loads(_zellij_raw(session, ["list-panes", "-j"], socket_dir, quiet=True))
     except (OSError, ValueError, subprocess.SubprocessError):
         return set()
     items: list[Any] = []
@@ -594,21 +599,29 @@ _TARGET_CACHE: dict[str, tuple[str | None, str]] = {}
 
 
 def zellij_target(session: str) -> tuple[str | None, str]:
-    """Return the cached (socket_dir, resolved_session) for a requested session."""
+    """Return the cached (socket_dir, resolved_session) for a requested session.
+
+    Honors ZAH_ZELLIJ_EXPLICIT_SESSION, which zj.sh exports when the caller chose
+    the session deliberately; the controller must then apply the same
+    no-substitution rule to its own zellij calls or it would place a pane in a
+    different session than the state it records.
+    """
     cached = _TARGET_CACHE.get(session)
     if cached is None:
-        cached = resolve_target(session, os.environ.get("ZELLIJ_PANE_ID"))
+        # "0" is a truthful string, so compare explicitly rather than truthy-test.
+        explicit = os.environ.get("ZAH_ZELLIJ_EXPLICIT_SESSION") == "1"
+        cached = resolve_target(session, os.environ.get("ZELLIJ_PANE_ID"), explicit)
         _TARGET_CACHE[session] = cached
     return cached
 
 
-def zellij(session: str, args: list[str]) -> str:
+def zellij(session: str, args: list[str], quiet: bool = False) -> str:
     socket_dir, resolved = zellij_target(session)
-    return _zellij_raw(resolved, args, socket_dir)
+    return _zellij_raw(resolved, args, socket_dir, quiet)
 
 
-def panes(session: str) -> list[dict[str, Any]]:
-    value = json.loads(zellij(session, ["list-panes", "-j", "-g", "-s", "-t"]))
+def panes(session: str, quiet: bool = False) -> list[dict[str, Any]]:
+    value = json.loads(zellij(session, ["list-panes", "-j", "-g", "-s", "-t"], quiet))
     if isinstance(value, dict):
         items: list[Any] = []
         for entry in value.values():

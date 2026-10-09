@@ -49,7 +49,7 @@ class AdmissionTests(unittest.TestCase):
         self.record("duplicate", "b", "terminal_2")
         self.record("closed", "b", "terminal_3")
         with mock.patch.object(stream, "zellij_session_status", return_value=({"a", "b"}, set())), \
-             mock.patch.object(stream, "panes", side_effect=lambda name: [{"id": 1 if name == "a" else 2}]):
+             mock.patch.object(stream, "panes", side_effect=lambda name, quiet=False: [{"id": 1 if name == "a" else 2}]):
             self.assertEqual(stream.active_stream_count("a"), 2)
 
     def test_missing_inventory_and_corrupt_state_fail_closed(self):

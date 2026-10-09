@@ -69,6 +69,13 @@ _zj() {  # run a zellij action against the target session
 _zj_target() {
   [ -n "${_ZJ_TARGET_DONE:-}" ] && return 0
   _ZJ_TARGET_DONE=1
+  # Tell the controller whether this target was chosen deliberately, so its own
+  # zellij calls apply the same no-substitution rule.
+  if [ "${_ZJ_SESSION_EXPLICIT:-0}" = 1 ]; then
+    export ZAH_ZELLIJ_EXPLICIT_SESSION=1
+  else
+    export ZAH_ZELLIJ_EXPLICIT_SESSION=0
+  fi
   command -v zellij >/dev/null 2>&1 || return 0
   [ -f "$_ZJ_HUNK_STREAM" ] || return 0
   local resolved dir session explicit=""

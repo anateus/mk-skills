@@ -129,11 +129,21 @@ class ZellijTargetTests(unittest.TestCase):
             (str(self.sockets), "live-a"),
         )
 
+    def test_controller_honors_the_deliberate_target_marker(self):
+        self.make_session(self.sockets, "live-a")
+        with mock.patch.dict(os.environ, {"ZAH_ZELLIJ_EXPLICIT_SESSION": "1"}):
+            self.assertEqual(hunk_stream.zellij_target("stale-name"), (None, "stale-name"))
+        hunk_stream._TARGET_CACHE.clear()
+        with mock.patch.dict(os.environ, {"ZAH_ZELLIJ_EXPLICIT_SESSION": "0"}):
+            self.assertEqual(
+                hunk_stream.zellij_target("stale-name"), (str(self.sockets), "live-a"),
+            )
+
     def test_zellij_passes_resolved_socket_dir(self):
         self.make_session(self.sockets, "live-a")
         calls = []
 
-        def raw(session, args, socket_dir=None):
+        def raw(session, args, socket_dir=None, quiet=False):
             calls.append((session, list(args), socket_dir))
             return "[]"
 
@@ -143,7 +153,8 @@ class ZellijTargetTests(unittest.TestCase):
 
     def test_target_is_cached_per_session(self):
         with mock.patch.object(
-            hunk_stream, "resolve_target", side_effect=lambda session, pane: ("/d", session),
+            hunk_stream, "resolve_target",
+            side_effect=lambda session, pane, explicit=False: ("/d", session),
         ) as resolver:
             hunk_stream.zellij_target("live-a")
             hunk_stream.zellij_target("live-a")
