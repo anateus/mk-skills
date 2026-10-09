@@ -52,8 +52,6 @@ If state points to a pane that no longer exists, first confirm the correct Zelli
 
 **A worktree pane disappeared after roll-up.** This is expected: `zj_watch_session` marks the supplied child streams complete, closes only their panes, and opens one aggregate stream over the parent root against the original fixed base. Do not substitute current `HEAD`, which would hide committed merges.
 
-**Codex Hunk hooks are configured but silent.** Validate `~/.codex/hooks.json`, then use `/hooks` in a new interactive Codex session to trust the definitions. Configuration installation does not grant trust automatically.
-
 ## Triggering / the `ZELLIJ` env var
 
 - **`ZELLIJ=0` means inside zellij, not "off".** zellij sets `ZELLIJ` to a **client index** (`0` for the primary/only client; higher values for additional clients attached to the same session). The skill keys on presence, not truthiness. Any integer (including `0`) means you're inside. Only a genuinely **unset** `ZELLIJ` means "not in zellij." Never write `if [ "$ZELLIJ" = 1 ]` or otherwise treat `0` as false.

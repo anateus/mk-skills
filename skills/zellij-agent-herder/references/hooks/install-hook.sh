@@ -2,7 +2,7 @@
 # Installs the zellij-agent-herder SessionStart *activation* hook — a discovery
 # aid that tells Claude it is inside zellij at session start, so this skill
 # triggers reliably. This is separate from scripts/install-hooks.sh (which
-# installs the operational status + hunk-autodiff hooks). Idempotent.
+# installs the operational status and origin hooks). Idempotent.
 set -euo pipefail
 SRC="$(cd "$(dirname "$0")" && pwd)"
 DEST_DIR="$HOME/.claude/hooks"; SETTINGS="$HOME/.claude/settings.json"
