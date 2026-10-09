@@ -19,6 +19,15 @@ SPEC.loader.exec_module(hunk_stream)
 
 
 class HunkPlacementTests(unittest.TestCase):
+    def setUp(self):
+        # Pin the socket directory: pruning consults the socket inventory, and these
+        # tests must not depend on which Zellij sessions the host happens to have.
+        pinned = mock.patch.dict(
+            os.environ, {"ZELLIJ_SOCKET_DIR": str(Path(tempfile.gettempdir()) / "zah-no-sockets")},
+        )
+        pinned.start()
+        self.addCleanup(pinned.stop)
+
     def test_origin_tab_base_preserved_verbatim(self):
         items = [
             {"id": 1, "tab_id": 7, "tab_name": "󰚩 Bots #1"},
