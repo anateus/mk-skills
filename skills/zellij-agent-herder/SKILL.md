@@ -57,7 +57,7 @@ bash "<skill-base-dir>/scripts/zj.sh" zj_spawn -n worker -- bash
 - **REQUIRED REFERENCE:** Read [peer agents](references/peer-agents.md) when spawning or driving interactive coding-agent panes.
 - Read [worktree review streams](references/worktree-review-streams.md) for headless worktree watchers, fixed-base fan-out, aggregation, or live Hunk review. Before annotating a live session, run `hunk skill path` and read the installed `hunk-review` skill completely.
 - Read [activation hook](references/activation-hook.md) when Zellij presence is being missed at session start.
-- Read [lifecycle hooks](references/lifecycle-hooks.md) for status, identity, origin, and automatic Hunk-diff hook installation or removal.
+- Read [lifecycle hooks](references/lifecycle-hooks.md) for status, identity, origin, and hook installation or removal.
 - Read [shared agent configuration](references/shared-agent-config.md) for shared `AGENTS.md`, Claude guidance, or Hindsight setup.
 - Read [command reference](references/command-reference.md) for complete helper signatures and verified native Zellij semantics.
 - Read [pitfalls](references/pitfalls.md) when diagnosing focus, addressing, headless spawn, status, or Hunk problems.

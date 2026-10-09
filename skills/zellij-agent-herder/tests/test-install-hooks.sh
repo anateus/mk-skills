@@ -31,11 +31,11 @@ CLAUDE_CONFIG_DIR="$CLAUDE" CODEX_CONFIG_DIR="$CODEX" bash "$INSTALLER" --uninst
 cmp "$TMP/unrelated-before.json" "$CLAUDE/settings.json"
 test -z "$(find "$CLAUDE" -maxdepth 1 -name 'settings.json.bak.*' -print)"
 
-cat > "$CLAUDE/settings.json" <<'JSON'
-{"theme":"dark","hooks":{"Stop":[{"hooks":[{"type":"command","command":"unrelated-claude"}]}],"EmptyEvent":[],"EmptyGroup":[{"matcher":"keep-claude","hooks":[]}]}}
+cat > "$CLAUDE/settings.json" <<JSON
+{"theme":"dark","hooks":{"Stop":[{"hooks":[{"type":"command","command":"unrelated-claude"}]}],"PostToolUse":[{"matcher":"Edit|Write|MultiEdit|NotebookEdit","hooks":[{"type":"command","command":"ZAH_HOST=claude bash '$CLAUDE/hooks/hunk-autodiff.sh'","timeout":10,"async":true}]}],"EmptyEvent":[],"EmptyGroup":[{"matcher":"keep-claude","hooks":[]}]}}
 JSON
-cat > "$CODEX/hooks.json" <<'JSON'
-{"version":1,"hooks":{"Stop":[{"hooks":[{"type":"command","command":"unrelated-codex"}]}],"EmptyEvent":[],"EmptyGroup":[{"matcher":"keep-codex","hooks":[]}]}}
+cat > "$CODEX/hooks.json" <<JSON
+{"version":1,"hooks":{"Stop":[{"hooks":[{"type":"command","command":"unrelated-codex"}]}],"PostToolUse":[{"matcher":"apply_patch|Edit|Write","hooks":[{"type":"command","command":"ZAH_HOST=codex bash '$CODEX/hooks/hunk-autodiff.sh'","timeout":10}]}],"EmptyEvent":[],"EmptyGroup":[{"matcher":"keep-codex","hooks":[]}]}}
 JSON
 
 run_installer() {
@@ -81,13 +81,14 @@ assert c["hooks"]["EmptyGroup"] == [{"matcher": "keep-claude", "hooks": []}]
 assert x["hooks"]["EmptyEvent"] == []
 assert x["hooks"]["EmptyGroup"] == [{"matcher": "keep-codex", "hooks": []}]
 assert sum("zellij-origin.sh" in h.get("command", "") for g in c["hooks"]["SessionStart"] for h in g["hooks"]) == 1
-assert sum("hunk-autodiff.sh" in h.get("command", "") for g in x["hooks"]["PostToolUse"] for h in g["hooks"]) == 1
-assert all(h.get("async") is True for g in c["hooks"]["PostToolUse"] for h in g["hooks"] if "hunk-autodiff.sh" in h.get("command", ""))
-assert all("async" not in h for g in x["hooks"]["PostToolUse"] for h in g["hooks"])
+for cfg in (c, x):
+    assert not any(
+        "hunk-autodiff.sh" in h.get("command", "")
+        for groups in cfg["hooks"].values() for g in groups for h in g.get("hooks", [])
+    )
 assert any("unrelated" in h.get("command", "") for g in x["hooks"]["Stop"] for h in g["hooks"])
-assert any(g.get("matcher") == "apply_patch|Edit|Write" and any("hunk-autodiff.sh" in h.get("command", "") for h in g["hooks"]) for g in x["hooks"]["PostToolUse"])
-assert {"UserPromptSubmit", "Stop", "Notification", "SessionEnd", "SessionStart", "PostToolUse"} <= set(c["hooks"])
-assert {"UserPromptSubmit", "PermissionRequest", "Stop", "SessionEnd", "SessionStart", "PostToolUse"} <= set(x["hooks"])
+assert {"UserPromptSubmit", "Stop", "Notification", "SessionEnd", "SessionStart"} <= set(c["hooks"])
+assert {"UserPromptSubmit", "PermissionRequest", "Stop", "SessionEnd", "SessionStart"} <= set(x["hooks"])
 session_start = [h.get("command", "") for g in x["hooks"]["SessionStart"] for h in g["hooks"]]
 assert sum("zellij-origin.sh" in command for command in session_start) == 1
 assert sum("zellij-agent-status.sh" in command for command in session_start) == 1

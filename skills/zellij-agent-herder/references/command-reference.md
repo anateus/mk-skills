@@ -8,8 +8,26 @@ Verified against a recent **zellij 0.45.0 development build containing [zellij-o
 - `pane_id` is per-session, monotonic, never reused within a session's life, **never stable across restarts** (a new session starts fresh at `terminal_0`/`plugin_0`).
 - `list-panes -j` reports `id` as a **bare int**; `zj.sh` normalizes it to `terminal_<n>` (or `plugin_<n>` for plugin panes — zellij keeps separate id counters per type, so `is_plugin` disambiguates a `terminal_2` from a `plugin_2`) everywhere. `-p terminal_<n>` and `-p <n>` are both accepted by zellij.
 - `zj.sh` is sourced into your shell (SKILL.md) under **bash/zsh** — no bash-only array indexing or `trap RETURN`. **From fish (or any non-POSIX shell)** you cannot source it; instead invoke a helper directly via the dispatcher: `bash "<dir>/zj.sh" <helper> <args...>` (e.g. `bash "<dir>/zj.sh" zj_spawn -n worker -- bash`). The dispatcher only fires when the file is executed, never when sourced.
-- Session targeting is the **global** flag before the subcommand: `zellij --session <name> action <cmd>`, or the `ZELLIJ_SESSION_NAME` env var. `action` has no independent `--session` flag. `zj.sh` uses `ZJ_SESSION` (defaults to `$ZELLIJ_SESSION_NAME`).
+- Session targeting is the **global** flag before the subcommand: `zellij --session <name> action <cmd>`, or the `ZELLIJ_SESSION_NAME` env var. `action` has no independent `--session` flag. `zj.sh` uses `ZJ_SESSION` (defaults to `$ZELLIJ_SESSION_NAME`) and resolves it against live sockets before the first call (see below).
 - `--name`/`-n` sets the pane **title only** — it is NOT addressable. Resolve name→id via `zj_resolve_id` (matches the full title or the base before `" · "`).
+
+## Session and socket resolution
+
+Zellij resolves its socket directory from `ZELLIJ_SOCKET_DIR` when set, else `$TMPDIR/zellij-$UID`, holding `contract_version_1/` since Zellij 0.44. Two failures follow from trusting the environment blindly: a harness that overrides `TMPDIR` for its subprocesses makes `zellij` look in the wrong directory, and a long-lived host process can carry a `ZELLIJ_SESSION_NAME` whose session no longer exists.
+
+Before its first call, `zj.sh` runs `_zj_target`, which asks `hunk-stream.py resolve` for a target and then uses it for every `zellij` invocation:
+
+```bash
+python3 "<skill-base-dir>/scripts/hunk-stream.py" resolve --session "$ZJ_SESSION" --pane "$ZELLIJ_PANE_ID"
+# socket_dir=<dir or empty>
+# session=<resolved name>
+```
+
+Resolution order: the requested session wherever a live socket exists; else, when the process is inside Zellij (`$ZELLIJ` is set), the sole live session, or the one live session whose pane list contains `ZELLIJ_PANE_ID`; else no change. It never guesses between several candidates, and it never adopts another session outside Zellij. An explicit `ZELLIJ_SOCKET_DIR` is authoritative and suppresses the other probe locations. `hunk-stream.py` applies the same resolution to its own `zellij` calls, so it works when invoked directly.
+
+| Helper | Signature → result |
+|---|---|
+| `hunk-stream.py resolve` | `resolve [--session NAME] [--pane ID]` → prints `socket_dir=` and `session=` for the resolved target. |
 
 ## `zj.sh` helper signatures
 

@@ -22,19 +22,15 @@ for arg in "$@"; do
 done
 
 configure_host() {
-  local host="$1" root config async matcher events origin_status
+  local host="$1" root config events origin_status
   if [ "$host" = claude ]; then
     root="${CLAUDE_CONFIG_DIR:-$HOME/.claude}"
     config="$root/settings.json"
-    async=true
-    matcher='Edit|Write|MultiEdit|NotebookEdit'
     events='UserPromptSubmit,Stop,Notification,SessionEnd'
     origin_status=false
   else
     root="${CODEX_CONFIG_DIR:-$HOME/.codex}"
     config="$root/hooks.json"
-    async=false
-    matcher='apply_patch|Edit|Write'
     events='UserPromptSubmit,PermissionRequest,Stop,SessionEnd'
     origin_status=true
   fi
@@ -57,8 +53,7 @@ configure_host() {
   cp "$config" "$backup"
 
   ZAH_ACTION="$ACTION" ZAH_HOST_NAME="$host" ZAH_HOOKS_DIR="$hooks_dir" \
-    ZAH_ASYNC="$async" ZAH_MATCHER="$matcher" ZAH_STATUS_EVENTS="$events" \
-    ZAH_ORIGIN_STATUS="$origin_status" python3 - "$config" <<'PY'
+    ZAH_STATUS_EVENTS="$events" ZAH_ORIGIN_STATUS="$origin_status" python3 - "$config" <<'PY'
 import json, os, shlex, sys
 
 path = sys.argv[1]
@@ -134,21 +129,15 @@ def remove_owned():
 
 removed = remove_owned()
 if action == "install":
-    def add(event, name, matcher=None, asynchronous=False):
+    def add(event, name):
         entry = {"type": "command", "command": commands[name], "timeout": 3 if event == "SessionEnd" else 10}
-        if asynchronous:
-            entry["async"] = True
-        group = {"hooks": [entry]}
-        if matcher is not None:
-            group["matcher"] = matcher
-        hooks.setdefault(event, []).append(group)
+        hooks.setdefault(event, []).append({"hooks": [entry]})
 
     for event in os.environ["ZAH_STATUS_EVENTS"].split(","):
         add(event, "zellij-agent-status.sh")
     add("SessionStart", "zellij-origin.sh")
     if os.environ["ZAH_ORIGIN_STATUS"] == "true":
         add("SessionStart", "zellij-agent-status.sh")
-    add("PostToolUse", "hunk-autodiff.sh", os.environ["ZAH_MATCHER"], os.environ["ZAH_ASYNC"] == "true")
 elif not removed:
     raise SystemExit(0)
 

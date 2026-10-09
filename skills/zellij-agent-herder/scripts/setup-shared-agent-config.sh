@@ -108,10 +108,6 @@ Keep linked facts consistent: when correcting a fact, update both known copies t
 
 Keep the existing Jcode startup and session-retention hooks as a secondary recovery layer. They are not a two-way memory synchronizer, and their observer output does not enter Jcode's prompt. Explicit recall and milestone writes remain necessary. Do not replace existing hook commands when adding another integration. Account, provider, secret, and customer-data restrictions apply to both stores and their background inference routes.
 </important>
-
-<important if="you are inside a Zellij session and have just finished a coding task with changes to review">
-Use the zellij-agent-herder work-stream-aware Hunk review flow to open or update the stream's review pane proactively. Before reviewing the live session, run `hunk skill path` and read the returned skill completely so the review follows the installed Hunk version's current guidance. Keep review associated with the originating work stream and do not wait for the user to request it.
-</important>
 EOF
 
 backup_if_changed "$CANONICAL" "$GUIDANCE_TMP"

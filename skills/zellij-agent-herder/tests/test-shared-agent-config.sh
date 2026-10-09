@@ -25,10 +25,6 @@ cat > "$CLAUDE/CLAUDE.md" <<'EOF'
 For all coding tasks use your judgement to delegate to an appropriate lower power model.
 </important>
 
-<important if="you are inside a zellij session and have just finished a coding task with changes to review">
-Use the zellij-agent-herder skill to open /hunk-review.
-</important>
-
 <important if="you are about to save a memory, recall past context, or decide which memory system to use">
 Use Hindsight MCP tools and bank claude_code as primary memory.
 </important>
@@ -99,13 +95,11 @@ test "$(cat "$SENTINEL")" = 'sentinel must remain unchanged'
 canonical_backup=$(find "$AGENTS" -maxdepth 1 -name 'AGENTS.md.bak.*' -print -quit)
 test -L "$canonical_backup"
 test "$(readlink "$canonical_backup")" = "$SENTINEL"
-test "$(grep -c '<important if=' "$CANONICAL")" -eq 3
+test "$(grep -c '<important if=' "$CANONICAL")" -eq 2
 grep -q 'Verify from the inside' "$CANONICAL"
 grep -q 'Hindsight' "$CANONICAL"
 grep -q 'claude_code' "$CANONICAL"
-grep -q 'work stream' "$CANONICAL"
-grep -q 'Hunk' "$CANONICAL"
-grep -q 'hunk skill path' "$CANONICAL"
+if grep -Eqi 'hunk|work stream|coding task with changes to review' "$CANONICAL"; then exit 1; fi
 grep -Fq 'In Jcode, keep native automatic memory enabled' "$CANONICAL"
 grep -Fq 'coarser, explicit cross-harness knowledge base' "$CANONICAL"
 grep -Fq 'page or document ID' "$CANONICAL"

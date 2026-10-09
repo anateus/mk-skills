@@ -48,8 +48,32 @@ _ZJ_SCRIPT_DIR="$(cd "$(dirname "$_ZJ_SCRIPT_PATH")" && pwd -P)"
 _ZJ_HUNK_STREAM="$_ZJ_SCRIPT_DIR/hunk-stream.py"
 
 _zj() {  # run a zellij action against the target session
+  _zj_target
   if [ -n "${ZJ_SESSION:-}" ]; then zellij --session "$ZJ_SESSION" action "$@"
   else zellij action "$@"; fi
+}
+
+# _zj_target resolves the live socket directory and session once per shell. A
+# long-lived host can carry a stale ZELLIJ_SESSION_NAME, and a harness that
+# overrides TMPDIR for its subprocesses makes plain `zellij` calls miss the
+# socket directory entirely (Zellij 0.44+ keeps sessions under
+# <socket dir>/contract_version_1). Resolution is best-effort: on any failure the
+# caller falls back to the requested session name and the inherited environment.
+_zj_target() {
+  [ -n "${_ZJ_TARGET_DONE:-}" ] && return 0
+  _ZJ_TARGET_DONE=1
+  command -v zellij >/dev/null 2>&1 || return 0
+  [ -f "$_ZJ_HUNK_STREAM" ] || return 0
+  local resolved dir session
+  resolved="$(python3 "$_ZJ_HUNK_STREAM" resolve --session "${ZJ_SESSION:-}" --pane "${ZELLIJ_PANE_ID:-}" 2>/dev/null)" || return 0
+  dir="$(printf '%s\n' "$resolved" | sed -n 's/^socket_dir=//p')"
+  session="$(printf '%s\n' "$resolved" | sed -n 's/^session=//p')"
+  [ -n "$session" ] && ZJ_SESSION="$session"
+  if [ -n "$dir" ]; then
+    _ZJ_SOCKET_DIR="$dir"
+    export ZELLIJ_SOCKET_DIR="$dir"
+  fi
+  return 0
 }
 
 # Emit each pane object from `list-panes -j` as one JSON line, id normalized to terminal_N.
@@ -270,6 +294,7 @@ _zj_stream() {
     || { echo "$caller: hunk not on PATH" >&2; return 2; }
   root="$(cd "$root" 2>/dev/null && pwd -P)" \
     || { echo "$caller: root not found: $requested_root" >&2; return 1; }
+  _zj_target
   [ -n "${ZJ_SESSION:-}" ] \
     || { echo "$caller: ZJ_SESSION is not set" >&2; return 1; }
   local parent="${ZELLIJ_PANE_ID:-terminal_0}" output

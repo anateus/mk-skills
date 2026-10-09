@@ -10,6 +10,7 @@ import hashlib
 import json
 import os
 import re
+import stat
 import subprocess
 import sys
 import tempfile
@@ -455,12 +456,149 @@ def edit_payload(payload: dict[str, Any]) -> str:
     return ensure_stream(session, parent, root, base, "worktree", None, False)
 
 
-def zellij(session: str, args: list[str]) -> str:
+def _zellij_raw(session: str, args: list[str], socket_dir: str | None = None) -> str:
+    env = dict(os.environ)
+    if socket_dir:
+        env["ZELLIJ_SOCKET_DIR"] = socket_dir
     result = subprocess.run(
         ["zellij", "--session", session, "action", *args],
-        check=True, stdout=subprocess.PIPE, text=True, timeout=5,
+        check=True, stdout=subprocess.PIPE, text=True, timeout=5, env=env,
     )
     return result.stdout.strip()
+
+
+def socket_dirs() -> list[str]:
+    """Candidate Zellij socket directories, most explicit first.
+
+    Zellij resolves its socket directory from ZELLIJ_SOCKET_DIR when set, else
+    $TMPDIR/zellij-$UID (holding contract_version_1/ since Zellij 0.44). A harness
+    that overrides TMPDIR for its subprocesses breaks the plain lookup, so probe the
+    platform locations too. An explicit ZELLIJ_SOCKET_DIR is authoritative.
+    """
+    explicit = os.environ.get("ZELLIJ_SOCKET_DIR")
+    if explicit:
+        return [os.path.normpath(explicit)]
+    uid = os.getuid()
+    candidates = []
+    tmp = os.environ.get("TMPDIR")
+    if tmp:
+        candidates.append(os.path.join(tmp, f"zellij-{uid}"))
+    try:
+        probe = subprocess.run(
+            ["getconf", "DARWIN_USER_TEMP_DIR"],
+            check=True, stdout=subprocess.PIPE, text=True, timeout=2,
+        ).stdout.strip()
+    except (OSError, subprocess.SubprocessError):
+        probe = ""
+    if probe:
+        candidates.append(os.path.join(probe, f"zellij-{uid}"))
+    candidates.append(f"/tmp/zellij-{uid}")
+    seen: set[str] = set()
+    ordered: list[str] = []
+    for candidate in candidates:
+        candidate = os.path.normpath(candidate)
+        if candidate not in seen:
+            seen.add(candidate)
+            ordered.append(candidate)
+    return ordered
+
+
+def live_sessions(socket_dir: str) -> list[str]:
+    """Names of live sessions whose socket exists in this directory."""
+    for base in (os.path.join(socket_dir, "contract_version_1"), socket_dir):
+        names = []
+        try:
+            entries = os.listdir(base)
+        except OSError:
+            continue
+        for name in sorted(entries):
+            try:
+                mode = os.stat(os.path.join(base, name)).st_mode
+            except OSError:
+                continue
+            if stat.S_ISSOCK(mode):
+                names.append(name)
+        if names:
+            return names
+    return []
+
+
+def session_pane_ids(socket_dir: str, session: str) -> set[str]:
+    try:
+        value = json.loads(_zellij_raw(session, ["list-panes", "-j"], socket_dir))
+    except (OSError, ValueError, subprocess.SubprocessError):
+        return set()
+    items: list[Any] = []
+    if isinstance(value, dict):
+        for entry in value.values():
+            items.extend(entry if isinstance(entry, list) else [entry])
+    elif isinstance(value, list):
+        items = value
+    ids: set[str] = set()
+    for item in items:
+        if isinstance(item, dict) and isinstance(item.get("id"), (str, int)):
+            raw = item["id"]
+            ids.add(
+                f"{'plugin' if item.get('is_plugin') else 'terminal'}_{raw}"
+                if isinstance(raw, int) else str(raw)
+            )
+    return ids
+
+
+def resolve_target(session: str, pane: str | None) -> tuple[str | None, str]:
+    """Resolve (socket_dir, session) for the requested Zellij session.
+
+    Prefers the requested session wherever a live socket exists. When that name is
+    stale (a long-lived host process can outlive its session) and this process is
+    inside Zellij, adopts the single live session that owns ZELLIJ_PANE_ID, else the
+    sole live session. Never guesses between several candidates; falls back to the
+    requested name with no socket dir.
+    """
+    directories = socket_dirs()
+    for directory in directories:
+        if session and session in live_sessions(directory):
+            return directory, session
+    # Recovery only makes sense inside a pane, where ZELLIJ_PANE_ID is meaningful.
+    # A caller outside Zellij (or a synthetic harness) gets its requested name back.
+    if "ZELLIJ" not in os.environ:
+        return None, session
+    live = [(directory, name) for directory in directories for name in live_sessions(directory)]
+    if not live:
+        return None, session
+    if len(live) == 1:
+        return _adopt(session, live[0])
+    if pane:
+        wanted = normalize_parent(pane)
+        matches = [entry for entry in live if wanted in session_pane_ids(*entry)]
+        if len(matches) == 1:
+            return _adopt(session, matches[0])
+    return None, session
+
+
+def _adopt(session: str, target: tuple[str, str]) -> tuple[str, str]:
+    directory, name = target
+    if session and session != name:
+        sys.stderr.write(
+            f"hunk-stream: session {session!r} is not live; using {name!r} in {directory}\n"
+        )
+    return directory, name
+
+
+_TARGET_CACHE: dict[str, tuple[str | None, str]] = {}
+
+
+def zellij_target(session: str) -> tuple[str | None, str]:
+    """Return the cached (socket_dir, resolved_session) for a requested session."""
+    cached = _TARGET_CACHE.get(session)
+    if cached is None:
+        cached = resolve_target(session, os.environ.get("ZELLIJ_PANE_ID"))
+        _TARGET_CACHE[session] = cached
+    return cached
+
+
+def zellij(session: str, args: list[str]) -> str:
+    socket_dir, resolved = zellij_target(session)
+    return _zellij_raw(resolved, args, socket_dir)
 
 
 def panes(session: str) -> list[dict[str, Any]]:
@@ -606,7 +744,11 @@ def spawn_hunk(request: dict[str, Any]) -> tuple[str, int]:
             raise RuntimeError(f"new review tab must contain exactly one pane: {returned!r}")
         time.sleep(0.25)
     if len(matches) != 1 or not isinstance(tab_id, int):
-        raise RuntimeError(f"new review tab must contain exactly one pane: {returned!r}")
+        raise RuntimeError(
+            f"new review tab must contain exactly one pane: {returned!r} "
+            "(Zellij only materialises new tabs and panes after a client attaches; "
+            "check that a client is attached to this session)"
+        )
     spawned = pane_id(matches[0])
     zellij(session, ["rename-pane", "-p", spawned, review_title(session, parent)])
     return spawned, tab_id
@@ -736,6 +878,9 @@ def main() -> None:
     rollup.add_argument("--label", required=True)
     rollup.add_argument("--child-pane", action="append", default=[])
     commands.add_parser("edit")
+    resolve = commands.add_parser("resolve")
+    resolve.add_argument("--session", default="")
+    resolve.add_argument("--pane")
     args = parser.parse_args()
     if args.command == "signature":
         print(diff_signature(args.root, args.base))
@@ -755,6 +900,10 @@ def main() -> None:
             args.session, args.parent, args.root, args.base, args.label,
             args.child_pane,
         ))
+    elif args.command == "resolve":
+        socket_dir, session = resolve_target(args.session, args.pane)
+        print(f"socket_dir={socket_dir or ''}")
+        print(f"session={session or ''}")
     else:
         try:
             payload = json.load(sys.stdin)

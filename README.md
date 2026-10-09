@@ -84,9 +84,9 @@ For Zellij pane-title status and auto-diff setup, read [`lifecycle-hooks.md`](sk
 
 ### Optional zellij-agent-herder setup
 
-The herder keeps Claude/Codex edits in origin-aware Hunk review streams with worktree roll-up. It requires a recent Zellij build containing [`new-pane --no-focus`](https://github.com/zellij-org/zellij/pull/5346) and Hunk 0.17 or newer for live diffs. Because builds containing that post-release change can still report `0.45.0`, verify the flag with `zellij action new-pane --help`.
+The herder opens origin-aware Hunk review streams with worktree roll-up for Claude/Codex work on request. It requires a recent Zellij build containing [`new-pane --no-focus`](https://github.com/zellij-org/zellij/pull/5346) and Hunk 0.17 or newer for live diffs. Because builds containing that post-release change can still report `0.45.0`, verify the flag with `zellij action new-pane --help`.
 
-The pane-title status, origin tracking, and stream-aware Hunk review features use Claude Code and Codex lifecycle hooks. Install both host configurations once:
+The pane-title status and origin-tracking features use Claude Code and Codex lifecycle hooks. Review streams are not opened automatically; the helpers do that when you ask. Install both host configurations once:
 
 ```bash
 bash "<skill-base-dir>/scripts/install-hooks.sh" --all

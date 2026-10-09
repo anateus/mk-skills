@@ -23,7 +23,7 @@ At completion, run:
 zj_review_stream <repo_root> "$BASE" [label]
 ```
 
-This reuses the live stream or explicitly reopens an unchanged stream that a human dismissed. Automatic lifecycle hooks keep that dismissal until the diff changes.
+This reuses the live stream or explicitly reopens an unchanged stream that a human dismissed. Because the installer no longer registers a review hook, nothing reopens it automatically; run this command (or `zj_watch_worktree`) when you want a review surface.
 
 ## Review handoff
 

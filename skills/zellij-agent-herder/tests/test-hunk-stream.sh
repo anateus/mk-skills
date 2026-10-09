@@ -8,6 +8,8 @@ STATUS="$ROOT_DIR/skills/zellij-agent-herder/scripts/zellij-agent-status.sh"
 ZJ="$ROOT_DIR/skills/zellij-agent-herder/scripts/zj.sh"
 T="$(mktemp -d)"; trap 'rm -rf "$T"' EXIT
 export HOME="$T/home" XDG_CACHE_HOME="$T/cache"; mkdir -p "$HOME"
+# Pin the socket directory so session resolution never probes the host's real Zellij.
+export ZELLIJ_SOCKET_DIR="$T/zellij-sockets"; mkdir -p "$ZELLIJ_SOCKET_DIR"
 git -C "$T" init -q repo
 git -C "$T/repo" config user.email test@example.com
 git -C "$T/repo" config user.name Test

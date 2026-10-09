@@ -111,7 +111,8 @@ class RealChildTests(unittest.TestCase):
         self.env.update({
             "PATH": f"{self.bin}:{os.environ['PATH']}", "HOME": str(self.root),
             "XDG_CACHE_HOME": str(self.root / "cache"), "ZELLIJ_PANE_ID": "10",
-            "ZJ_SESSION": "a", "TEST_ROOT": str(self.root),
+            "ZELLIJ_SOCKET_DIR": str(self.root / "zellij-sockets"), "ZJ_SESSION": "a",
+            "TEST_ROOT": str(self.root),
             "ZAH_HUNK_SAMPLE_SECONDS": "0.04", "ZAH_HUNK_RSS_MIB": "1",
             "ZAH_HUNK_PRESSURE_SAMPLES": "3", "ZAH_HUNK_RESUME_GRACE_SECONDS": "2",
             "ZAH_HUNK_RESTART_DELAY_SECONDS": "0.08", "ZAH_HUNK_STOP_GRACE_SECONDS": "0.1",
