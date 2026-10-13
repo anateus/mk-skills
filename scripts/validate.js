@@ -49,6 +49,26 @@ for (const check of checks) {
 }
 
 const configuredValidator = process.env.PLUGIN_VALIDATOR;
+const claudeCli = process.env.CLAUDE_CLI || 'claude';
+const claudeProbe = spawnSync(claudeCli, ['--version'], { cwd: root, encoding: 'utf8' });
+const defaultClaudeCliMissing = !process.env.CLAUDE_CLI && claudeProbe.error?.code === 'ENOENT';
+if (defaultClaudeCliMissing) {
+  process.stdout.write('\n==> Claude plugin validation\nSKIP Claude plugin checks: Claude CLI absent; set CLAUDE_CLI to enable them.\n');
+} else if (claudeProbe.error || claudeProbe.status !== 0) {
+  if (claudeProbe.stdout) process.stdout.write(claudeProbe.stdout);
+  if (claudeProbe.stderr) process.stderr.write(claudeProbe.stderr);
+  if (claudeProbe.error) process.stderr.write(`${claudeProbe.error.message}\n`);
+  process.exit(claudeProbe.status || 1);
+} else {
+  for (const [label, args] of [
+    ['Claude plugin package', ['plugin', 'validate', '.', '--strict']],
+    ['Claude plugin manifest', ['plugin', 'validate', '.claude-plugin/plugin.json', '--strict']],
+  ]) {
+    const status = run(label, claudeCli, args);
+    if (status !== 0) process.exit(status);
+  }
+}
+
 const systemValidator = path.join(
   os.homedir(), '.codex', 'skills', '.system', 'plugin-creator', 'scripts', 'validate_plugin.py',
 );
@@ -63,7 +83,7 @@ if (fs.existsSync(pluginValidator) && systemDependenciesAvailable) {
   const reason = fs.existsSync(pluginValidator)
     ? 'PyYAML unavailable'
     : 'validator file absent';
-  process.stdout.write(`\n==> Plugin schema\nSKIP plugin-schema check: ${reason}; set PLUGIN_VALIDATOR to enable it.\n`);
+  process.stdout.write(`\n==> Codex plugin schema\nSKIP plugin-schema check: ${reason}; set PLUGIN_VALIDATOR to enable it.\n`);
 }
 
 process.exit(run('Diff whitespace', 'git', ['diff', '--check']));

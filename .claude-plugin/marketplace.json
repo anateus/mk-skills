@@ -1,0 +1,14 @@
+{
+  "name": "mk-skills",
+  "description": "Curated software-development skills for Claude Code.",
+  "owner": {
+    "name": "Michael Katsevman"
+  },
+  "plugins": [
+    {
+      "name": "mk-skills",
+      "source": "./",
+      "description": "Composable engineering skills with selective and strict operating profiles."
+    }
+  ]
+}

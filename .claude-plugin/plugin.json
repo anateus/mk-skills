@@ -1,0 +1,12 @@
+{
+  "name": "mk-skills",
+  "version": "0.2.0",
+  "description": "Curated, selectively invoked software-development skills for Claude Code and Codex.",
+  "author": {
+    "name": "Michael Katsevman",
+    "email": "michael@domu.ai",
+    "url": "https://github.com/anateus"
+  },
+  "repository": "https://github.com/anateus/mk-skills",
+  "license": "MIT"
+}

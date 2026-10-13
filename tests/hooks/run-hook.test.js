@@ -96,7 +96,7 @@ test('plugin manifest and discovered hook declaration use the supported schemas'
   assert.equal(groups[0].matcher, 'startup|resume|clear|compact');
   assert.deepEqual(groups[0].hooks, [{
     type: 'command',
-    command: 'node "${PLUGIN_ROOT}/hooks/run-hook.js"',
+      command: 'node "${CLAUDE_PLUGIN_ROOT:-$PLUGIN_ROOT}/hooks/run-hook.js"',
     timeout: 10,
   }]);
 });

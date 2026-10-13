@@ -26,9 +26,42 @@ Use one concrete value, for example `MK_SKILLS_MODE=strict codex`. Until reasoni
 
 Without an override, conservative small-model markers (`mini`, `nano`, and `haiku`) and legacy GPT-3.x, Claude 2, and Claude 3 families select strict mode automatically. Other and unknown model identifiers remain selective; adjust `config/mode-policy.json` when a host introduces a new stable model family.
 
-## Claude Code adapter
+## Claude Code plugin
 
-Claude support is a required deliverable, not a separate skill fork. Package or link the repository as a Claude plugin and expose [`adapters/claude/hooks.json`](adapters/claude/hooks.json) as its hook declaration. It invokes the same runners and configuration through `CLAUDE_PLUGIN_ROOT`, so both hosts use identical mode and subagent artifact behavior. Review both hook commands before enabling the plugin. Startup, resume, clear, and compact use the shared selector where Claude supports those `SessionStart` sources.
+Add the repository as a marketplace, then install its plugin:
+
+```text
+/plugin marketplace add anateus/mk-skills
+/plugin install mk-skills@mk-skills
+```
+
+The current Claude Code CLI also supports this one-step install:
+
+```text
+/plugin install mk-skills --marketplace anateus/mk-skills
+```
+
+The marketplace catalog lists this repository root (`./`) as the `mk-skills` plugin source. The `.claude-plugin/marketplace.json` and `.claude-plugin/plugin.json` manifests provide the marketplace and plugin metadata. Claude Code discovers skills from the plugin, so invoke them by namespaced name, for example `/mk-skills:planning-work`.
+
+The plugin uses [`hooks/hooks.json`](hooks/hooks.json), shared with Codex. The hook declarations expand `CLAUDE_PLUGIN_ROOT` or `PLUGIN_ROOT`; the runner resolves `PLUGIN_ROOT` first, then `CLAUDE_PLUGIN_ROOT`. Node.js is required to run the hooks. Review the hook commands before enabling the plugin. No extra hook declaration is needed.
+
+For local marketplace development, add this checkout, validate the marketplace and plugin manifests with strict checks, then install the plugin from the local marketplace:
+
+```bash
+claude plugin marketplace add ./path/to/mk-skills
+claude plugin validate --strict ./path/to/mk-skills
+claude plugin validate --strict ./path/to/mk-skills/.claude-plugin/plugin.json
+claude plugin install mk-skills@mk-skills
+```
+
+Restart Claude Code after plugin updates to load the new version. To update a marketplace installation, refresh the catalog and then update the plugin:
+
+```text
+/plugin marketplace update mk-skills
+/plugin update mk-skills@mk-skills
+```
+
+Release the Claude `.claude-plugin/plugin.json` version in alignment with the Codex `.codex-plugin/plugin.json` version. Initially, bump both versions together for each release.
 
 ## Subagent artifacts
 
@@ -55,13 +88,13 @@ The installer preserves unrelated hooks and links Claude Code and Codex to the s
 pnpx skills update -g -y
 ```
 
-Review the updated runner, then start new Claude Code and Codex sessions. Use Codex `/hooks` to confirm the hook is enabled; Codex requires another trust decision if its installed definition hash changes. Rerun the installer only after changing installation scope or when a release changes lifecycle event wiring. `pnpx skills update` updates skill directories only, so it cannot update a separately cached plugin installation.
+Review the updated runner, then start new Claude Code and Codex sessions. Use Codex `/hooks` to confirm the hook is enabled; Codex requires another trust decision if its installed definition hash changes. Rerun the installer only after changing installation scope or when a release changes lifecycle event wiring. `pnpx skills update` updates skill directories only, so it does not update a separately cached plugin installation.
 
-Use either plugin-provided artifact hooks or the standalone installer. Enabling both runs the same lifecycle handler twice.
+Use either plugin-provided artifact hooks or the standalone installer. Enabling both runs the same lifecycle handler twice. The plugin's artifact hooks are enabled by default, so choose the standalone installer only when you are not using the plugin.
 
 The update command does not install skills added to the repository after your original installation. If `subagent-artifact-discipline` is not present under `~/.agents/skills`, run the one-time `skills add` command above before the installer.
 
-For a project-only skills installation without hooks, use `pnpx skills add anateus/mk-skills`. Ordinary execution skills are self-contained and work offline after installation. Network access is used only for deliberate upstream curation; [`curating-skills`](skills/curating-skills/SKILL.md) additionally requires an mk-skills source checkout, reviews pinned sources, and produces a manual merge report without overwriting local skills.
+For a project-only skills installation without hooks, use `pnpx skills add anateus/mk-skills`. Don’t install skills separately with that command when using the plugin, or you may get duplicate skill entries. Ordinary execution skills are self-contained and work offline after installation. Network access is used only for deliberate upstream curation; [`curating-skills`](skills/curating-skills/SKILL.md) also requires an mk-skills source checkout, reviews pinned sources, and produces a manual merge report without overwriting local skills.
 
 ## Validate
 
