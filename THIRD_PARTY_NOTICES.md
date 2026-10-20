@@ -30,6 +30,34 @@ The above copyright notice and this permission notice shall be included in all c
 
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+## Spec Kitty Open Packs
+
+Source: https://github.com/spec-kitty/spec-kitty-open-packs.git
+
+The software-development mission prompts, templates, and expected-artifact manifest moved out of Spec Kitty core. `config/sources.yaml` tracks this canonical content separately from the core loader and its dependency pin.
+
+MIT License
+
+Copyright (c) 2026 Spec Kitty LLC and the Spec Kitty contributors
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
 ## Superpowers
 
 Source: https://github.com/obra/superpowers
@@ -48,7 +76,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 Source: https://github.com/blader/humanizer
 
-Unlike the sources above, `skills/humanizer` vendors upstream content: the full pattern catalog is kept verbatim in `references/signs-of-ai-writing.md` (with the upstream LICENSE beside it), under a condensed local SKILL.md entry point. Upstream version at review: 3.0.0.
+Unlike the sources above, `skills/humanizer` vendors upstream content: the full pattern catalog is kept verbatim in `references/signs-of-ai-writing.md` (with the upstream LICENSE beside it), under a condensed local SKILL.md entry point. Upstream version at review: 3.1.0.
 
 MIT License
 
@@ -77,3 +105,31 @@ SOFTWARE.
 Source: https://github.com/antithesishq/antithesis-skills
 
 `skills/analyzing-codebase` adapts the `antithesis-research` workflow into a platform-neutral testing-analysis mode. The upstream project is licensed under Apache License 2.0; a copy is retained at `skills/analyzing-codebase/LICENSE`.
+
+## Cursor Team Kit
+
+Source: https://github.com/cursor/plugins
+
+The reviewed scope is `cursor-team-kit/skills`, licensed by `cursor-team-kit/LICENSE`. Local skills adapt selected verification ideas rather than copying Cursor workflows or granting permission to run their external actions.
+
+MIT License
+
+Copyright (c) 2026 Cursor
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.

@@ -14,7 +14,7 @@ Cover the following in the smallest useful specification. These are coverage che
 - **Problem:** who or what is affected, and why the current state is insufficient.
 - **Behavior:** externally observable outcomes, including important failure behavior.
 - **Constraints:** compatibility, security, performance, dependency, and operational boundaries that actually apply.
-- **Acceptance criteria:** concrete, independently checkable statements.
+- **Acceptance criteria:** concrete, independently checkable statements. A criterion for changed behavior should fail if nothing changes; label existing-behavior preservation separately.
 - **Seams:** public behavior or integration boundaries where acceptance can be tested and verified.
 - **Non-goals:** nearby work deliberately outside scope.
 

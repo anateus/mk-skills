@@ -239,6 +239,760 @@
         "python3 -B -m unittest tests.curation.test_review_upstreams -v",
         "node scripts/validate.js"
       ]
+    },
+    {
+      "source": "matt-pocock-skills",
+      "fromCommit": "3cca18b368ae95cdbdebbff572ccafa662551015",
+      "toCommit": "5beb35b040e3de97e54fa9e386d7e42d15c295c2",
+      "decision": "accept",
+      "disposition": "adapted",
+      "localSkills": [
+        "reviewing-code"
+      ],
+      "summary": "Search relevant repository writing-standard files before evaluating standards.",
+      "rationale": "Upstream skills/engineering/code-review/SKILL.md adds explicit standards discovery. Local reviewing-code:23 applies standards but does not say how to find them. Adapt narrowly and preserve proportional review topology.",
+      "validation": [
+        "node scripts/validate.js",
+        "python3 -B -m unittest tests.curation.test_review_upstreams -v",
+        "docs/reviews/2026-10-20-upstream-curation.md"
+      ]
+    },
+    {
+      "source": "matt-pocock-skills",
+      "fromCommit": "3cca18b368ae95cdbdebbff572ccafa662551015",
+      "toCommit": "5beb35b040e3de97e54fa9e386d7e42d15c295c2",
+      "decision": "reject",
+      "disposition": "rejected",
+      "localSkills": [
+        "reviewing-code"
+      ],
+      "summary": "Do not require two foreground subagents or upstream-generated tracker docs for every review.",
+      "rationale": "Upstream code-review:13,59-61 assumes two agent axes and a setup-provided tracker. Local reviewing-code:33-35 scales passes and verifies peer findings; setup output is not a mk-skills runtime dependency.",
+      "validation": [
+        "node scripts/validate.js",
+        "python3 -B -m unittest tests.curation.test_review_upstreams -v",
+        "docs/reviews/2026-10-20-upstream-curation.md"
+      ]
+    },
+    {
+      "source": "matt-pocock-skills",
+      "fromCommit": "3cca18b368ae95cdbdebbff572ccafa662551015",
+      "toCommit": "5beb35b040e3de97e54fa9e386d7e42d15c295c2",
+      "decision": "accept",
+      "disposition": "adapted",
+      "localSkills": [
+        "diagnosing-bugs"
+      ],
+      "summary": "Before trusting a forced red, confirm the intended mutation actually landed.",
+      "rationale": "Upstream diagnosing-bugs/SKILL.md:125-130 guards against a false red; local diagnosis:12-19 required real failure evidence but not explicit mutation proof. Added only to diagnosing-bugs:19, because TDD already requires a red for the intended behavioral reason.",
+      "validation": [
+        "node scripts/validate.js",
+        "python3 -B -m unittest tests.curation.test_review_upstreams -v",
+        "docs/reviews/2026-10-20-upstream-curation.md"
+      ]
+    },
+    {
+      "source": "matt-pocock-skills",
+      "fromCommit": "3cca18b368ae95cdbdebbff572ccafa662551015",
+      "toCommit": "5beb35b040e3de97e54fa9e386d7e42d15c295c2",
+      "decision": "accept",
+      "disposition": "adapted",
+      "localSkills": [
+        "test-driven-development"
+      ],
+      "summary": "For consequential proposed test seams, state what each catches and misses.",
+      "rationale": "Upstream tdd/SKILL.md:24-30 adds tradeoffs. Local TDD:21 identifies the wrong change a test catches but not its blind spots. Keep proportional alternatives and avoid compulsory approval for each test.",
+      "validation": [
+        "node scripts/validate.js",
+        "python3 -B -m unittest tests.curation.test_review_upstreams -v",
+        "docs/reviews/2026-10-20-upstream-curation.md"
+      ]
+    },
+    {
+      "source": "matt-pocock-skills",
+      "fromCommit": "3cca18b368ae95cdbdebbff572ccafa662551015",
+      "toCommit": "5beb35b040e3de97e54fa9e386d7e42d15c295c2",
+      "decision": "reject",
+      "disposition": "rejected",
+      "localSkills": [
+        "implementing-work"
+      ],
+      "summary": "Do not add mandatory ticket-title lookup to the implementation skill.",
+      "rationale": "Upstream implement/SKILL.md:9 fetches a supplied ticket. Local implementing-work:12 already confirms scope, while tracker identity checks belong to configured tracker and agent assignment policy; the skill need not grow for this one route.",
+      "validation": [
+        "node scripts/validate.js",
+        "python3 -B -m unittest tests.curation.test_review_upstreams -v",
+        "docs/reviews/2026-10-20-upstream-curation.md"
+      ]
+    },
+    {
+      "source": "matt-pocock-skills",
+      "fromCommit": "3cca18b368ae95cdbdebbff572ccafa662551015",
+      "toCommit": "5beb35b040e3de97e54fa9e386d7e42d15c295c2",
+      "decision": "reject",
+      "disposition": "rejected",
+      "localSkills": [
+        "implementing-work",
+        "test-driven-development"
+      ],
+      "summary": "Do not import literal Skill-tool calls or unconditional TDD and code-review gates.",
+      "rationale": "Upstream implement/SKILL.md replaces slash mentions with host tool calls; local implementing-work:13-16 routes proportionally and does not own external lifecycle state. Mandatory seam approval is likewise disproportionate.",
+      "validation": [
+        "node scripts/validate.js",
+        "python3 -B -m unittest tests.curation.test_review_upstreams -v",
+        "docs/reviews/2026-10-20-upstream-curation.md"
+      ]
+    },
+    {
+      "source": "matt-pocock-skills",
+      "fromCommit": "3cca18b368ae95cdbdebbff572ccafa662551015",
+      "toCommit": "5beb35b040e3de97e54fa9e386d7e42d15c295c2",
+      "decision": "reject",
+      "disposition": "rejected",
+      "localSkills": [
+        "planning-work"
+      ],
+      "summary": "Do not put tracker-specific parent and blocker operations in the planning skill.",
+      "rationale": "Upstream to-tickets/SKILL.md:63,99-105 uses native sub-issues and blocker edges, but local planning-work:30 explicitly delegates tracker publication to repository/user policy. A conditional tracker command here would add instructions in the wrong layer.",
+      "validation": [
+        "node scripts/validate.js",
+        "python3 -B -m unittest tests.curation.test_review_upstreams -v",
+        "docs/reviews/2026-10-20-upstream-curation.md"
+      ]
+    },
+    {
+      "source": "matt-pocock-skills",
+      "fromCommit": "3cca18b368ae95cdbdebbff572ccafa662551015",
+      "toCommit": "5beb35b040e3de97e54fa9e386d7e42d15c295c2",
+      "decision": "accept",
+      "disposition": "no-local-change",
+      "localSkills": [
+        "planning-work",
+        "clarifying-work",
+        "handing-off-work"
+      ],
+      "summary": "Keep real references and distinct decision work; retain an appropriate temporary handoff location.",
+      "rationale": "Wayfinder/SKILL.md:65-68,115-124 avoids placeholder links and misclassified triage; local planning:22,28-30 and clarification:15 separate these concerns without importing a wayfinder. Upstream handoff/SKILL.md:8 clarifies TMPDIR/TEMP fallback; local handing-off-work:12 already uses an appropriate temporary location.",
+      "validation": [
+        "node scripts/validate.js",
+        "python3 -B -m unittest tests.curation.test_review_upstreams -v",
+        "docs/reviews/2026-10-20-upstream-curation.md"
+      ]
+    },
+    {
+      "source": "matt-pocock-skills",
+      "fromCommit": "3cca18b368ae95cdbdebbff572ccafa662551015",
+      "toCommit": "5beb35b040e3de97e54fa9e386d7e42d15c295c2",
+      "decision": "reject",
+      "disposition": "rejected",
+      "localSkills": [
+        "planning-work",
+        "adversarial-refinement",
+        "clarifying-work",
+        "diagnosing-bugs",
+        "test-driven-development"
+      ],
+      "summary": "Reject automatic wayfinder research pushes, universal yes-framed recommendations, and a forced GLOSSARY.md convention.",
+      "rationale": "Upstream wayfinder/SKILL.md:115 pushes research branches without PRs, grilling/SKILL.md:24 fixes answer polarity, and domain-modeling/setup plus diagnosis/TDD rename CONTEXT.md to GLOSSARY.md. Local plans do not authorize pushes, substantive choices should not be steered by polarity, and vocabulary sources are repository-specific.",
+      "validation": [
+        "node scripts/validate.js",
+        "python3 -B -m unittest tests.curation.test_review_upstreams -v",
+        "docs/reviews/2026-10-20-upstream-curation.md"
+      ]
+    },
+    {
+      "source": "matt-pocock-skills",
+      "fromCommit": "3cca18b368ae95cdbdebbff572ccafa662551015",
+      "toCommit": "5beb35b040e3de97e54fa9e386d7e42d15c295c2",
+      "decision": "accept",
+      "disposition": "adapted",
+      "localSkills": [
+        "learning-from-mistakes"
+      ],
+      "summary": "For observed mechanical mistakes, prefer an existing or new deterministic check over a prose rule.",
+      "rationale": "Upstream retro/SKILL.md:17-20, promoted into the plugin, now distinguishes existing unwired checks from new guardrails and mechanical from judgment failures. Local learning-from-mistakes:19-25 already insists on mechanisms and evaluation. Add only the specific check-selection distinction.",
+      "validation": [
+        "node scripts/validate.js",
+        "python3 -B -m unittest tests.curation.test_review_upstreams -v",
+        "docs/reviews/2026-10-20-upstream-curation.md"
+      ]
+    },
+    {
+      "source": "matt-pocock-skills",
+      "fromCommit": "3cca18b368ae95cdbdebbff572ccafa662551015",
+      "toCommit": "5beb35b040e3de97e54fa9e386d7e42d15c295c2",
+      "decision": "reject",
+      "disposition": "rejected",
+      "localSkills": [
+        "learning-from-mistakes"
+      ],
+      "summary": "Do not import automatic retros, unconditional writing-for-agents loading, or an absent linter as a universal defect.",
+      "rationale": "Upstream retro/SKILL.md:11,18 and ask-matt/SKILL.md:34,50 presume these steps. Local learning-from-mistakes:12-25 requires observed evidence, risk-based changes and conditional references; previous ledger rejected retro as an unrelated workflow.",
+      "validation": [
+        "node scripts/validate.js",
+        "python3 -B -m unittest tests.curation.test_review_upstreams -v",
+        "docs/reviews/2026-10-20-upstream-curation.md"
+      ]
+    },
+    {
+      "source": "matt-pocock-skills",
+      "fromCommit": "3cca18b368ae95cdbdebbff572ccafa662551015",
+      "toCommit": "5beb35b040e3de97e54fa9e386d7e42d15c295c2",
+      "decision": "reject",
+      "disposition": "rejected",
+      "localSkills": [
+        "reviewing-code"
+      ],
+      "summary": "Do not import the PR-body template as review behavior or require visuals and pseudo-test evidence in every PR.",
+      "rationale": "New plugin-exported pr/SKILL.md:12-37,152-170 is a PR authoring skill. Local reviewing-code is a review skill; Mike's writing profile:40-47 calls for linked tickets and exact merge gates. Before/after evidence and reversibility are useful candidates for future PR-authoring guidance, not proof that this template is a fit.",
+      "validation": [
+        "node scripts/validate.js",
+        "python3 -B -m unittest tests.curation.test_review_upstreams -v",
+        "docs/reviews/2026-10-20-upstream-curation.md"
+      ]
+    },
+    {
+      "source": "matt-pocock-skills",
+      "fromCommit": "3cca18b368ae95cdbdebbff572ccafa662551015",
+      "toCommit": "5beb35b040e3de97e54fa9e386d7e42d15c295c2",
+      "decision": "reject",
+      "disposition": "rejected",
+      "localSkills": [
+        "implementing-work",
+        "planning-work",
+        "reviewing-code"
+      ],
+      "summary": "Do not import the graduated implement-spec integration-branch and worktree/merger-agent protocol.",
+      "rationale": "The prior pin already had in-progress implement-spec. Current plugin.json exports the promoted version, which adds ancestry and tracker completion but still mandates branches, subagents, merged worktrees and final review. Local implementing-work:26-28 leaves lifecycle state to repository/user policy; prior ledger rejected importing implement-spec.",
+      "validation": [
+        "node scripts/validate.js",
+        "python3 -B -m unittest tests.curation.test_review_upstreams -v",
+        "docs/reviews/2026-10-20-upstream-curation.md"
+      ]
+    },
+    {
+      "source": "matt-pocock-skills",
+      "fromCommit": "3cca18b368ae95cdbdebbff572ccafa662551015",
+      "toCommit": "5beb35b040e3de97e54fa9e386d7e42d15c295c2",
+      "decision": "accept",
+      "disposition": "no-local-change",
+      "localSkills": [
+        "implementing-work",
+        "handing-off-work"
+      ],
+      "summary": "Retain policy-owned PR state and provenance pointers rather than adopting new workflow shells.",
+      "rationale": "Promoted implement-spec delays draft PR until after a first merge and makes PR creation conditional; local implementation:26-28 already defers PR lifecycle to policy and Mike's profile:40-47 reserves drafts for unfinished work. Chief-of-staff's dated, commit-cited historical claims and supersession fit local handing-off-work:16,20,24 stable identifiers and explicit verification provenance. Neither requires an imported skill.",
+      "validation": [
+        "node scripts/validate.js",
+        "python3 -B -m unittest tests.curation.test_review_upstreams -v",
+        "docs/reviews/2026-10-20-upstream-curation.md"
+      ]
+    },
+    {
+      "source": "matt-pocock-skills",
+      "fromCommit": "3cca18b368ae95cdbdebbff572ccafa662551015",
+      "toCommit": "5beb35b040e3de97e54fa9e386d7e42d15c295c2",
+      "decision": "reject",
+      "disposition": "rejected",
+      "localSkills": [
+        "planning-work",
+        "implementing-work",
+        "handing-off-work"
+      ],
+      "summary": "Do not import experimental chief-of-staff, compulsory subagents/wiki/schedules, or broad live-system access.",
+      "rationale": "chief-of-staff/SKILL.md:20-68 is in skills/in-progress and excluded by skills/in-progress/README.md and plugin.json. Its broad mandate conflicts with proportional local work and access boundaries; dated provenance is separable from that workflow.",
+      "validation": [
+        "node scripts/validate.js",
+        "python3 -B -m unittest tests.curation.test_review_upstreams -v",
+        "docs/reviews/2026-10-20-upstream-curation.md"
+      ]
+    },
+    {
+      "source": "matt-pocock-skills",
+      "fromCommit": "3cca18b368ae95cdbdebbff572ccafa662551015",
+      "toCommit": "5beb35b040e3de97e54fa9e386d7e42d15c295c2",
+      "decision": "accept",
+      "disposition": "no-local-change",
+      "localSkills": [
+        "implementing-work"
+      ],
+      "summary": "Removed upstream merge-conflict skill requires no local equivalent or deletion.",
+      "rationale": "The pin exported skills/engineering/resolving-merge-conflicts/SKILL.md; head removes it and leaves only an archived docs page. No mk-skills mapping or equivalent behavior depends on it.",
+      "validation": [
+        "node scripts/validate.js",
+        "python3 -B -m unittest tests.curation.test_review_upstreams -v",
+        "docs/reviews/2026-10-20-upstream-curation.md"
+      ]
+    },
+    {
+      "source": "matt-pocock-skills",
+      "fromCommit": "3cca18b368ae95cdbdebbff572ccafa662551015",
+      "toCommit": "5beb35b040e3de97e54fa9e386d7e42d15c295c2",
+      "decision": "reject",
+      "disposition": "rejected",
+      "localSkills": [
+        "planning-work"
+      ],
+      "summary": "Do not import unrelated setup/triage, teach, wizard, or upstream maintainer-policy changes.",
+      "rationale": "GitHub tracker template improves sub-issue and paginated external PR operations, but mk-skills doesn't use that generator; conditional parent linkage is addressed separately. teach quiz/workspace, wizard interactive shell, SCOPE.md and out-of-scope records are not mapped local runtime behavior. The unchanged to-spec mapping needs no decision.",
+      "validation": [
+        "node scripts/validate.js",
+        "python3 -B -m unittest tests.curation.test_review_upstreams -v",
+        "docs/reviews/2026-10-20-upstream-curation.md"
+      ]
+    },
+    {
+      "source": "matt-pocock-skills",
+      "fromCommit": "3cca18b368ae95cdbdebbff572ccafa662551015",
+      "toCommit": "5beb35b040e3de97e54fa9e386d7e42d15c295c2",
+      "decision": "accept",
+      "disposition": "no-local-change",
+      "localSkills": [
+        "specifying-work"
+      ],
+      "summary": "Retain the unchanged mapped specification workflow.",
+      "rationale": "skills/engineering/to-spec has no delta between the recorded and reviewed revisions. The existing local specification contract remains appropriate.",
+      "validation": [
+        "node scripts/validate.js",
+        "python3 -B -m unittest tests.curation.test_review_upstreams -v",
+        "docs/reviews/2026-10-20-upstream-curation.md"
+      ]
+    },
+    {
+      "source": "superpowers",
+      "fromCommit": "b36e0829c6d0140e93cfef2ca599b1b07d4a7797",
+      "toCommit": "b739a8af570e10a95898f2bdf6cec97467fa6c12",
+      "decision": "accept",
+      "disposition": "no-local-change",
+      "localSkills": [
+        "clarifying-work",
+        "adversarial-refinement",
+        "specifying-work"
+      ],
+      "summary": "Retain proportional clarification, explicit assumptions, and user-owned material decisions as upstream simplifies brainstorming and builder checks.",
+      "rationale": "Local clarifying-work/SKILL.md and specifying-work/SKILL.md already derive facts from evidence, avoid needless interviews, and reserve user approval for choices that materially change the result. The new upstream builder-check-prompt.md asks only about planning-critical ambiguity, which the local specification readiness criterion already covers.",
+      "validation": [
+        "node scripts/validate.js",
+        "python3 -B -m unittest tests.curation.test_review_upstreams -v",
+        "docs/reviews/2026-10-20-upstream-curation.md"
+      ]
+    },
+    {
+      "source": "superpowers",
+      "fromCommit": "b36e0829c6d0140e93cfef2ca599b1b07d4a7797",
+      "toCommit": "b739a8af570e10a95898f2bdf6cec97467fa6c12",
+      "decision": "accept",
+      "disposition": "adapted",
+      "localSkills": [
+        "planning-work"
+      ],
+      "summary": "Adapt a proportional check for plausible omitted user inputs and boundary failures in consequential plans.",
+      "rationale": "Upstream skills/writing-plans/SKILL.md adds a Review Focus for input classes and failure modes the plan's tests omit. Local planning-work/SKILL.md already checked acceptance and risk. Its final check now includes one proportional sentence asking planners of consequential work to check likely omitted user inputs and boundary failures in owned slices, without fixed lists or invented requirements.",
+      "validation": [
+        "node scripts/validate.js",
+        "python3 -B -m unittest tests.curation.test_review_upstreams -v",
+        "docs/reviews/2026-10-20-upstream-curation.md"
+      ]
+    },
+    {
+      "source": "superpowers",
+      "fromCommit": "b36e0829c6d0140e93cfef2ca599b1b07d4a7797",
+      "toCommit": "b739a8af570e10a95898f2bdf6cec97467fa6c12",
+      "decision": "reject",
+      "disposition": "rejected",
+      "localSkills": [
+        "reviewing-code"
+      ],
+      "summary": "Reject blanket empty-range failure in the generic review-package helper.",
+      "rationale": "Upstream skills/subagent-driven-development/scripts/review-package rejects both non-ancestor and zero-commit comparisons. Local skills/reviewing-code/scripts/review_coverage.py:31-64 already rejects non-ancestor inputs, while tests/skills/review-package.test.js:148-157 explicitly requires a valid empty comparison. A claim of changed work requires a nonempty comparison at the consumer's provenance check, not a ban on generating an empty package.",
+      "validation": [
+        "node scripts/validate.js",
+        "python3 -B -m unittest tests.curation.test_review_upstreams -v",
+        "docs/reviews/2026-10-20-upstream-curation.md"
+      ]
+    },
+    {
+      "source": "superpowers",
+      "fromCommit": "b36e0829c6d0140e93cfef2ca599b1b07d4a7797",
+      "toCommit": "b739a8af570e10a95898f2bdf6cec97467fa6c12",
+      "decision": "accept",
+      "disposition": "no-local-change",
+      "localSkills": [
+        "implementing-work",
+        "verifying-work",
+        "diagnosing-bugs",
+        "test-driven-development",
+        "handling-review-feedback",
+        "learning-from-mistakes",
+        "reviewing-code"
+      ],
+      "summary": "Preserve evidence-based execution, review of spec-silent boundaries, truthful failed-test reporting, safe debugging examples, and bounded private session analysis.",
+      "rationale": "Local implementing-work/SKILL.md, verifying-work/SKILL.md, diagnosing-bugs/SKILL.md, and reviewing-code/SKILL.md already require observed results, material deviations, and scrutiny of boundary failures and consumer expectations. Local learning-from-mistakes/references/sessions.md distinguishes user actions from tool records and tracks missing transcript coverage. The unchanged live receiving-code-review and verification-before-completion mappings require no adaptation; upstream's workspace, shell, visual server, and host plugin implementations have no local runtime equivalent.",
+      "validation": [
+        "node scripts/validate.js",
+        "python3 -B -m unittest tests.curation.test_review_upstreams -v",
+        "docs/reviews/2026-10-20-upstream-curation.md"
+      ]
+    },
+    {
+      "source": "superpowers",
+      "fromCommit": "b36e0829c6d0140e93cfef2ca599b1b07d4a7797",
+      "toCommit": "b739a8af570e10a95898f2bdf6cec97467fa6c12",
+      "decision": "reject",
+      "disposition": "rejected",
+      "localSkills": [
+        "clarifying-work",
+        "adversarial-refinement",
+        "implementing-work",
+        "planning-work"
+      ],
+      "summary": "Reject universal questioning cadence, compulsory visual preview or committed design, blanket approval, and fixed plan execution choice.",
+      "rationale": "The rebuilt brainstorming gate still requires approval for any building unless a user opts out, adds 200-300 word playback and visual offers, and writing-plans requires a human review before work. Local skills ask only consequential questions, preserve clear user authority to start bounded tasks, allow reversible probes, and leave review topology to task risk and repository policy.",
+      "validation": [
+        "node scripts/validate.js",
+        "python3 -B -m unittest tests.curation.test_review_upstreams -v",
+        "docs/reviews/2026-10-20-upstream-curation.md"
+      ]
+    },
+    {
+      "source": "superpowers",
+      "fromCommit": "b36e0829c6d0140e93cfef2ca599b1b07d4a7797",
+      "toCommit": "b739a8af570e10a95898f2bdf6cec97467fa6c12",
+      "decision": "reject",
+      "disposition": "rejected",
+      "localSkills": [
+        "implementing-work",
+        "reviewing-code",
+        "verifying-work",
+        "test-driven-development"
+      ],
+      "summary": "Reject mandatory per-task ledger and full suite, single review-fix pass, deferred-minor rule, prescribed model and worktree, and upstream SDD shell workspace.",
+      "rationale": "Upstream executing-plans/SKILL.md and subagent-driven-development/SKILL.md impose a platform-specific lifecycle. Local implementation uses coherent slices, AgentPlan task identity, risk-based verification and independent review when useful. Local reviewing-code/SKILL.md:31 keeps unresolved findings open rather than parking them after one fix round. Every observed failed test must be reported, but upstream test-driven-development/SKILL.md's bare whole-suite requirement is disproportionate for some narrow tasks.",
+      "validation": [
+        "node scripts/validate.js",
+        "python3 -B -m unittest tests.curation.test_review_upstreams -v",
+        "docs/reviews/2026-10-20-upstream-curation.md"
+      ]
+    },
+    {
+      "source": "superpowers",
+      "fromCommit": "b36e0829c6d0140e93cfef2ca599b1b07d4a7797",
+      "toCommit": "b739a8af570e10a95898f2bdf6cec97467fa6c12",
+      "decision": "reject",
+      "disposition": "rejected",
+      "localSkills": [
+        "learning-from-mistakes",
+        "diagnosing-bugs",
+        "clarifying-work"
+      ],
+      "summary": "Do not import the new Superpowers-only session diagnosis and maintainer filing workflow or its visual companion runtime.",
+      "rationale": "New skills/diagnosing-superpowers requires seven analysts and refuses to diagnose a skill defect, while local learning-from-mistakes can investigate mechanisms across hosts and protects private transcripts. Its issue template's human-authored summary and informed filing approval are compatible with local publication boundaries, but a copied Superpowers issue template, scrubbed-bundle publisher, and visual companion server are not mk-skills capabilities or mapped dependencies.",
+      "validation": [
+        "node scripts/validate.js",
+        "python3 -B -m unittest tests.curation.test_review_upstreams -v",
+        "docs/reviews/2026-10-20-upstream-curation.md"
+      ]
+    },
+    {
+      "source": "humanizer",
+      "fromCommit": "9862685f575c65a8247f90369951df1b3416e3d6",
+      "toCommit": "8c307f367c91bd974002f10f2be2965d642c13df",
+      "decision": "accept",
+      "disposition": "adapted",
+      "localSkills": [
+        "humanizer"
+      ],
+      "summary": "Adapt Humanizer 3.1.0's reader-context pattern, redundant-example and self-narration checks, grammar correction, and precise pattern cross-references.",
+      "rationale": "The local entry loads the catalog conditionally and preserves every claim. Known reader context changes ordering, not claim retention. The 3.1.0 catalog remains verbatim with an updated attribution wrapper, and the standalone foster word cue was removed with a focused regression test. Upstream plugin manifests, README, issue templates, and package validator do not replace mk-skills runtime wiring.",
+      "validation": [
+        "node scripts/validate.js",
+        "python3 -B tests/humanizer/test_prose_check.py -v",
+        "python3 -B -m unittest tests.curation.test_review_upstreams -v",
+        "docs/reviews/2026-10-20-upstream-curation.md"
+      ]
+    },
+    {
+      "source": "humanizer",
+      "fromCommit": "9862685f575c65a8247f90369951df1b3416e3d6",
+      "toCommit": "8c307f367c91bd974002f10f2be2965d642c13df",
+      "decision": "reject",
+      "disposition": "rejected",
+      "localSkills": [
+        "humanizer"
+      ],
+      "summary": "Reject blanket removal of known context or proof, the §26 example's omitted concrete claims and stock closing, and imports of the standalone upstream packaging and marketing.",
+      "rationale": "Local editing must retain claims, numbers, quoted errors, code, actionable evidence, and confidence-bearing caveats. The upstream example is useful as a reader-context signal, not as an automatic claim-dropping recipe; the recipient may still need proof or a link. The upstream root Claude/Cursor plugin, package validator, sponsorship, and unverified 16/16 preference claim are specific to the standalone distribution rather than this multi-skill package.",
+      "validation": [
+        "node scripts/validate.js",
+        "python3 -B tests/humanizer/test_prose_check.py -v",
+        "python3 -B -m unittest tests.curation.test_review_upstreams -v",
+        "docs/reviews/2026-10-20-upstream-curation.md"
+      ]
+    },
+    {
+      "source": "antithesis-skills",
+      "fromCommit": "75bba77a1412e4eec65519a6d681b46bd532b3c7",
+      "toCommit": "527c182d17aac476fdf9c9ca5e290e03caa4b62a",
+      "decision": "accept",
+      "disposition": "no-local-change",
+      "localSkills": [
+        "analyzing-codebase"
+      ],
+      "summary": "Keep the existing research adaptation and neutral fault-availability language; upstream's mapped research changes are version metadata and webhook-to-launcher terminology.",
+      "rationale": "The mapped antithesis-research/SKILL.md changes only its version fields, and references/faults.md changes one launch-term noun. Local for-testing.md already carries the research workflow and fault-models.md says tenant and launch configuration without coupling to a vendor CLI. No local behavioral change follows from this mapped delta.",
+      "validation": [
+        "node scripts/validate.js",
+        "python3 -B -m unittest tests.curation.test_review_upstreams -v",
+        "docs/reviews/2026-10-20-upstream-curation.md"
+      ]
+    },
+    {
+      "source": "antithesis-skills",
+      "fromCommit": "75bba77a1412e4eec65519a6d681b46bd532b3c7",
+      "toCommit": "527c182d17aac476fdf9c9ca5e290e03caa4b62a",
+      "decision": "accept",
+      "disposition": "no-local-change",
+      "localSkills": [
+        "analyzing-codebase",
+        "test-driven-development"
+      ],
+      "summary": "Retain feature-scoped testing analysis and test-first behavior already present locally rather than import a second feature-workload entrypoint.",
+      "rationale": "New antithesis-feature-workload/SKILL.md and references/feature-analysis.md narrow the broad research pipeline to a feature, including unfinished features. Local for-testing.md already has targeted property research with scoped system refresh, evidence, and candidate mechanisms; test-driven-development/SKILL.md already handles red-green behavior at public seams. Building a self-driving Antithesis workload is beyond the analyzing-codebase research contract.",
+      "validation": [
+        "node scripts/validate.js",
+        "python3 -B -m unittest tests.curation.test_review_upstreams -v",
+        "docs/reviews/2026-10-20-upstream-curation.md"
+      ]
+    },
+    {
+      "source": "antithesis-skills",
+      "fromCommit": "75bba77a1412e4eec65519a6d681b46bd532b3c7",
+      "toCommit": "527c182d17aac476fdf9c9ca5e290e03caa4b62a",
+      "decision": "accept",
+      "disposition": "adapted",
+      "localSkills": [
+        "analyzing-codebase"
+      ],
+      "summary": "Add a conditional, evidence-backed input-generation audit for generated workloads, without mandating per-run randomization.",
+      "rationale": "New antithesis-review-inputs/SKILL.md and references/anti-patterns.md separate unexplored state space from defects. Before this adaptation, local property-evaluation.md checked whether a mechanism could create a property's preconditions but did not inspect generator policy across runs. The new conditional paragraph checks action selection, values and boundaries, initial state, concurrency, and pacing when a generated workload exists, citing the workload and the state-space ceiling. It treats a fixed policy as potentially intentional rather than requiring per-run randomization.",
+      "validation": [
+        "node scripts/validate.js",
+        "python3 -B -m unittest tests.curation.test_review_upstreams -v",
+        "docs/reviews/2026-10-20-upstream-curation.md"
+      ]
+    },
+    {
+      "source": "antithesis-skills",
+      "fromCommit": "75bba77a1412e4eec65519a6d681b46bd532b3c7",
+      "toCommit": "527c182d17aac476fdf9c9ca5e290e03caa4b62a",
+      "decision": "accept",
+      "disposition": "adapted",
+      "localSkills": [
+        "analyzing-codebase"
+      ],
+      "summary": "Add a conditional property-oracle falsification check for important green catalogs, separating reach, mutant quality, and oracle quality.",
+      "rationale": "New antithesis-mutation-testing/SKILL.md and references/sweep-and-verdicts.md distinguish an unobserved violation from a property that would not catch one, require a clean baseline, and attribute a failing assertion to the injected divergence in the same history rather than aggregate counts. Local test-driven-development/SKILL.md already tests a plausible wrong implementation, and verifying-work/SKILL.md already requires a known positive for custom sweeps. The portfolio-level diagnostic is now conditional in property-evaluation.md, not an automatic per-property paid Antithesis campaign. It asks for a clean baseline, an isolated plausible mutation, reach evidence and same-execution oracle evidence, and an inconclusive verdict when the probe cannot establish reach or attribution.",
+      "validation": [
+        "node scripts/validate.js",
+        "python3 -B -m unittest tests.curation.test_review_upstreams -v",
+        "docs/reviews/2026-10-20-upstream-curation.md"
+      ]
+    },
+    {
+      "source": "antithesis-skills",
+      "fromCommit": "75bba77a1412e4eec65519a6d681b46bd532b3c7",
+      "toCommit": "527c182d17aac476fdf9c9ca5e290e03caa4b62a",
+      "decision": "reject",
+      "disposition": "rejected",
+      "localSkills": [
+        "analyzing-codebase"
+      ],
+      "summary": "Do not import product-coupled workload, mutation, debug, triage, launch, or setup procedures as generic codebase analysis.",
+      "rationale": "The new feature and mutation skills require Antithesis SDK assertions, Docker Compose images, snouty runs, forked mutant patches, and run-budget authorization. The removed antithesis-agent-browser and antithesis-query-logs skills are replaced at runtime by antithesis-triage/SKILL.md using snouty runs search and antithesis-debug/SKILL.md using snouty runs exec; related files switch --webhook to --launcher, require snouty 0.8.0, and correct a template's driver requirement. These are real upstream product changes, but local mappings track platform-neutral research and diagnostics, not product execution. Importing these commands or artifacts would break the platform-neutral, minimal-topology contract; the generic analysis retains only the accepted diagnostics above.",
+      "validation": [
+        "node scripts/validate.js",
+        "python3 -B -m unittest tests.curation.test_review_upstreams -v",
+        "docs/reviews/2026-10-20-upstream-curation.md"
+      ]
+    },
+    {
+      "source": "spec-kitty",
+      "fromCommit": "ab4636831945d20ac06d7e9b61d832ffd9a0359b",
+      "toCommit": "137dec7df8d083be5e233a59f6ee92a925c9ef34",
+      "decision": "accept",
+      "disposition": "adapted",
+      "localSkills": [
+        "specifying-work",
+        "planning-work",
+        "implementing-work",
+        "reviewing-code",
+        "verifying-work",
+        "curating-skills"
+      ],
+      "summary": "Repair obsolete mappings by tracking live core mission loaders, pinned pack metadata, and installed phase skills while recording canonical pack content as a separate upstream.",
+      "rationale": "The checked-in override tier was deleted at 19af971b1, then built-in pack files were relocated to spec-kitty-open-packs at 3f6ef61fc. Current init, command, and manifest loaders resolve the synced pack root rather than the deleted paths. Separate source names preserve the prior core decisions and the new content provenance. The pack pin remains af1c370f even though the public source main is 500e3a77 with an identical built-in subtree. The maintenance skill now makes initial snapshot semantics and cross-repository provenance explicit.",
+      "validation": [
+        "node scripts/validate.js",
+        "python3 -B -m unittest tests.curation.test_review_upstreams -v",
+        "docs/reviews/2026-10-20-upstream-curation.md"
+      ]
+    },
+    {
+      "source": "spec-kitty",
+      "fromCommit": "ab4636831945d20ac06d7e9b61d832ffd9a0359b",
+      "toCommit": "137dec7df8d083be5e233a59f6ee92a925c9ef34",
+      "decision": "accept",
+      "disposition": "no-local-change",
+      "localSkills": [
+        "planning-work",
+        "implementing-work",
+        "reviewing-code",
+        "verifying-work"
+      ],
+      "summary": "Keep local phase separation, review against a known base, structured actionable rejection, and relevant typecheck or build verification.",
+      "rationale": "The local phase skills already link requirements to executable slices, verify real paths, and separate evidence from status or prose. Upstream spk-mission-plan, spk-run-review-wp, spk-run-verdict-capture and spk-gate-accept add runtime-specific verbs, but their portable safety intent is already represented locally.",
+      "validation": [
+        "node scripts/validate.js",
+        "python3 -B -m unittest tests.curation.test_review_upstreams -v",
+        "docs/reviews/2026-10-20-upstream-curation.md"
+      ]
+    },
+    {
+      "source": "spec-kitty",
+      "fromCommit": "ab4636831945d20ac06d7e9b61d832ffd9a0359b",
+      "toCommit": "137dec7df8d083be5e233a59f6ee92a925c9ef34",
+      "decision": "reject",
+      "disposition": "rejected",
+      "localSkills": [
+        "specifying-work",
+        "planning-work"
+      ],
+      "summary": "Do not add another diagram trigger during this curation.",
+      "rationale": "The new core phase routing to spk-practice-show-me was inspected, but a distinct local gap was not demonstrated. Optional visual explanations remain possible without importing a helper, CLI, or mandatory new instruction.",
+      "validation": [
+        "node scripts/validate.js",
+        "python3 -B -m unittest tests.curation.test_review_upstreams -v",
+        "docs/reviews/2026-10-20-upstream-curation.md"
+      ]
+    },
+    {
+      "source": "spec-kitty",
+      "fromCommit": "ab4636831945d20ac06d7e9b61d832ffd9a0359b",
+      "toCommit": "137dec7df8d083be5e233a59f6ee92a925c9ef34",
+      "decision": "reject",
+      "disposition": "rejected",
+      "localSkills": [
+        "specifying-work",
+        "planning-work",
+        "implementing-work",
+        "reviewing-code",
+        "verifying-work"
+      ],
+      "summary": "Do not adopt mission states, work-package frontmatter IDs, mandatory artifacts, automated promotion or verdict commands, hosted sync, or tool-specific skill families.",
+      "rationale": "The current skills operate without a Spec Kitty mission runtime. Requirements should remain testable without adopting wps.yaml, status.events.jsonl, charter profiles, command slugs, pack-sync tooling, or a compulsory accept and merge sequence. Independent source inventory changes do not create local behavior contracts by themselves.",
+      "validation": [
+        "node scripts/validate.js",
+        "python3 -B -m unittest tests.curation.test_review_upstreams -v",
+        "docs/reviews/2026-10-20-upstream-curation.md"
+      ]
+    },
+    {
+      "source": "spec-kitty-open-packs",
+      "fromCommit": "500e3a77a6c427e35bb460757210d9525ac3d7b5",
+      "toCommit": "500e3a77a6c427e35bb460757210d9525ac3d7b5",
+      "decision": "accept",
+      "disposition": "adapted",
+      "localSkills": [
+        "specifying-work"
+      ],
+      "summary": "Initial snapshot: distinguish new-behavior acceptance from existing-behavior preservation with a no-op check.",
+      "rationale": "The canonical non-vacuity tactic and specification template ask whether unchanged code could satisfy a new-behavior criterion. Local specifying-work now requires such criteria to fail for a no-op and labels preservation separately. Existing TDD, review, and verification already cover public seams, plausible wrong implementations, and valid/invalid consumer checks; no compound-fix or mandatory matrix instruction was added. Core runtime af1c370f and reviewed external main 500e3a77 have identical built-in Git trees.",
+      "validation": [
+        "node scripts/validate.js",
+        "python3 -B -m unittest tests.curation.test_review_upstreams -v",
+        "docs/reviews/2026-10-20-upstream-curation.md"
+      ]
+    },
+    {
+      "source": "spec-kitty-open-packs",
+      "fromCommit": "500e3a77a6c427e35bb460757210d9525ac3d7b5",
+      "toCommit": "500e3a77a6c427e35bb460757210d9525ac3d7b5",
+      "decision": "reject",
+      "disposition": "rejected",
+      "localSkills": [
+        "specifying-work",
+        "planning-work",
+        "implementing-work",
+        "reviewing-code",
+        "verifying-work"
+      ],
+      "summary": "Initial snapshot: do not import mission step prompts, fixed FR/SC IDs, mandatory per-work-package state or filesystem manifest gates.",
+      "rationale": "The canonical pack implements framework-specific artifacts and status gates. Its 45 software-dev files are a live source for comparison, not a license to impose that runtime on self-contained local skills; the external main's later release and internal-pack changes are not loaded by current core runtime.",
+      "validation": [
+        "node scripts/validate.js",
+        "python3 -B -m unittest tests.curation.test_review_upstreams -v",
+        "docs/reviews/2026-10-20-upstream-curation.md"
+      ]
+    },
+    {
+      "source": "cursor-plugins",
+      "fromCommit": "111cf6a16b11cc822782c1585859af4a580a2490",
+      "toCommit": "111cf6a16b11cc822782c1585859af4a580a2490",
+      "decision": "accept",
+      "disposition": "no-local-change",
+      "localSkills": [
+        "verifying-work",
+        "diagnosing-bugs",
+        "reviewing-code",
+        "implementing-work",
+        "handling-review-feedback",
+        "learning-from-mistakes",
+        "personal-writing-style"
+      ],
+      "summary": "Initial snapshot: retain existing direct verification, diagnosis, complete PR inventory, scoped changes, feedback evaluation, and evidence-based lesson extraction.",
+      "rationale": "This is an initial review of existing cursor-team-kit content at the pinned head, not a change since a prior review. Local skills already cover these compatible principles through their current entrypoints and review helpers; no Cursor code or skill text is copied. The durable review lists all eighteen baseline skill entries and their dispositions.",
+      "validation": [
+        "node scripts/validate.js",
+        "python3 -B -m unittest tests.curation.test_review_upstreams -v",
+        "docs/reviews/2026-10-20-upstream-curation.md"
+      ]
+    },
+    {
+      "source": "cursor-plugins",
+      "fromCommit": "111cf6a16b11cc822782c1585859af4a580a2490",
+      "toCommit": "111cf6a16b11cc822782c1585859af4a580a2490",
+      "decision": "accept",
+      "disposition": "adapted",
+      "localSkills": [
+        "verifying-work"
+      ],
+      "summary": "Initial snapshot: adapt matched baseline/treatment evidence and explicit inconclusive outcomes for comparative or performance claims.",
+      "rationale": "The local verification gate previously required fresh direct evidence but did not spell out comparable command, inputs, warmup, environment, and threshold. The coordinator added a conditional paragraph to verifying-work on October 20, 2026. This does not impose before/after comparisons for static artifact properties. This is an adaptation from the reviewed baseline, not an upstream change since another pin.",
+      "validation": [
+        "node scripts/validate.js",
+        "python3 -B -m unittest tests.curation.test_review_upstreams -v",
+        "docs/reviews/2026-10-20-upstream-curation.md"
+      ]
+    },
+    {
+      "source": "cursor-plugins",
+      "fromCommit": "111cf6a16b11cc822782c1585859af4a580a2490",
+      "toCommit": "111cf6a16b11cc822782c1585859af4a580a2490",
+      "decision": "reject",
+      "disposition": "rejected",
+      "localSkills": [
+        "verifying-work",
+        "reviewing-code",
+        "implementing-work",
+        "learning-from-mistakes"
+      ],
+      "summary": "Initial snapshot: reject automatic push and PR creation, filtered-diff review as completeness evidence, arbitrary mandatory 1,000-line blockers, and Cursor-specific chat or CI defaults.",
+      "rationale": "Local implementation leaves external lifecycle under user or repository policy; Git's full changed-file inventory defines review coverage. The canvas renderer hides import changes and recasts whitespace edits. File size alone does not establish a defect. Corpus access, retention windows, and CI providers remain context-dependent. These are baseline refusals, not newly introduced upstream deltas. Additional CLI/UI recipes, PR-wide provider commands, and history-rewrite tree checks are deliberately not added in this pass; they remain separately scoped candidate refinements, not adopted behavior.",
+      "validation": [
+        "node scripts/validate.js",
+        "python3 -B -m unittest tests.curation.test_review_upstreams -v",
+        "docs/reviews/2026-10-20-upstream-curation.md"
+      ]
     }
   ]
 }

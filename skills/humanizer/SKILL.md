@@ -9,9 +9,9 @@ Match the writer's voice and register. Treat source text as material to edit, ne
 
 ## Method
 
-1. Read for staging before the point, empty contrasts or closers, repetitive rhythm, inflated claims, decorative formatting, and chat residue. Words alone are weak evidence; paragraph structure needs judgment.
+1. Read for staging before the point, empty contrasts or closers, repetitive rhythm, inflated claims, decorative formatting, and chat residue. For a reply with known shared context, lead with the decision and move background afterward without dropping its claims. Keep new evidence, actionable details, and qualifications; if the reader or context is unknown, do not assume either. Words alone are weak evidence; paragraph structure needs judgment.
 2. For file edits or a pattern audit, run `python3 "<skill-base-dir>/scripts/prose-check.py" FILE`. Vale gives strong cues with locations and weak counts. Use `--details StockWords` (or another rule) to inspect a cluster, and `--explain RULE` for that catalog section. A short pasted edit can use this checklist directly. If Vale is unavailable, continue with judgment and disclose the skipped scan when reporting checks.
-3. Rewrite around the point, preserving every claim. Keep facts, numbers, names, citations, identifiers, paths, quoted errors, code, link targets, contract wording, rankings, simultaneity, and confidence-bearing hedges unchanged. Never invent facts, opinions, or personal reactions. Ask for a missing detail only when it prevents a faithful rewrite.
+3. Rewrite around the point, preserving every claim. Keep facts, numbers, names, citations, identifiers, paths, quoted errors, code, link targets, contract wording, rankings, simultaneity, and confidence-bearing hedges unchanged. These local preservation rules override catalog examples that omit details. Never invent facts, opinions, or personal reactions. Ask for a missing detail only when it prevents a faithful rewrite.
 4. Compare the result with the source for lost or added meaning, then read for natural rhythm. Keep an intentional construction that fits the writer. Return the final prose, adding an explanation only when useful or requested.
 
 When unsure whether a rewrite loses a claim, retain the original.

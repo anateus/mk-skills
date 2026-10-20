@@ -21,7 +21,7 @@ Inspect each axis separately so one kind of confidence does not hide another:
 
    For guards, gates, triggers, skips, or empty/default results, exercise the actual consumer decision: invalid work stays blocked and valid work proceeds, including external consumers. An approved green PR must remain mergeable after a same-SHA body edit; successful check metadata doesn't prove merge eligibility. Check whole datasets and individual clients or partitions. Validate new test expectations against the consumer contract. Before weakening a check, identify its invariant and where enforcement will move.
 2. **Specification compliance:** when a specification exists, map requirements and non-goals to the diff and evidence. Distinguish missing behavior from a flawed implementation.
-3. **Repository standards:** apply documented local conventions, architecture, tooling, and maintainability expectations.
+3. **Repository standards:** find `CODING_STANDARDS.md`, `CONTRIBUTING.md`, and equivalent guidance. Apply relevant conventions, architecture, tooling, and maintainability expectations.
 4. **Executed behavior:** when the change is runnable, run it: the focused tests and the real code path with realistic input. Results reported by the implementer, a subagent, or a CI comment are claims to check, not evidence.
 
 Read surrounding code to validate assumptions. Prefer executed paths and evidence over style speculation. Confirm the comparison point remains fixed before reporting.

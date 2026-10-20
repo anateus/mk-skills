@@ -5,7 +5,7 @@
       "name": "matt-pocock-skills",
       "url": "https://github.com/mattpocock/skills",
       "branch": "main",
-      "reviewedCommit": "3cca18b368ae95cdbdebbff572ccafa662551015",
+      "reviewedCommit": "5beb35b040e3de97e54fa9e386d7e42d15c295c2",
       "license": "MIT",
       "mappings": [
         {
@@ -62,6 +62,12 @@
           "upstreamPaths": [
             "skills/productivity/handoff"
           ]
+        },
+        {
+          "localSkill": "learning-from-mistakes",
+          "upstreamPaths": [
+            "skills/engineering/retro/SKILL.md"
+          ]
         }
       ]
     },
@@ -69,46 +75,54 @@
       "name": "spec-kitty",
       "url": "https://github.com/Priivacy-ai/spec-kitty",
       "branch": "main",
-      "reviewedCommit": "ab4636831945d20ac06d7e9b61d832ffd9a0359b",
+      "reviewedCommit": "137dec7df8d083be5e233a59f6ee92a925c9ef34",
       "license": "MIT",
       "mappings": [
         {
           "localSkill": "specifying-work",
           "upstreamPaths": [
-            ".kittify/overrides/missions/software-dev/actions/specify",
-            ".kittify/overrides/missions/software-dev/command-templates/specify.md",
-            ".kittify/overrides/missions/software-dev/templates/spec-template.md"
+            "src/charter/offering/skills/spk-mission-specify",
+            "src/charter/offering/skills/spk-practice-show-me",
+            "src/charter/offering/missions/repository.py",
+            "src/specify_cli/runtime/resolver.py"
           ]
         },
         {
           "localSkill": "planning-work",
           "upstreamPaths": [
-            ".kittify/overrides/missions/software-dev/actions/plan",
-            ".kittify/overrides/missions/software-dev/command-templates/plan.md",
-            ".kittify/overrides/missions/software-dev/command-templates/tasks.md",
-            ".kittify/overrides/missions/software-dev/templates/plan-template.md",
-            ".kittify/overrides/missions/software-dev/templates/tasks-template.md"
+            "src/charter/offering/skills/spk-mission-plan",
+            "src/charter/offering/skills/spk-mission-tasks",
+            "src/charter/offering/skills/spk-practice-show-me",
+            "src/charter/offering/missions/mission_step_repository.py",
+            "src/specify_cli/template/manager.py"
           ]
         },
         {
           "localSkill": "implementing-work",
           "upstreamPaths": [
-            ".kittify/overrides/missions/software-dev/actions/implement",
-            ".kittify/overrides/missions/software-dev/command-templates/implement.md"
+            "src/charter/offering/skills/spk-run-implement-review",
+            "src/charter/offering/skills/spec-kitty-implement-review",
+            "src/charter/offering/missions/repository.py",
+            "packs/built-in.source.yaml"
           ]
         },
         {
           "localSkill": "reviewing-code",
           "upstreamPaths": [
-            ".kittify/overrides/missions/software-dev/actions/review",
-            ".kittify/overrides/missions/software-dev/command-templates/review.md"
+            "src/charter/offering/skills/spk-run-review-wp",
+            "src/charter/offering/skills/spk-run-verdict-capture",
+            "src/charter/offering/skills/spec-kitty-runtime-review",
+            "src/charter/offering/missions/repository.py"
           ]
         },
         {
           "localSkill": "verifying-work",
           "upstreamPaths": [
-            ".kittify/overrides/missions/software-dev/command-templates/accept.md",
-            "packs/built-in/missions/software-dev/expected-artifacts.yaml"
+            "src/charter/offering/skills/spk-gate-accept",
+            "src/charter/activation/manifest_loader.py",
+            "src/charter/offering/missions/expected_artifact_manifest.py",
+            "src/charter/offering/missions/repository.py",
+            "packs/built-in.source.yaml"
           ]
         }
       ]
@@ -117,7 +131,7 @@
       "name": "superpowers",
       "url": "https://github.com/obra/superpowers",
       "branch": "main",
-      "reviewedCommit": "b36e0829c6d0140e93cfef2ca599b1b07d4a7797",
+      "reviewedCommit": "b739a8af570e10a95898f2bdf6cec97467fa6c12",
       "license": "MIT",
       "mappings": [
         {
@@ -182,7 +196,7 @@
       "name": "humanizer",
       "url": "https://github.com/blader/humanizer",
       "branch": "main",
-      "reviewedCommit": "9862685f575c65a8247f90369951df1b3416e3d6",
+      "reviewedCommit": "8c307f367c91bd974002f10f2be2965d642c13df",
       "license": "MIT",
       "mappings": [
         {
@@ -197,13 +211,134 @@
       "name": "antithesis-skills",
       "url": "https://github.com/antithesishq/antithesis-skills",
       "branch": "main",
-      "reviewedCommit": "75bba77a1412e4eec65519a6d681b46bd532b3c7",
+      "reviewedCommit": "527c182d17aac476fdf9c9ca5e290e03caa4b62a",
       "license": "Apache-2.0",
       "mappings": [
         {
           "localSkill": "analyzing-codebase",
           "upstreamPaths": [
-            "antithesis-research"
+            "antithesis-research",
+            "antithesis-review-inputs/SKILL.md",
+            "antithesis-review-inputs/references/anti-patterns.md",
+            "antithesis-mutation-testing/SKILL.md",
+            "antithesis-mutation-testing/references/sweep-and-verdicts.md"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "spec-kitty-open-packs",
+      "url": "https://github.com/spec-kitty/spec-kitty-open-packs.git",
+      "branch": "main",
+      "reviewedCommit": "500e3a77a6c427e35bb460757210d9525ac3d7b5",
+      "license": "MIT",
+      "mappings": [
+        {
+          "localSkill": "specifying-work",
+          "upstreamPaths": [
+            "packs/built-in/missions/mission-steps/software-dev/specify",
+            "packs/built-in/missions/software-dev/templates/spec-template.md",
+            "packs/built-in/tactics/testing/acceptance-criteria-non-vacuity.tactic.yaml"
+          ]
+        },
+        {
+          "localSkill": "planning-work",
+          "upstreamPaths": [
+            "packs/built-in/missions/mission-steps/software-dev/plan",
+            "packs/built-in/missions/mission-steps/software-dev/tasks",
+            "packs/built-in/missions/mission-steps/software-dev/tasks-outline",
+            "packs/built-in/missions/mission-steps/software-dev/tasks-packages",
+            "packs/built-in/missions/mission-steps/software-dev/tasks-finalize",
+            "packs/built-in/missions/software-dev/templates/plan-template.md",
+            "packs/built-in/missions/software-dev/templates/tasks-template.md",
+            "packs/built-in/missions/software-dev/templates/task-prompt-template.md"
+          ]
+        },
+        {
+          "localSkill": "implementing-work",
+          "upstreamPaths": [
+            "packs/built-in/missions/mission-steps/software-dev/implement",
+            "packs/built-in/missions/software-dev/actions/implement/index.yaml"
+          ]
+        },
+        {
+          "localSkill": "reviewing-code",
+          "upstreamPaths": [
+            "packs/built-in/missions/mission-steps/software-dev/review",
+            "packs/built-in/missions/software-dev/actions/review/index.yaml",
+            "packs/built-in/tactics/testing/acceptance-criteria-non-vacuity.tactic.yaml"
+          ]
+        },
+        {
+          "localSkill": "verifying-work",
+          "upstreamPaths": [
+            "packs/built-in/missions/mission-steps/software-dev/accept",
+            "packs/built-in/missions/software-dev/expected-artifacts.yaml",
+            "packs/built-in/tactics/testing/acceptance-criteria-non-vacuity.tactic.yaml"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "cursor-plugins",
+      "url": "https://github.com/cursor/plugins",
+      "branch": "main",
+      "reviewedCommit": "111cf6a16b11cc822782c1585859af4a580a2490",
+      "license": "MIT",
+      "mappings": [
+        {
+          "localSkill": "verifying-work",
+          "upstreamPaths": [
+            "cursor-team-kit/skills/verify-this",
+            "cursor-team-kit/skills/check-compiler-errors",
+            "cursor-team-kit/skills/loop-on-ci",
+            "cursor-team-kit/skills/run-smoke-tests"
+          ]
+        },
+        {
+          "localSkill": "diagnosing-bugs",
+          "upstreamPaths": [
+            "cursor-team-kit/skills/control-cli",
+            "cursor-team-kit/skills/control-ui",
+            "cursor-team-kit/skills/fix-ci",
+            "cursor-team-kit/skills/run-smoke-tests"
+          ]
+        },
+        {
+          "localSkill": "reviewing-code",
+          "upstreamPaths": [
+            "cursor-team-kit/skills/deslop",
+            "cursor-team-kit/skills/make-pr-easy-to-review",
+            "cursor-team-kit/skills/pr-review-canvas",
+            "cursor-team-kit/skills/review-and-ship",
+            "cursor-team-kit/skills/thermo-nuclear-code-quality-review"
+          ]
+        },
+        {
+          "localSkill": "implementing-work",
+          "upstreamPaths": [
+            "cursor-team-kit/skills/fix-ci",
+            "cursor-team-kit/skills/fix-merge-conflicts",
+            "cursor-team-kit/skills/new-branch-and-pr",
+            "cursor-team-kit/skills/review-and-ship"
+          ]
+        },
+        {
+          "localSkill": "handling-review-feedback",
+          "upstreamPaths": [
+            "cursor-team-kit/skills/get-pr-comments"
+          ]
+        },
+        {
+          "localSkill": "learning-from-mistakes",
+          "upstreamPaths": [
+            "cursor-team-kit/skills/workflow-from-chats"
+          ]
+        },
+        {
+          "localSkill": "personal-writing-style",
+          "upstreamPaths": [
+            "cursor-team-kit/skills/workflow-from-chats"
           ]
         }
       ]

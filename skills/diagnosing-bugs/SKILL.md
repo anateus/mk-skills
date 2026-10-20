@@ -16,6 +16,8 @@ Build a tight feedback loop that distinguishes causes before editing. The object
 5. Repeat until evidence identifies the causal mechanism. Fix the cause at the narrowest appropriate layer, preserving unrelated public behavior.
 6. Demonstrate the original reproduction now passes and add regression protection at a useful behavior seam. Run fresh affected verification.
 
+When forcing a red through a code or fixture mutation, compare against a pristine copy to confirm the mutation landed before trusting the failure.
+
 Keep experiments cheap and reversible. Logs, temporary assertions, history, and dependency inspection are evidence sources; none substitutes for testing a hypothesis.
 
 Capture only evidence needed for the discriminator. Redact sensitive values in commands and artifacts before sharing; this grants no additional data access.

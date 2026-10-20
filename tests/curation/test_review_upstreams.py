@@ -15,6 +15,22 @@ SPEC.loader.exec_module(review)
 
 
 class ReviewUpstreamsTests(unittest.TestCase):
+    def assert_current_pin_decisions_cover_mappings(self, sources, decisions):
+        for source in sources.values():
+            mapped_skills = {mapping['localSkill'] for mapping in source['mappings']}
+            reviewed_skills = {
+                skill
+                for decision in decisions
+                if decision['source'] == source['name']
+                and decision['toCommit'] == source['reviewedCommit']
+                for skill in decision['localSkills']
+            }
+            self.assertFalse(
+                mapped_skills - reviewed_skills,
+                f"{source['name']}: mapped local skills without decisions at reviewedCommit: "
+                f"{sorted(mapped_skills - reviewed_skills)}",
+            )
+
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
@@ -198,19 +214,55 @@ class ReviewUpstreamsTests(unittest.TestCase):
         expected = {
             "matt-pocock-skills",
             "spec-kitty",
+            "spec-kitty-open-packs",
             "superpowers",
             "humanizer",
             "antithesis-skills",
+            "cursor-plugins",
         }
         expected_licenses = {
             "matt-pocock-skills": "MIT",
             "spec-kitty": "MIT",
+            "spec-kitty-open-packs": "MIT",
             "superpowers": "MIT",
             "humanizer": "MIT",
             "antithesis-skills": "Apache-2.0",
+            "cursor-plugins": "MIT",
         }
         sources = {source["name"]: source for source in manifest["sources"]}
         self.assertEqual(expected, set(sources))
+        open_packs = sources["spec-kitty-open-packs"]
+        self.assertEqual(
+            "https://github.com/spec-kitty/spec-kitty-open-packs.git", open_packs["url"],
+        )
+        self.assertEqual("main", open_packs["branch"])
+        self.assertEqual(
+            {"specifying-work", "planning-work", "implementing-work",
+             "reviewing-code", "verifying-work"},
+            {mapping["localSkill"] for mapping in open_packs["mappings"]},
+        )
+        for mapping in open_packs["mappings"]:
+            for path in mapping["upstreamPaths"]:
+                self.assertTrue(path.startswith("packs/built-in/"), path)
+        cursor = sources["cursor-plugins"]
+        self.assertEqual("https://github.com/cursor/plugins", cursor["url"])
+        self.assertEqual("main", cursor["branch"])
+        self.assertEqual(
+            {
+                "verifying-work", "diagnosing-bugs", "reviewing-code",
+                "implementing-work", "handling-review-feedback",
+                "learning-from-mistakes", "personal-writing-style",
+            },
+            {mapping["localSkill"] for mapping in cursor["mappings"]},
+        )
+        for mapping in cursor["mappings"]:
+            for path in mapping["upstreamPaths"]:
+                self.assertTrue(path.startswith("cursor-team-kit/skills/"), path)
+        self.assertIn(
+            "cursor-team-kit/skills/verify-this",
+            next(mapping["upstreamPaths"] for mapping in cursor["mappings"]
+                 if mapping["localSkill"] == "verifying-work"),
+        )
         for name in expected:
             source = sources[name]
             self.assertRegex(source["reviewedCommit"], r"^[0-9a-f]{40}$")
@@ -238,6 +290,14 @@ class ReviewUpstreamsTests(unittest.TestCase):
         self.assertIn(
             ("superpowers", "adversarial-refinement", "skills/brainstorming"), mapped,
         )
+        for expected_mapping in (
+            ("matt-pocock-skills", "learning-from-mistakes", "skills/engineering/retro/SKILL.md"),
+            ("antithesis-skills", "analyzing-codebase", "antithesis-review-inputs/SKILL.md"),
+            ("antithesis-skills", "analyzing-codebase", "antithesis-review-inputs/references/anti-patterns.md"),
+            ("antithesis-skills", "analyzing-codebase", "antithesis-mutation-testing/SKILL.md"),
+            ("antithesis-skills", "analyzing-codebase", "antithesis-mutation-testing/references/sweep-and-verdicts.md"),
+        ):
+            self.assertIn(expected_mapping, mapped)
         local = {item["name"]: item for item in manifest["localProvenance"]}
         self.assertEqual({"mk-clarify", "mk-write-plan", "mk-pr"}, set(local))
         original_root = Path(
@@ -269,12 +329,27 @@ class ReviewUpstreamsTests(unittest.TestCase):
             for skill in decision["localSkills"]:
                 self.assertTrue((ROOT / "skills" / skill / "SKILL.md").is_file())
 
-        # Recorded decisions are history, not a snapshot of the current pin.
-        for source in sources.values():
-            decisions = [d for d in ledger['decisions'] if d['source'] == source['name']]
-            if decisions:
-                self.assertTrue(any(d['toCommit'] == source['reviewedCommit'] for d in decisions),
-                                source['name'] + ': pin has no matching reviewed decision')
+        # Historical decisions may remain, including initial snapshots with identical
+        # fromCommit/toCommit. Every mapped local skill needs a decision at the pin.
+        self.assert_current_pin_decisions_cover_mappings(sources, ledger['decisions'])
+
+    def test_current_pin_coverage_rejects_missing_source_and_mapping_decisions(self):
+        pin = 'a' * 40
+        sources = {'fixture': {
+            'name': 'fixture', 'reviewedCommit': pin,
+            'mappings': [{'localSkill': 'planning-work'}, {'localSkill': 'reviewing-code'}],
+        }}
+        with self.assertRaisesRegex(AssertionError, 'planning-work'):
+            self.assert_current_pin_decisions_cover_mappings(sources, [])
+        with self.assertRaisesRegex(AssertionError, 'reviewing-code'):
+            self.assert_current_pin_decisions_cover_mappings(sources, [
+                {'source': 'fixture', 'toCommit': pin, 'localSkills': ['planning-work']},
+                {'source': 'fixture', 'toCommit': 'b' * 40, 'localSkills': ['reviewing-code']},
+            ])
+        self.assert_current_pin_decisions_cover_mappings(sources, [
+            {'source': 'fixture', 'fromCommit': pin, 'toCommit': pin,
+             'localSkills': ['planning-work', 'reviewing-code']},
+        ])
 
 
 if __name__ == "__main__":

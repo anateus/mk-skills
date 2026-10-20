@@ -32,6 +32,10 @@ Compare the catalog with the system analysis and topology section by section. Lo
 
 For each property, determine whether the test can create its preconditions and observe a credible oracle. Check required code changes, internal instrumentation, dependency fidelity, topology, runtime, cost, reproducibility, shrinking or replay, and cleanup. Flag properties whose candidate mechanism cannot actually exercise them.
 
+When the candidate uses a generated workload, inspect its action choices and weights, valid, invalid, and boundary inputs, initial state, concurrency, and pacing. Identify fixed choices that prevent relevant preconditions or states, citing the workload path and the state space left unexplored. A fixed policy may be intentional. Do not require per-run randomization by default.
+
+For an important property with only green results, consider a safe, proportional falsification probe. Compare a clean baseline with an isolated, reversible mutation that should violate the property. Check that the mutated path ran and that the oracle rejected the violation in the same execution. Distinguish an unreached mutation, an ineffective mutation, and an oracle that tolerates the violation. If reach or attribution is missing, report the probe as inconclusive. A green run alone does not validate the oracle, and a mutation campaign is not required for every catalog.
+
 ### 4. Wildcard
 
 Run this after the fixed lenses. Question the framing, find missing perspectives, cross-cut mechanism fit with feasibility, and report concrete concerns that do not fit another lens.

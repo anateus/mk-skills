@@ -61,6 +61,13 @@ robust = True
         self.assertEqual(report['counts'], {'Humanizer.StockPhrases': 1})
         self.assertEqual(report['findings'][0]['match'], 'DELVE')
 
+    def test_fostering_is_not_a_standalone_stock_word(self):
+        self.assertEqual(self.report('Fostering cooperation.\n')['counts'], {})
+        report = self.report('Fostering cooperation needs robust systems.\n',
+                             '--details', 'StockWords')
+        self.assertEqual(report['counts'], {'Humanizer.StockWords': 1})
+        self.assertEqual([finding['match'] for finding in report['findings']], ['robust'])
+
     def test_every_rule_detects_a_known_positive(self):
         source = ('Here is the revised version. Let that sink in. Delve.\n\n'
                   'Not only faster, but cheaper. Robust systems, perhaps. This \u2014 that \u2013 other.\n\n'

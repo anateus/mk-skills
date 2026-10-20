@@ -19,6 +19,8 @@ Scale breadth to impact, but never scale away the direct check. If verification 
 
 Evidence expires when code, inputs, configuration, or environment relevant to the claim changes. Re-run the affected check after such changes.
 
+For comparative or performance claims, capture baseline and changed-state evidence with the same command, inputs, warmup, and environment. Compare the observed result with the claimed threshold; missing baselines, noise, or confounding differences leave the comparison inconclusive.
+
 Synthesis and subagent handoff must not strengthen evidence. Carry reviewer caveats and open verification gaps forward until a direct check resolves each one. Distinguish a producer emitting success from a consumer accepting it, such as successful checks versus branch protection permitting a merge. A coordinator must not label acceptance as verified or acceptance-aligned from a weaker proxy; retain the narrower result and unresolved consumer check.
 
 ## Regression protection

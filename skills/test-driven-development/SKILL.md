@@ -18,7 +18,7 @@ Drive behavior through evidence, not implementation shape. Work in narrow red-gr
 
 Prefer public seams over private calls, snapshots without meaningful assertions, or mocks that merely restate collaborators. A test should survive harmless internal refactoring.
 
-Name the wrong production change each test would catch. For agent instructions, evaluate behavior on realistic requests; wording checks prove only structural contracts. Interaction assertions are useful when the interaction itself is the contract.
+Name the wrong production change each test would catch. For consequential seam choices, note what each proposed seam catches and misses. For agent instructions, evaluate behavior on realistic requests; wording checks prove only structural contracts. Interaction assertions are useful when the interaction itself is the contract.
 
 For an important claim, choose a plausible incorrect implementation and confirm the assertion distinguishes it. Use independent, distinguishable identifiers and values. Recovery tests should observe a new successful result after the fault clears; handler success, an old result, or a count without identity may not establish recovery. Use bounded waiting at the observation point for asynchronous results.
 

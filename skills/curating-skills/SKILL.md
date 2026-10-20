@@ -30,6 +30,8 @@ For each mapped change, compare:
 
 Read `$REPO_ROOT/config/curation-decisions.json` before deciding. Identify the underlying idea, its benefit, and conflicts with local principles. Append an **accept** or **reject** record spanning the prior pin to the exact reviewed head. An accepted idea is adapted to local interfaces; never automatically copy upstream files. A rejected idea is still recorded so it is not reconsidered on every run.
 
+For a new source, inspect the initial snapshot and record equal `fromCommit` and `toCommit` values with explicit scope; an empty delta is not a review. When content moves across repositories, retain the original provenance and record the successor separately at its traced revision, with old-to-current path coverage.
+
 Validate affected local skills and their contract tests after adaptations. Confirm attribution remains accurate. Advance `reviewedCommit` only after every relevant change has a recorded decision and validation is complete. Pin the exact reviewed head from the bundle.
 
 Prefer distinct triggers and conditional references over repeated instructions. Test proposed removals on realistic requests in fresh sessions, withholding the intended answer and rubric. Static wording checks do not establish equivalent behavior.
