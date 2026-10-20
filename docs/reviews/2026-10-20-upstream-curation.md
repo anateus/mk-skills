@@ -95,3 +95,31 @@ Prospective metadata passed all ten curation tests before repository pins advanc
 Astra independently reviewed the actual adaptation, test, notice, source, and ledger changes against `ca82eedbb69c3f5947dbdb45ec640c1e6321568b`, then confirmed the committed slice `793af5017ea3225acc0f79f72574b51b0047e3e8`. The review found missing future-tracking mappings for the accepted Matt retro and Antithesis input/mutation ideas. Those five paths were added with regression assertions. Two stale new-record rationales were corrected. No blocking findings remained in that reviewed scope. Astra independently ran the full validator with exit 0, reran all ten curation tests after the rationale cleanup, reproduced the source inventory and catalog-body checks, and checked the final frozen probe responses and hashes.
 
 The optional Codex plugin-schema validator was absent in both full runs. The native Zellij peer-submission PTY test was opt-in and skipped. Static, synthetic, and skipped checks must remain distinct from executed end-user workflows.
+
+## Public CLI acceptance follow-through
+
+After committing the curation changes, the maintainer's documented command was run against the actual seven-source manifest and live Git remotes:
+
+```bash
+python3 "$PWD/skills/curating-skills/scripts/review-upstreams.py" \
+  --manifest "$PWD/config/sources.yaml" \
+  --output "$JCODE_SCRATCH_DIR/upstream-review-public-acceptance-2026-10-20.md" \
+  --cache-dir "$JCODE_SCRATCH_DIR/upstream-cache"
+```
+
+The command exited 0, fetched all seven configured repositories, and produced a 374-line report. SHA-256 checks before and after confirmed that neither `config/sources.yaml` nor `config/curation-decisions.json` changed. This exercises the real report command, configuration consumer, network fetches, Git objects, and report writer without stubs or copied application code.
+
+The first follow-up attempt failed because a manually initialized review repository had been linked into the cache without an `origin` remote. The failure preserved both provenance files. Removing that scratch symlink let the tool create its normal clone; the next run succeeded. No shipped code or source pin was changed to make the command pass.
+
+The comparison counts every unique source-relative mapping row emitted by each real report. These are complete report populations, not samples of all upstream files or evidence of agent instruction efficacy:
+
+| Observed report | Sources | Mapping rows | Paths missing at fetched head |
+|---|---:|---:|---:|
+| Original five-source review | 5 | 35 | 14 |
+| Committed-manifest public CLI run | 7 | 76 | 0 |
+
+The original fourteen missing rows were the obsolete Spec Kitty mappings. The accepted workflow now exposes live core and canonical-pack paths, includes Cursor's sixteen scoped paths, and tracks all five newly adopted Matt and Antithesis inputs. The different row counts reflect those intentional configuration changes. A disposable missing-row parser control was detected, and the complete original missing rows were reproduced before checking the new report. The compact receipt is `docs/reviews/2026-10-20-upstream-public-acceptance.json`.
+
+The live run also observed Cursor advancing from the reviewed `111cf6a16b11cc822782c1585859af4a580a2490` to `190d28736eff128ec94f502a22c7fe0c4b56cd37`. The report listed four newer commits and six changed inventory paths, all outside `cursor-team-kit/skills`, and correctly reported no mapped local skill affected. The reviewed pin remains unchanged; detecting a later repository-wide delta does not silently mark it reviewed.
+
+The actual prose-check CLI was also run on this shipped review memo, with its real bundled Vale configuration. It exited 0 with zero strong cues and two weak contextual contrasts. `--explain StockWords` exited 0 and returned the current 3.1.0 catalog section, without the removed standalone `fostering` watch word. That confirms the public command consumes the updated assets. It does not establish how reliably an installed agent will follow semantic editing instructions; the six earlier synthetic probes remain the bounded evidence for those changes. The public seven-source curation workflow itself was exercised successfully.

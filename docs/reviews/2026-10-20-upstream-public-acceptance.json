@@ -1,0 +1,51 @@
+{
+  "artifacts": {
+    "/Users/mike/.jcode/scratch/upstream-review-2026-10-20.md": "d83233b0485813c57e8aa1cc09dfd5d4cb3e711554a4a3d211f158c84d89fe15",
+    "/Users/mike/.jcode/scratch/upstream-review-public-acceptance-2026-10-20.md": "780f81877a429f1b0bf133c669e88843c16e510661ac81710f561b8ead9ca699"
+  },
+  "original": {
+    "mappingRows": 35,
+    "missingCurrentPaths": 14,
+    "sources": 5
+  },
+  "parserMissingPathControlDetected": true,
+  "population": "All unique source-relative mapping rows emitted by each actual CLI report, not sampled skills or all upstream repository files.",
+  "publicAcceptance": {
+    "bySource": {
+      "antithesis-skills": 5,
+      "cursor-plugins": 16,
+      "humanizer": 1,
+      "matt-pocock-skills": 10,
+      "spec-kitty": 17,
+      "spec-kitty-open-packs": 17,
+      "superpowers": 10
+    },
+    "mappingRows": 76,
+    "missingCurrentPaths": 0,
+    "sources": 7
+  },
+  "publicInterface": {
+    "command": "python3 skills/curating-skills/scripts/review-upstreams.py --manifest config/sources.yaml --output \"$JCODE_SCRATCH_DIR/upstream-review-public-acceptance-2026-10-20.md\" --cache-dir \"$JCODE_SCRATCH_DIR/upstream-cache\"",
+    "exitCode": 0,
+    "reportLines": 374,
+    "network": "Actual configured Git remotes fetched; no stubs",
+    "provenanceFilesUnchanged": true,
+    "initialCacheFailure": "Manually initialized review repository lacked origin. A normal tool-managed clone succeeded; no shipped code or pin changed."
+  },
+  "cursorFollowup": {
+    "recorded": "111cf6a16b11cc822782c1585859af4a580a2490",
+    "fetched": "190d28736eff128ec94f502a22c7fe0c4b56cd37",
+    "newCommits": 4,
+    "changedInventoryPaths": 6,
+    "mappedLocalSkillsAffected": 0,
+    "pinAdvanced": false
+  },
+  "proseInterface": {
+    "command": "python3 skills/humanizer/scripts/prose-check.py docs/reviews/2026-10-20-upstream-curation.md --json",
+    "exitCode": 0,
+    "strongCues": 0,
+    "weakContextualContrasts": 2,
+    "explainStockWordsExitCode": 0,
+    "limits": "Public asset consumption checked; semantic agent behavior remains bounded synthetic evidence, not installed-host reliability proof."
+  }
+}
