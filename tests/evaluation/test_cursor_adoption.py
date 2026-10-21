@@ -67,6 +67,21 @@ class CursorAdoptionFixtures(unittest.TestCase):
         listed = json.loads(self.run_command('marker.py', 'list', '--store', store).stdout)
         self.assertEqual(listed['markers'], ['v1', 'v1'])
 
+    def test_cli_specification_case_preserves_existing_contract(self):
+        self.prepare('cli-specification-contract')
+        store = self.workspace / 'markers.json'
+        self.assertIn('usage:', self.run_command('marker.py', '--help').stdout)
+        self.assertIn('--name required', self.run_command('marker.py', 'add', '--store',
+                                                        str(store), success=False).stderr)
+        self.assertFalse(store.exists())
+        self.assertEqual(json.loads(self.run_command('marker.py', 'add', '--name', 'v1',
+                                                     '--store', str(store)).stdout), ['v1'])
+        self.assertEqual(json.loads(self.run_command('marker.py', 'add', '--name', 'v1',
+                                                     '--store', str(store)).stdout), ['v1'])
+        self.assertEqual(json.loads(self.run_command('marker.py', 'list', '--store',
+                                                     str(store)).stdout), ['v1'])
+        self.assertNotIn('dry-run', self.run_command('marker.py', '--help').stdout)
+
     def test_pr_draft_inventory_and_public_behavior(self):
         self.prepare('author-pr-draft')
         changed = set(runner.git(self.workspace, 'diff', '--name-only', 'BASE..HEAD').splitlines())
