@@ -106,15 +106,43 @@ Source: https://github.com/antithesishq/antithesis-skills
 
 `skills/analyzing-codebase` adapts the `antithesis-research` workflow into a platform-neutral testing-analysis mode. The upstream project is licensed under Apache License 2.0; a copy is retained at `skills/analyzing-codebase/LICENSE`.
 
-## Cursor Team Kit
+## Cursor plugins
 
 Source: https://github.com/cursor/plugins
 
-The reviewed scope is `cursor-team-kit/skills`, licensed by `cursor-team-kit/LICENSE`. Local skills adapt selected verification ideas rather than copying Cursor workflows or granting permission to run their external actions.
+Reviewed workflow sources include `cursor-team-kit`, `thermos`, `cli-for-agent`, and `agent-compatibility`. Their scoped `LICENSE` files carry the MIT notice below. Local skills adapt selected procedures without importing Cursor runtime or authorizing external actions. Pstack's separate attribution follows.
 
 MIT License
 
 Copyright (c) 2026 Cursor
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+## Pstack
+
+Source: https://github.com/cursor/plugins
+
+The reviewed scope is the selected `pstack/skills` review, architecture, and verification-harness procedures. `pstack/LICENSE` supplies the notice below. The individually installable `building-verification-harnesses` skill retains a copy of that license.
+
+MIT License
+
+Copyright (c) 2026 Lauren Tan
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

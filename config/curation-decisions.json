@@ -993,6 +993,188 @@
         "python3 -B -m unittest tests.curation.test_review_upstreams -v",
         "docs/reviews/2026-10-20-upstream-curation.md"
       ]
+    },
+    {
+      "source": "cursor-plugins",
+      "fromCommit": "111cf6a16b11cc822782c1585859af4a580a2490",
+      "toCommit": "190d28736eff128ec94f502a22c7fe0c4b56cd37",
+      "decision": "accept",
+      "disposition": "adapted",
+      "localSkills": [
+        "reviewing-code"
+      ],
+      "summary": "Expand ordinary review with structural simplification and cross-boundary safety checks.",
+      "rationale": "This reconsiders existing source content at the user-approved scope; the selected plugin paths are unchanged between the prior pin and reviewed head, not new upstream deltas. Adapt the nuclear code-quality procedure, pstack blast-radius, and thermos correctness review into independent design and conditional safety references. Include unnecessarily retained complexity, canonical ownership, contracts, gates, developer setup, deleted consumers, and executed safety assumptions. Preserve proportional severity and do not require a runtime bug before reporting a concrete design burden.",
+      "validation": [
+        "node scripts/validate.js",
+        "python3 -B -m unittest tests.curation.test_review_upstreams -v",
+        "docs/reviews/2026-10-21-cursor-adoption.md",
+        "docs/reviews/2026-10-21-cursor-adoption-evidence.json"
+      ]
+    },
+    {
+      "source": "cursor-plugins",
+      "fromCommit": "111cf6a16b11cc822782c1585859af4a580a2490",
+      "toCommit": "190d28736eff128ec94f502a22c7fe0c4b56cd37",
+      "decision": "accept",
+      "disposition": "adapted",
+      "localSkills": [
+        "planning-work"
+      ],
+      "summary": "Add conditional caller-facing architecture sketches for consequential boundaries.",
+      "rationale": "This reconsiders existing source content at the user-approved scope; the selected plugin paths are unchanged between the prior pin and reviewed head, not new upstream deltas. Adapt the architect entry and design-red-flags reference: start with actual caller usage, compare distinct ownership/type shapes, preserve mutation/error/order contracts, and revisit repeated workarounds. Simple edits do not acquire a universal architecture ritual.",
+      "validation": [
+        "node scripts/validate.js",
+        "python3 -B -m unittest tests.curation.test_review_upstreams -v",
+        "docs/reviews/2026-10-21-cursor-adoption.md",
+        "docs/reviews/2026-10-21-cursor-adoption-evidence.json"
+      ]
+    },
+    {
+      "source": "cursor-plugins",
+      "fromCommit": "111cf6a16b11cc822782c1585859af4a580a2490",
+      "toCommit": "190d28736eff128ec94f502a22c7fe0c4b56cd37",
+      "decision": "accept",
+      "disposition": "adapted",
+      "localSkills": [
+        "specifying-work",
+        "verifying-work"
+      ],
+      "summary": "Add automation-friendly CLI contracts and normal non-TTY verification routing.",
+      "rationale": "This reconsiders existing source content at the user-approved scope; the selected plugin paths are unchanged between the prior pin and reviewed head, not new upstream deltas. Define missing-input behavior, help/examples, composable output and errors, observable preview and operation-specific retry guarantees. Resolve the upstream interactive-fallback ambiguity explicitly and reject universal idempotence. Ordinary CLI review and separate CLI-specification tasks have distinct evaluation cases.",
+      "validation": [
+        "node scripts/validate.js",
+        "python3 -B -m unittest tests.curation.test_review_upstreams -v",
+        "docs/reviews/2026-10-21-cursor-adoption.md",
+        "docs/reviews/2026-10-21-cursor-adoption-evidence.json"
+      ]
+    },
+    {
+      "source": "cursor-plugins",
+      "fromCommit": "111cf6a16b11cc822782c1585859af4a580a2490",
+      "toCommit": "190d28736eff128ec94f502a22c7fe0c4b56cd37",
+      "decision": "accept",
+      "disposition": "adapted",
+      "localSkills": [
+        "implementing-work",
+        "handing-off-work"
+      ],
+      "summary": "Fold author-side PR preparation into implementation and handoff with explicit discovery.",
+      "rationale": "This reconsiders existing source content at the user-approved scope; the selected plugin paths are unchanged between the prior pin and reviewed head, not new upstream deltas. The prepare/tidy trigger drafts accurate intent, risk, migration order, observed tests and reviewer entry points, separating mechanical/generated changes from logic. This is authoring, not reviewer-side capture. History cleanup needs specific authorization and complete tree identity checks; drafting does not authorize posting, pushing, rebasing, or PR-state changes.",
+      "validation": [
+        "node scripts/validate.js",
+        "python3 -B -m unittest tests.curation.test_review_upstreams -v",
+        "docs/reviews/2026-10-21-cursor-adoption.md",
+        "docs/reviews/2026-10-21-cursor-adoption-evidence.json"
+      ]
+    },
+    {
+      "source": "cursor-plugins",
+      "fromCommit": "111cf6a16b11cc822782c1585859af4a580a2490",
+      "toCommit": "190d28736eff128ec94f502a22c7fe0c4b56cd37",
+      "decision": "accept",
+      "disposition": "adapted",
+      "localSkills": [
+        "diagnosing-bugs",
+        "verifying-work"
+      ],
+      "summary": "Add provider-inclusive, current-head PR check triage.",
+      "rationale": "This reconsiders existing source content at the user-approved scope; the selected plugin paths are unchanged between the prior pin and reviewed head, not new upstream deltas. Inspect all attached checks including external providers, investigate relevant authorized evidence, refresh after head changes, and separate attached status, required checks and mergeability. Synthetic provider cases remain explicitly synthetic and do not establish hosted acceptance.",
+      "validation": [
+        "node scripts/validate.js",
+        "python3 -B -m unittest tests.curation.test_review_upstreams -v",
+        "docs/reviews/2026-10-21-cursor-adoption.md",
+        "docs/reviews/2026-10-21-cursor-adoption-evidence.json"
+      ]
+    },
+    {
+      "source": "cursor-plugins",
+      "fromCommit": "111cf6a16b11cc822782c1585859af4a580a2490",
+      "toCommit": "190d28736eff128ec94f502a22c7fe0c4b56cd37",
+      "decision": "accept",
+      "disposition": "adapted",
+      "localSkills": [
+        "analyzing-codebase"
+      ],
+      "summary": "Add an explicitly requested cold-start and validation readiness mode.",
+      "rationale": "This reconsiders existing source content at the user-approved scope; the selected plugin paths are unchanged between the prior pin and reviewed head, not new upstream deltas. Adapt startup, scoped validation and docs-reliability reviewers into observed commands, recovery and prerequisite limits. Do not import an opaque score, mandatory subagents, unpinned external scanner, or automatic installation and setup fixes.",
+      "validation": [
+        "node scripts/validate.js",
+        "python3 -B -m unittest tests.curation.test_review_upstreams -v",
+        "docs/reviews/2026-10-21-cursor-adoption.md",
+        "docs/reviews/2026-10-21-cursor-adoption-evidence.json"
+      ]
+    },
+    {
+      "source": "cursor-plugins",
+      "fromCommit": "111cf6a16b11cc822782c1585859af4a580a2490",
+      "toCommit": "190d28736eff128ec94f502a22c7fe0c4b56cd37",
+      "decision": "accept",
+      "disposition": "adapted",
+      "localSkills": [
+        "building-verification-harnesses"
+      ],
+      "summary": "Add opt-in reusable verification-harness construction and maintenance.",
+      "rationale": "This reconsiders existing source content at the user-approved scope; the selected plugin paths are unchanged between the prior pin and reviewed head, not new upstream deltas. Adapt pstack creation and maintenance into one host-neutral skill: discover existing runners, establish launch/doctor/ownership, drive public journeys, retain action/result/side-effect evidence, clean only owned state, separate mapped and exercised coverage, and distinguish doc drift, harness gaps and product regressions. Real-host construction and drift maintenance are exercised against mk-skills public CLIs without copying product code or editing the product.",
+      "validation": [
+        "node scripts/validate.js",
+        "python3 -B -m unittest tests.curation.test_review_upstreams -v",
+        "docs/reviews/2026-10-21-cursor-adoption.md",
+        "docs/reviews/2026-10-21-cursor-adoption-evidence.json"
+      ]
+    },
+    {
+      "source": "cursor-plugins",
+      "fromCommit": "111cf6a16b11cc822782c1585859af4a580a2490",
+      "toCommit": "190d28736eff128ec94f502a22c7fe0c4b56cd37",
+      "decision": "accept",
+      "disposition": "no-local-change",
+      "localSkills": [
+        "handling-review-feedback",
+        "learning-from-mistakes",
+        "personal-writing-style",
+        "diagnosing-bugs",
+        "verifying-work",
+        "reviewing-code",
+        "implementing-work"
+      ],
+      "summary": "Retain compatible existing Team Kit equivalents and scope out the unrelated repository delta.",
+      "rationale": "The requested Team Kit subtree and newly consulted plugin sources have no delta from the prior pin. Existing capture/feedback, session-learning, voice, smoke and diagnosis boundaries remain. Four intervening commits and six changed inventory paths concern the third-party X plugin and root listing, not the adopted scopes. No extra vendor runtime is imported.",
+      "validation": [
+        "node scripts/validate.js",
+        "python3 -B -m unittest tests.curation.test_review_upstreams -v",
+        "docs/reviews/2026-10-21-cursor-adoption.md",
+        "docs/reviews/2026-10-21-cursor-adoption-evidence.json"
+      ]
+    },
+    {
+      "source": "cursor-plugins",
+      "fromCommit": "111cf6a16b11cc822782c1585859af4a580a2490",
+      "toCommit": "190d28736eff128ec94f502a22c7fe0c4b56cd37",
+      "decision": "reject",
+      "disposition": "rejected",
+      "localSkills": [
+        "verifying-work",
+        "diagnosing-bugs",
+        "reviewing-code",
+        "implementing-work",
+        "handling-review-feedback",
+        "learning-from-mistakes",
+        "personal-writing-style",
+        "planning-work",
+        "specifying-work",
+        "handing-off-work",
+        "analyzing-codebase",
+        "building-verification-harnesses"
+      ],
+      "summary": "Retain refusals of rigid thresholds, unsafe review narrowing, host-specific lifecycle machinery, and opaque readiness scoring.",
+      "rationale": "Do not import 1000-line presumptive blockers, added/modified-only review scope, automatic suppression of intentional high-risk changes, a single safety-invariant assumption, universal parallelism/idempotence, automatic push/PR creation, retry-until-green loops, fixed harness directories, mandatory cloud accounts or per-feature agents, opaque weighted scores, or an unpinned scanner. The accepted folds keep their useful procedures while preserving local authority and evidence limits.",
+      "validation": [
+        "node scripts/validate.js",
+        "python3 -B -m unittest tests.curation.test_review_upstreams -v",
+        "docs/reviews/2026-10-21-cursor-adoption.md",
+        "docs/reviews/2026-10-21-cursor-adoption-evidence.json"
+      ]
     }
   ]
 }

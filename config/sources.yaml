@@ -283,7 +283,7 @@
       "name": "cursor-plugins",
       "url": "https://github.com/cursor/plugins",
       "branch": "main",
-      "reviewedCommit": "111cf6a16b11cc822782c1585859af4a580a2490",
+      "reviewedCommit": "190d28736eff128ec94f502a22c7fe0c4b56cd37",
       "license": "MIT",
       "mappings": [
         {
@@ -292,7 +292,9 @@
             "cursor-team-kit/skills/verify-this",
             "cursor-team-kit/skills/check-compiler-errors",
             "cursor-team-kit/skills/loop-on-ci",
-            "cursor-team-kit/skills/run-smoke-tests"
+            "cursor-team-kit/skills/run-smoke-tests",
+            "cli-for-agent/skills/cli-for-agents/SKILL.md",
+            "cursor-team-kit/skills/fix-ci"
           ]
         },
         {
@@ -301,7 +303,8 @@
             "cursor-team-kit/skills/control-cli",
             "cursor-team-kit/skills/control-ui",
             "cursor-team-kit/skills/fix-ci",
-            "cursor-team-kit/skills/run-smoke-tests"
+            "cursor-team-kit/skills/run-smoke-tests",
+            "cursor-team-kit/skills/loop-on-ci"
           ]
         },
         {
@@ -311,7 +314,9 @@
             "cursor-team-kit/skills/make-pr-easy-to-review",
             "cursor-team-kit/skills/pr-review-canvas",
             "cursor-team-kit/skills/review-and-ship",
-            "cursor-team-kit/skills/thermo-nuclear-code-quality-review"
+            "cursor-team-kit/skills/thermo-nuclear-code-quality-review",
+            "pstack/skills/blast-radius/SKILL.md",
+            "thermos/skills/thermo-nuclear-review/SKILL.md"
           ]
         },
         {
@@ -320,7 +325,8 @@
             "cursor-team-kit/skills/fix-ci",
             "cursor-team-kit/skills/fix-merge-conflicts",
             "cursor-team-kit/skills/new-branch-and-pr",
-            "cursor-team-kit/skills/review-and-ship"
+            "cursor-team-kit/skills/review-and-ship",
+            "cursor-team-kit/skills/make-pr-easy-to-review"
           ]
         },
         {
@@ -339,6 +345,42 @@
           "localSkill": "personal-writing-style",
           "upstreamPaths": [
             "cursor-team-kit/skills/workflow-from-chats"
+          ]
+        },
+        {
+          "localSkill": "planning-work",
+          "upstreamPaths": [
+            "pstack/skills/architect/SKILL.md",
+            "pstack/skills/architect/references/design-red-flags.md"
+          ]
+        },
+        {
+          "localSkill": "specifying-work",
+          "upstreamPaths": [
+            "cli-for-agent/skills/cli-for-agents/SKILL.md"
+          ]
+        },
+        {
+          "localSkill": "handing-off-work",
+          "upstreamPaths": [
+            "cursor-team-kit/skills/make-pr-easy-to-review"
+          ]
+        },
+        {
+          "localSkill": "analyzing-codebase",
+          "upstreamPaths": [
+            "agent-compatibility/skills/check-agent-compatibility/SKILL.md",
+            "agent-compatibility/agents/startup-review.md",
+            "agent-compatibility/agents/validation-review.md",
+            "agent-compatibility/agents/docs-reliability-review.md"
+          ]
+        },
+        {
+          "localSkill": "building-verification-harnesses",
+          "upstreamPaths": [
+            "pstack/skills/create-verification-skill/SKILL.md",
+            "pstack/skills/create-verification-skill/references/feature-map-example/README.md",
+            "pstack/skills/maintain-verification-skill/SKILL.md"
           ]
         }
       ]

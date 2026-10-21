@@ -252,12 +252,19 @@ class ReviewUpstreamsTests(unittest.TestCase):
                 "verifying-work", "diagnosing-bugs", "reviewing-code",
                 "implementing-work", "handling-review-feedback",
                 "learning-from-mistakes", "personal-writing-style",
+                "planning-work", "specifying-work", "handing-off-work",
+                "analyzing-codebase", "building-verification-harnesses",
             },
             {mapping["localSkill"] for mapping in cursor["mappings"]},
         )
+        reviewed_cursor_roots = (
+            "cursor-team-kit/skills/", "thermos/skills/", "pstack/skills/",
+            "cli-for-agent/skills/", "agent-compatibility/skills/",
+            "agent-compatibility/agents/",
+        )
         for mapping in cursor["mappings"]:
             for path in mapping["upstreamPaths"]:
-                self.assertTrue(path.startswith("cursor-team-kit/skills/"), path)
+                self.assertTrue(path.startswith(reviewed_cursor_roots), path)
         self.assertIn(
             "cursor-team-kit/skills/verify-this",
             next(mapping["upstreamPaths"] for mapping in cursor["mappings"]
@@ -291,6 +298,22 @@ class ReviewUpstreamsTests(unittest.TestCase):
             ("superpowers", "adversarial-refinement", "skills/brainstorming"), mapped,
         )
         for expected_mapping in (
+            ("cursor-plugins", "reviewing-code", "pstack/skills/blast-radius/SKILL.md"),
+            ("cursor-plugins", "reviewing-code", "thermos/skills/thermo-nuclear-review/SKILL.md"),
+            ("cursor-plugins", "planning-work", "pstack/skills/architect/SKILL.md"),
+            ("cursor-plugins", "planning-work", "pstack/skills/architect/references/design-red-flags.md"),
+            ("cursor-plugins", "specifying-work", "cli-for-agent/skills/cli-for-agents/SKILL.md"),
+            ("cursor-plugins", "verifying-work", "cli-for-agent/skills/cli-for-agents/SKILL.md"),
+            ("cursor-plugins", "implementing-work", "cursor-team-kit/skills/make-pr-easy-to-review"),
+            ("cursor-plugins", "handing-off-work", "cursor-team-kit/skills/make-pr-easy-to-review"),
+            ("cursor-plugins", "diagnosing-bugs", "cursor-team-kit/skills/loop-on-ci"),
+            ("cursor-plugins", "analyzing-codebase", "agent-compatibility/skills/check-agent-compatibility/SKILL.md"),
+            ("cursor-plugins", "analyzing-codebase", "agent-compatibility/agents/startup-review.md"),
+            ("cursor-plugins", "analyzing-codebase", "agent-compatibility/agents/validation-review.md"),
+            ("cursor-plugins", "analyzing-codebase", "agent-compatibility/agents/docs-reliability-review.md"),
+            ("cursor-plugins", "building-verification-harnesses", "pstack/skills/create-verification-skill/SKILL.md"),
+            ("cursor-plugins", "building-verification-harnesses", "pstack/skills/create-verification-skill/references/feature-map-example/README.md"),
+            ("cursor-plugins", "building-verification-harnesses", "pstack/skills/maintain-verification-skill/SKILL.md"),
             ("matt-pocock-skills", "learning-from-mistakes", "skills/engineering/retro/SKILL.md"),
             ("antithesis-skills", "analyzing-codebase", "antithesis-review-inputs/SKILL.md"),
             ("antithesis-skills", "analyzing-codebase", "antithesis-review-inputs/references/anti-patterns.md"),
@@ -311,6 +334,10 @@ class ReviewUpstreamsTests(unittest.TestCase):
             self.assertIn(url, notices)
         self.assertGreaterEqual(notices.count("MIT License"), 3)
         self.assertIn("Permission is hereby granted", notices)
+        self.assertIn("Copyright (c) 2026 Lauren Tan", notices)
+        harness_license = (ROOT / "skills/building-verification-harnesses/LICENSE").read_text()
+        self.assertIn("Copyright (c) 2026 Lauren Tan", harness_license)
+        self.assertIn("MIT License", harness_license)
 
         ledger = json.loads((ROOT / "config" / "curation-decisions.json").read_text())
         self.assertEqual(1, ledger["version"])

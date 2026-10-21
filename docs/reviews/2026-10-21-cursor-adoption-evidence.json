@@ -1,0 +1,481 @@
+{
+  "realHarnessHost": {
+    "construction": {
+      "after_product": {
+        "head": "cbd1562cf2383a9c79f63eadb5ce0c7a35330894",
+        "status": ""
+      },
+      "before_product": {
+        "head": "cbd1562cf2383a9c79f63eadb5ce0c7a35330894",
+        "status": ""
+      },
+      "context_sha256": "003d017dcb2961a8a9ea803fd3e93d610b9a87ebe1c01e778c9bedd023516382",
+      "elapsed_seconds": 186.66,
+      "exit_code": 0,
+      "grading": "pending; process success alone is not acceptance",
+      "host": "codex",
+      "mode": "construction",
+      "model_requested": "gpt-6-sol",
+      "product": "/Users/mike/code/mk-skills",
+      "timed_out": false,
+      "workspace": "/Users/mike/.jcode/scratch/approved-real-harness-workspace"
+    },
+    "maintenance": {
+      "after_product": {
+        "head": "c1c4c8acf5f156a931b933656c8346094949946e",
+        "status": ""
+      },
+      "before_product": {
+        "head": "c1c4c8acf5f156a931b933656c8346094949946e",
+        "status": ""
+      },
+      "context_sha256": "003d017dcb2961a8a9ea803fd3e93d610b9a87ebe1c01e778c9bedd023516382",
+      "elapsed_seconds": 128.806,
+      "exit_code": 0,
+      "grading": "pending; process success alone is not acceptance",
+      "host": "codex",
+      "mode": "maintenance",
+      "model_requested": "gpt-6-sol",
+      "product": "/Users/mike/code/mk-skills",
+      "timed_out": false,
+      "workspace": "/Users/mike/.jcode/scratch/approved-real-harness-workspace"
+    }
+  },
+  "realHarnessObservations": [
+    {
+      "data": {
+        "base": "666e93538f5738be0d6b799b5a89f9e8a5529453",
+        "head": "cbd1562cf2383a9c79f63eadb5ce0c7a35330894",
+        "outcome": "passed",
+        "product": "/Users/mike/code/mk-skills",
+        "product_status_unchanged": true,
+        "prose_check": {
+          "exit_code": 0,
+          "input_sha256_before_after": "8d94a59f5b3a740bb7a677ae27c15f5e4baba8471500c9b3227811aba5de6483",
+          "input_unchanged": true,
+          "stock_words": 4
+        },
+        "retained_evidence_exists": true,
+        "review_coverage": {
+          "exit_code": 1,
+          "gaps": 23,
+          "reviewed": 0,
+          "total": 23
+        },
+        "review_package": {
+          "files": 23,
+          "git_names": 23,
+          "manifest_sha256": "4b194dbd9129f1c5a697e6dc588c46e2439c988dbee4dd7dff75a136b50c5073",
+          "package_sha256": "f36e77f3a219f91dfbcb8a3c6d3055ebe149080bca89b092565abc02da3fe8cb",
+          "retained_pair_existed": true,
+          "temporary_pair_existed": true
+        },
+        "temporary_removed": true
+      },
+      "run": "20261021T004800Z-72451"
+    },
+    {
+      "data": {
+        "base": "666e93538f5738be0d6b799b5a89f9e8a5529453",
+        "head": "cbd1562cf2383a9c79f63eadb5ce0c7a35330894",
+        "outcome": "passed",
+        "product": "/Users/mike/code/mk-skills",
+        "product_status_unchanged": true,
+        "prose_check": {
+          "exit_code": 0,
+          "input_sha256_before_after": "8d94a59f5b3a740bb7a677ae27c15f5e4baba8471500c9b3227811aba5de6483",
+          "input_unchanged": true,
+          "stock_words": 4
+        },
+        "retained_package_exists_after_cleanup": true,
+        "retained_prose_input_exists_after_cleanup": true,
+        "review_coverage": {
+          "exit_code": 1,
+          "gaps": 23,
+          "reviewed": 0,
+          "total": 23
+        },
+        "review_package": {
+          "files": 23,
+          "git_names": 23,
+          "manifest_sha256": "4b194dbd9129f1c5a697e6dc588c46e2439c988dbee4dd7dff75a136b50c5073",
+          "package_sha256": "f36e77f3a219f91dfbcb8a3c6d3055ebe149080bca89b092565abc02da3fe8cb",
+          "retained_pair_existed": true,
+          "temporary_pair_existed": true
+        },
+        "temporary_path": "/Users/mike/.jcode/scratch/mk-skills-verification.i46tir9n",
+        "temporary_removed": true
+      },
+      "run": "20261021T004858Z-76221"
+    },
+    {
+      "data": {
+        "base": "666e93538f5738be0d6b799b5a89f9e8a5529453",
+        "error": "committed HEAD moved; choose and inspect a new fixed range",
+        "head": "cbd1562cf2383a9c79f63eadb5ce0c7a35330894",
+        "outcome": "failed",
+        "product": "/Users/mike/code/mk-skills",
+        "retained_package_exists_after_cleanup": false,
+        "retained_prose_input_exists_after_cleanup": false
+      },
+      "run": "20261021T005227Z-88778"
+    },
+    {
+      "data": {
+        "base": "666e93538f5738be0d6b799b5a89f9e8a5529453",
+        "error": "committed HEAD moved; choose and inspect a new fixed range",
+        "head": "cbd1562cf2383a9c79f63eadb5ce0c7a35330894",
+        "outcome": "failed",
+        "product": "/Users/mike/code/mk-skills",
+        "retained_package_exists_after_cleanup": false,
+        "retained_prose_input_exists_after_cleanup": false
+      },
+      "run": "20261021T005314Z-93214"
+    },
+    {
+      "data": {
+        "base": "666e93538f5738be0d6b799b5a89f9e8a5529453",
+        "head": "c1c4c8acf5f156a931b933656c8346094949946e",
+        "outcome": "passed",
+        "product": "/Users/mike/code/mk-skills",
+        "product_status_unchanged": true,
+        "prose_check": {
+          "exit_code": 0,
+          "input_sha256_before_after": "8d94a59f5b3a740bb7a677ae27c15f5e4baba8471500c9b3227811aba5de6483",
+          "input_unchanged": true,
+          "stock_words": 4
+        },
+        "retained_package_exists_after_cleanup": true,
+        "retained_prose_input_exists_after_cleanup": true,
+        "review_coverage": {
+          "exit_code": 1,
+          "gaps": 23,
+          "reviewed": 0,
+          "total": 23
+        },
+        "review_package": {
+          "files": 23,
+          "git_names": 23,
+          "manifest_sha256": "502be96b55389e3d299b47164dcd165f31e9676508b689460c1392f494bc23d2",
+          "package_sha256": "09f242ea0126ae72c6f2d89d8bfb8eef2c22338d98ca2322a6079f039d681cd5",
+          "retained_pair_existed": true,
+          "temporary_pair_existed": true
+        },
+        "temporary_path": "/Users/mike/.jcode/scratch/mk-skills-verification.tzjzege0",
+        "temporary_removed": true
+      },
+      "run": "20261021T005344Z-95157"
+    },
+    {
+      "data": {
+        "base": "666e93538f5738be0d6b799b5a89f9e8a5529453",
+        "head": "c1c4c8acf5f156a931b933656c8346094949946e",
+        "outcome": "passed",
+        "product": "/Users/mike/code/mk-skills",
+        "product_status_unchanged": true,
+        "prose_check": {
+          "exit_code": 0,
+          "input_sha256_before_after": "8d94a59f5b3a740bb7a677ae27c15f5e4baba8471500c9b3227811aba5de6483",
+          "input_unchanged": true,
+          "stock_words": 4
+        },
+        "retained_package_exists_after_cleanup": true,
+        "retained_prose_input_exists_after_cleanup": true,
+        "review_coverage": {
+          "exit_code": 1,
+          "gaps": 23,
+          "reviewed": 0,
+          "total": 23
+        },
+        "review_package": {
+          "files": 23,
+          "git_names": 23,
+          "manifest_sha256": "502be96b55389e3d299b47164dcd165f31e9676508b689460c1392f494bc23d2",
+          "package_sha256": "09f242ea0126ae72c6f2d89d8bfb8eef2c22338d98ca2322a6079f039d681cd5",
+          "retained_pair_existed": true,
+          "temporary_pair_existed": true
+        },
+        "temporary_path": "/Users/mike/.jcode/scratch/mk-skills-verification.wq70qfim",
+        "temporary_removed": true
+      },
+      "run": "20261021T005416Z-97298"
+    }
+  ],
+  "runs": [
+    {
+      "artifacts": {
+        "/Users/mike/.jcode/scratch/approved-baseline-design-only/maintainability-correct-overbuilt/workspace/assessment.md": "164309bf35453f26c6a0956383c8f751f98636d845cca42035da975b9f61b463"
+      },
+      "case": "maintainability-correct-overbuilt",
+      "executionSnapshotSha256": "5528d669654cf56361af43348654c1746735614f34379eca02c7079a9414a141",
+      "exitCode": 0,
+      "host": "codex",
+      "hostVersion": "codex-cli 0.163.0",
+      "modelRequested": "gpt-6-sol",
+      "observedReadCommands": [
+        "reviewing-code/SKILL.md",
+        "verifying-work/SKILL.md"
+      ],
+      "rawReceipt": "/Users/mike/.jcode/scratch/approved-baseline-design-only/maintainability-correct-overbuilt/result.json",
+      "run": "approved-baseline-design-only",
+      "timedOut": false,
+      "traceSha256": "2dfc0a4d8eba4fe1a554119ce01e88621effd8c84ca47b1694049611cf16ae94",
+      "manualBehaviorGrade": "Observed rubric satisfied in this bounded run",
+      "selectionCaveat": null
+    },
+    {
+      "artifacts": {
+        "/Users/mike/.jcode/scratch/approved-baseline-clean-control/maintainability-clean-control/workspace/assessment.md": "1dcdd17a8299190d15f5eaff87642b3bf2434797ce466752ee810af09caaa32c"
+      },
+      "case": "maintainability-clean-control",
+      "executionSnapshotSha256": "0bc0fa5a79cf3dca02326cffb823297bcfcdde59df21a8845f11c99ffde68ca7",
+      "exitCode": 0,
+      "host": "codex",
+      "hostVersion": "codex-cli 0.163.0",
+      "modelRequested": "gpt-6-sol",
+      "observedReadCommands": [
+        "reviewing-code/SKILL.md",
+        "verifying-work/SKILL.md"
+      ],
+      "rawReceipt": "/Users/mike/.jcode/scratch/approved-baseline-clean-control/maintainability-clean-control/result.json",
+      "run": "approved-baseline-clean-control",
+      "timedOut": false,
+      "traceSha256": "6ff810752debfa07cbccc716a5fca837e2f79c2527a1fd2416dc02f621c31d5e",
+      "manualBehaviorGrade": "Observed rubric satisfied in this bounded run",
+      "selectionCaveat": null
+    },
+    {
+      "artifacts": {
+        "/Users/mike/.jcode/scratch/approved-candidate-design-only/maintainability-correct-overbuilt/workspace/assessment.md": "f1983d686d5c618e89ed9a75358462fbcdae23fae199fb8736eb8fc49f97d9e6"
+      },
+      "case": "maintainability-correct-overbuilt",
+      "executionSnapshotSha256": "ff6e5229a8fae30f8253b045307591ab329cc39ab69853782eb6ac1b785d4798",
+      "exitCode": 0,
+      "host": "codex",
+      "hostVersion": "codex-cli 0.163.0",
+      "modelRequested": "gpt-6-sol",
+      "observedReadCommands": [
+        "reviewing-code/SKILL.md",
+        "verifying-work/SKILL.md",
+        "design-review.md"
+      ],
+      "rawReceipt": "/Users/mike/.jcode/scratch/approved-candidate-design-only/maintainability-correct-overbuilt/result.json",
+      "run": "approved-candidate-design-only",
+      "timedOut": false,
+      "traceSha256": "a2273dd29a13d9ea88e2f900a045e3ba16b2c56e7e4077a91722fdec091f4bc7",
+      "manualBehaviorGrade": "Observed rubric satisfied in this bounded run",
+      "selectionCaveat": null
+    },
+    {
+      "artifacts": {
+        "/Users/mike/.jcode/scratch/approved-candidate-clean-control/maintainability-clean-control/workspace/assessment.md": "b47843c11aa2cd6a999888e999858fda1fd3b3e09ed2eeb72eb7aeda4db1f89e"
+      },
+      "case": "maintainability-clean-control",
+      "executionSnapshotSha256": "034b5a89d5f8979e3728378f94882b3315d3e05701f910c9845dbd437f562537",
+      "exitCode": 0,
+      "host": "codex",
+      "hostVersion": "codex-cli 0.163.0",
+      "modelRequested": "gpt-6-sol",
+      "observedReadCommands": [
+        "reviewing-code/SKILL.md",
+        "verifying-work/SKILL.md",
+        "design-review.md"
+      ],
+      "rawReceipt": "/Users/mike/.jcode/scratch/approved-candidate-clean-control/maintainability-clean-control/result.json",
+      "run": "approved-candidate-clean-control",
+      "timedOut": false,
+      "traceSha256": "1b8b30d7ae0d54569560c60d98000bad99876b66229dc354233ee5c7f314cdaa",
+      "manualBehaviorGrade": "Observed rubric satisfied in this bounded run",
+      "selectionCaveat": null
+    },
+    {
+      "artifacts": {
+        "/Users/mike/.jcode/scratch/approved-candidate-adoption-a/author-pr-draft/workspace/draft.md": "6c9cb34a7f1e016d66b34600765493d28af2a8fe9b3344eb49a225bfe9287b81"
+      },
+      "case": "author-pr-draft",
+      "executionSnapshotSha256": "478290d06b24c696b9bc894d4f4bd3d24da505978c409657ec31e0637ec273dc",
+      "exitCode": 0,
+      "host": "codex",
+      "hostVersion": "codex-cli 0.163.0",
+      "modelRequested": "gpt-6-sol",
+      "observedReadCommands": [
+        "reviewing-code/SKILL.md",
+        "verifying-work/SKILL.md",
+        "implementing-work/SKILL.md",
+        "pr-preparation.md"
+      ],
+      "rawReceipt": "/Users/mike/.jcode/scratch/approved-candidate-adoption-a/author-pr-draft/result.json",
+      "run": "approved-candidate-adoption-a",
+      "timedOut": false,
+      "traceSha256": "8c8efc2ca369eb7b79c90747ac6470b1319d506e656a65d2d4be56b7ebc73dfd",
+      "manualBehaviorGrade": "Observed rubric satisfied in this bounded run",
+      "selectionCaveat": null
+    },
+    {
+      "artifacts": {
+        "/Users/mike/.jcode/scratch/approved-candidate-adoption-a/ci-external-check/workspace/assessment.md": "fbf2d9110366baf2e3b7938b8b4e1ca0abee60d53fbeaade72dcb410a5addc5d"
+      },
+      "case": "ci-external-check",
+      "executionSnapshotSha256": "478290d06b24c696b9bc894d4f4bd3d24da505978c409657ec31e0637ec273dc",
+      "exitCode": 0,
+      "host": "codex",
+      "hostVersion": "codex-cli 0.163.0",
+      "modelRequested": "gpt-6-sol",
+      "observedReadCommands": [
+        "verifying-work/SKILL.md",
+        "pr-check-triage.md"
+      ],
+      "rawReceipt": "/Users/mike/.jcode/scratch/approved-candidate-adoption-a/ci-external-check/result.json",
+      "run": "approved-candidate-adoption-a",
+      "timedOut": false,
+      "traceSha256": "e7f4a974c607efe7e95688dc19f73c5500159dec9c89ebbce5bf220d06cbbb2e",
+      "manualBehaviorGrade": "Observed rubric satisfied in this bounded run",
+      "selectionCaveat": null
+    },
+    {
+      "artifacts": {
+        "/Users/mike/.jcode/scratch/approved-candidate-adoption-a/cli-headless-contract/workspace/assessment.md": "5d529b70111b053b63126860124ee73948ffc5058750e530d2b4469a3be6baa3"
+      },
+      "case": "cli-headless-contract",
+      "executionSnapshotSha256": "478290d06b24c696b9bc894d4f4bd3d24da505978c409657ec31e0637ec273dc",
+      "exitCode": 0,
+      "host": "codex",
+      "hostVersion": "codex-cli 0.163.0",
+      "modelRequested": "gpt-6-sol",
+      "observedReadCommands": [
+        "reviewing-code/SKILL.md",
+        "verifying-work/SKILL.md"
+      ],
+      "rawReceipt": "/Users/mike/.jcode/scratch/approved-candidate-adoption-a/cli-headless-contract/result.json",
+      "run": "approved-candidate-adoption-a",
+      "timedOut": false,
+      "traceSha256": "2684c665122c9da09ba2a8ff7390b52955fb00048633dca1ecac220f9eb83301",
+      "manualBehaviorGrade": "Observed rubric satisfied in this bounded run",
+      "selectionCaveat": "Original expected specifying-work activation was not observed; reviewing-code and verifying-work were used. Separate CLI specification case is independent coverage."
+    },
+    {
+      "artifacts": {
+        "/Users/mike/.jcode/scratch/approved-candidate-adoption-b/cold-start-readiness/workspace/assessment.md": "1543045466941187d8c828f9f3f2593d11a59fd93bd4628d6c206260d2462b6e"
+      },
+      "case": "cold-start-readiness",
+      "executionSnapshotSha256": "7276172acdb6d3aec1669e71901f82ff88e630590d4a5fcc278dc2dc8805c4f0",
+      "exitCode": 0,
+      "host": "codex",
+      "hostVersion": "codex-cli 0.163.0",
+      "modelRequested": "gpt-6-sol",
+      "observedReadCommands": [
+        "verifying-work/SKILL.md",
+        "analyzing-codebase/SKILL.md",
+        "agent-readiness.md"
+      ],
+      "rawReceipt": "/Users/mike/.jcode/scratch/approved-candidate-adoption-b/cold-start-readiness/result.json",
+      "run": "approved-candidate-adoption-b",
+      "timedOut": false,
+      "traceSha256": "eee082e769f355ec21e89df2640c1b6a42617cb8952acd56ab73c0c02aadf077",
+      "manualBehaviorGrade": "Observed rubric satisfied in this bounded run",
+      "selectionCaveat": null
+    },
+    {
+      "artifacts": {
+        "/Users/mike/.jcode/scratch/approved-candidate-adoption-b/harness-miniapp/workspace/verification.md": "06ce65cf890775d7451c56cce48f4881bc8b47d4619dde0f388ac7455beb4086"
+      },
+      "case": "harness-miniapp",
+      "executionSnapshotSha256": "7276172acdb6d3aec1669e71901f82ff88e630590d4a5fcc278dc2dc8805c4f0",
+      "exitCode": 0,
+      "host": "codex",
+      "hostVersion": "codex-cli 0.163.0",
+      "modelRequested": "gpt-6-sol",
+      "observedReadCommands": [
+        "verifying-work/SKILL.md",
+        "building-verification-harnesses/SKILL.md",
+        "journey-map.md"
+      ],
+      "rawReceipt": "/Users/mike/.jcode/scratch/approved-candidate-adoption-b/harness-miniapp/result.json",
+      "run": "approved-candidate-adoption-b",
+      "timedOut": false,
+      "traceSha256": "cecc302ad0f1ed42e86923e360fe848e31ed2d23eed5eea65633ece397206d4e",
+      "manualBehaviorGrade": "Observed rubric satisfied in this bounded run",
+      "selectionCaveat": null
+    },
+    {
+      "artifacts": {
+        "/Users/mike/.jcode/scratch/approved-candidate-cli-spec/cli-specification-contract/workspace/contract.md": "996a82d9e7465dc1954a2752f50390221a48163245cdaf0ecc736a0bb62b9fcd"
+      },
+      "case": "cli-specification-contract",
+      "executionSnapshotSha256": "7cc0306b4e9ab41685512a0aa46daab7ac7a81bfc34cc12408e4a3f9fb91c8bb",
+      "exitCode": 0,
+      "host": "codex",
+      "hostVersion": "codex-cli 0.163.0",
+      "modelRequested": "gpt-6-sol",
+      "observedReadCommands": [
+        "verifying-work/SKILL.md",
+        "specifying-work/SKILL.md"
+      ],
+      "rawReceipt": "/Users/mike/.jcode/scratch/approved-candidate-cli-spec/cli-specification-contract/result.json",
+      "run": "approved-candidate-cli-spec",
+      "timedOut": false,
+      "traceSha256": "433f8abc5bb2c277f5721345e81f3d2a113e08dbccca5aacd77aa056a7f6d410",
+      "manualBehaviorGrade": "Observed rubric satisfied in this bounded run",
+      "selectionCaveat": null
+    },
+    {
+      "artifacts": {
+        "/Users/mike/.jcode/scratch/approved-candidate-architecture/caller-architecture-plan/workspace/plan.md": "d0550f445d4b6a1ff3de1a6356696b2e5d93442dfd4e2e0b16a141842a5d1e2a"
+      },
+      "case": "caller-architecture-plan",
+      "executionSnapshotSha256": "0961587d378daf7b6c8abcd09fcff4de39df3e9b6bcb2f26eedf4be0169c65c9",
+      "exitCode": 0,
+      "host": "codex",
+      "hostVersion": "codex-cli 0.163.0",
+      "modelRequested": "gpt-6-sol",
+      "observedReadCommands": [
+        "verifying-work/SKILL.md",
+        "planning-work/SKILL.md",
+        "analyzing-codebase/SKILL.md",
+        "architecture-sketch.md"
+      ],
+      "rawReceipt": "/Users/mike/.jcode/scratch/approved-candidate-architecture/caller-architecture-plan/result.json",
+      "run": "approved-candidate-architecture",
+      "timedOut": false,
+      "traceSha256": "057fa7c88d38d61946740ac683616a32827757c91103b23e996f5b6e7ef275e3",
+      "manualBehaviorGrade": "Observed rubric satisfied in this bounded run",
+      "selectionCaveat": null
+    }
+  ],
+  "sourceAudit": {
+    "frame": "Every unique source-relative path in the supplied manifest at its exact reviewed commit.",
+    "missingPaths": 0,
+    "sourceCount": 7,
+    "watchedPaths": 88
+  },
+  "scope": {
+    "approval": "2026-10-21T00:32:50Z",
+    "baselineSkillRevision": "666e93538f5738be0d6b799b5a89f9e8a5529453",
+    "candidateSkillRevision": "cbd1562cf2383a9c79f63eadb5ce0c7a35330894",
+    "cliSpecificationFixtureRevision": "c1c4c8acf5f156a931b933656c8346094949946e",
+    "sourceReviewFrom": "111cf6a16b11cc822782c1585859af4a580a2490",
+    "sourceReviewTo": "190d28736eff128ec94f502a22c7fe0c4b56cd37",
+    "retainedHistoricalDecisions": 53,
+    "appendedDecisions": 9,
+    "baselineRuns": 2,
+    "candidateRuns": 9,
+    "comparativeConclusion": "Baseline and candidate both recovered the design finding and passed the justified-complexity control. No incremental effectiveness or statistical reliability claim."
+  },
+  "realHarnessGrading": {
+    "construction": "Observed real mk-skills public commands executed, 23-path manifest agrees with Git, 23 unreviewed gaps correctly remain, four Vale cues detected, input/product unchanged, owned state removed and evidence retained.",
+    "maintenance": "Observed intentional stale-head rejection, source-inspected pin update and controlled prose-rule correction, both mapped real public journeys redriven, prior 59 evidence files preserved byte-identically and product unchanged.",
+    "unverified": [
+      "During-drive failure/cancellation cleanup branches",
+      "Hosted CI and merge eligibility",
+      "Native plugin installation/discovery",
+      "Native UI or PTY journeys",
+      "Mapped but unexercised coverage/prose modes",
+      "General model reliability beyond one-shot examples"
+    ]
+  },
+  "integration": {
+    "fullCommittedValidator": "pending",
+    "finalAstraReview": "pending",
+    "finalPublicCurationCLI": "pending"
+  }
+}
