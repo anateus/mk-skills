@@ -25,4 +25,6 @@ Redact secrets, credentials, tokens, personal data, and unnecessary environment 
 
 Keep the handoff concise and disposable. Durable decisions belong in the project's established artifacts, not only in the temporary file.
 
+For an authored PR preparation handoff, link the current draft description and reviewer entry points, identify any proposed split or history cleanup and its authorization state, and distinguish unfinished implementation from a completed change with an external merge gate. Use [implementing-work's PR preparation guide](../implementing-work/references/pr-preparation.md) for the author-side draft; do not turn a handoff into a posted PR or reviewer-side findings.
+
 For generated deliverables, include the generator and command needed to reproduce them. Other artifacts need a durable, accessible copy and enough context to continue.

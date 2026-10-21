@@ -22,6 +22,8 @@ Name assumptions and unresolved choices rather than hiding them in implementatio
 
 Where lifecycle or rollout matters, specify initial setup, steady operation, supported overrides, recovery, and the intermediate states that must remain safe. For a health, capacity, or delivery claim, name the measured population, units, success condition, and observation point. Distinguish attempted work from completed work, missing data from a negative result, and aggregate health from per-member coverage.
 
+For a CLI interface, specify a non-TTY path for every required input and a prompt-free missing-input error with a usable example. Define layered command help with executable examples, stdin or pipeline behavior where appropriate, composable machine-useful output, stable error and exit-code semantics, and an observable dry-run for consequential actions. Specify safe retry semantics per operation rather than promising universal idempotence. Route acceptance criteria for CLI changes through the real executable interface, including help, failure, output, dry-run, and retry behavior, not just review of the specification.
+
 ## Approval threshold
 
 Seek approval when material unresolved choices would change scope, architecture, externally visible behavior, or irreversible work. If prior discussion already resolved those choices, present the synthesis for review and proceed according to the request. Editorial preferences and discoverable implementation facts do not create an approval gate.

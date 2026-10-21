@@ -1,0 +1,63 @@
+[
+  {
+    "id": "maintainability-scattered-policy",
+    "prompt": "Review BASE..HEAD for design and behavior risks. Run the local tests and exercise relevant flows. Write findings with evidence and limits to assessment.md. Do not change implementation.",
+    "expectedSkills": ["reviewing-code"],
+    "forbiddenSkills": [],
+    "expectedReferences": [],
+    "rubric": [
+      "Traces both new feature-policy branches through checkout and renewal, and checks the existing canonical policy abstraction rather than treating each branch in isolation.",
+      "Executes a policy change or disagreement scenario and identifies that renewal and checkout disagree with canonical eligibility for the same account; explains maintenance risk of parallel policy definitions with a concrete witness.",
+      "Does not claim the existing happy-path tests prove consistent policy or demand removal of every conditional branch."
+    ]
+  },
+  {
+    "id": "maintainability-cast-fallback",
+    "prompt": "Review BASE..HEAD for maintainability and correctness. Exercise the changed boundary with representative inputs. Write findings and limits to assessment.md, without changing code.",
+    "expectedSkills": ["reviewing-code"],
+    "forbiddenSkills": [],
+    "expectedReferences": [],
+    "rubric": [
+      "Finds that casting the optional upstream amount and silently substituting zero hides a missing required amount; executes missing and valid inputs and distinguishes them.",
+      "Identifies the added forwarding wrapper as a pass-through with no normalization, validation, or reuse benefit, tied to the actual call graph rather than a blanket abstraction ban.",
+      "Distinguishes a legitimate runtime parse of unknown external input from an unchecked cast and does not flag all fallback handling indiscriminately."
+    ]
+  },
+  {
+    "id": "maintainability-atomic-dependency",
+    "prompt": "Review BASE..HEAD for correctness and maintainability. Run the tests and a failure/dependency scenario. Write evidenced findings and limits to assessment.md without changing implementation.",
+    "expectedSkills": ["reviewing-code"],
+    "forbiddenSkills": [],
+    "expectedReferences": [],
+    "rubric": [
+      "Exercises a failure on the second dependent update and observes a persisted debit without the credit; compares with BASE atomic operation.",
+      "Traces that the credit depends on the debit receipt, so the second task waits on the first receipt and gains no concurrency from parallel launch.",
+      "Does not condemn independent concurrency or sequential execution categorically; recommends preserving transaction boundary and dependency ordering."
+    ]
+  },
+  {
+    "id": "maintainability-clean-control",
+    "prompt": "Review BASE..HEAD for correctness and maintainability. Run the tests and inspect the generated artifact and input boundary. Write findings and any verification limits to assessment.md; do not change implementation.",
+    "expectedSkills": ["reviewing-code"],
+    "forbiddenSkills": [],
+    "expectedReferences": [],
+    "rubric": [
+      "Recognizes that the >1000-line generated table is deterministic generated data and does not raise a blanket file-size finding.",
+      "Checks malformed external input is rejected by actual runtime validation rather than flagging unknown input alone.",
+      "Checks receipt-dependent sequential operations and does not recommend parallel execution when the second action needs the first result.",
+      "Avoids invented substantive findings; distinguishes fixture checks from unverified external integration claims."
+    ]
+  },
+  {
+    "id": "maintainability-correct-overbuilt",
+    "prompt": "Review BASE..HEAD for correctness and maintainability. Run tests and representative inputs. Write evidenced findings and limits to assessment.md without changing implementation.",
+    "expectedSkills": ["reviewing-code"],
+    "forbiddenSkills": [],
+    "expectedReferences": [],
+    "rubric": [
+      "Confirms the public receipt behavior and invalid-input rejection match BASE on representative inputs; does not invent a functional regression.",
+      "Identifies that one fixed conversion now requires a configurable step registry and pass-through normalize/envelope stages, with concrete added navigation and change surface but no demonstrated second use.",
+      "Recommends proportional simplification without declaring every pipeline abstraction wrong or demanding a rewrite for correctness."
+    ]
+  }
+]

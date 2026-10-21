@@ -1,6 +1,6 @@
 ---
 name: analyzing-codebase
-description: Build an evidence-backed model of a codebase before consequential work. Use when entering an unfamiliar repository, inventorying contracts across languages or repositories, planning a codebase transition, or discovering architecture, runtime boundaries, state, and test strategy. Supports for-contracts, for-transitioning, and for-testing. Do not use for a bounded lookup or routine edit in a familiar area.
+description: Build an evidence-backed model of a codebase before consequential work. Use when entering an unfamiliar repository, inventorying contracts across languages or repositories, planning a codebase transition, discovering architecture, runtime boundaries, state, and test strategy, or explicitly auditing agent readiness. Supports for-contracts, for-transitioning, for-testing, and requested agent-readiness review. Do not use for a bounded lookup or routine edit in a familiar area.
 ---
 
 # Analyzing Codebases
@@ -20,6 +20,7 @@ Learn enough of a system to make the next decision safely. Treat names such as `
 - For schemas, types, endpoints, external API clients, or boundaries across languages and repositories, read [for contracts](references/for-contracts.md). Its shared inventory feeds testing and transition analysis.
 - For refactoring, modernization, language changes, or moving capabilities out of a monorepo, read [for transitioning](references/for-transitioning.md). Track callers, behavioral differences, cutover, and evidence required to retire the old path.
 - For a testing-oriented analysis, including ordinary tests, property-based testing, stateful or generative testing, simulation, Hegel, or Antithesis, read [for testing](references/for-testing.md) and follow its conditional references.
+- For an explicitly requested audit of whether a fresh agent can start and validate this repository, read [agent readiness](references/agent-readiness.md). Do not run this audit during routine repository entry or a small change.
 - For architecture orientation without a testing deliverable, use the shared workflow above and the system-model portion of [system discovery](references/system-discovery.md).
 - For a requested code graph, first define the question the graph must answer. Prefer built-in text and structural search for bounded questions. A future graph-indexing mode may add tools such as `sqry` or Graphify only after their availability, language coverage, generated-data location, and query value are verified.
 

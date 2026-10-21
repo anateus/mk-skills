@@ -1,6 +1,6 @@
 ---
 name: implementing-work
-description: Implement clear or approved changes as coherent, verified slices. Use when asked to add, build, change, or fix behavior from a request, plan, specification, or feedback.
+description: Implement clear or approved changes as coherent, verified slices. Use when asked to add, build, change, or fix behavior from a request, plan, specification, or feedback, or to prepare or tidy an authored PR for review.
 ---
 
 # Implementing Work
@@ -22,6 +22,10 @@ If evidence invalidates the plan, update the route rather than forcing the plann
 When code acquires resources, changes shared state, retries work, or adds recovery, identify ownership and the relevant transitions before implementing cleanup. Cover partial setup, interruption, repeat execution, and simultaneous primary and cleanup failures. Attempt cleanup for all acquired resources, preserve the primary failure, and report secondary failures. Verify ownership before releasing shared claims.
 
 When several slices need the same runner or resource lifecycle, reuse a tested helper where practical. Land the runner, generation steps, and required automated selection with the behavior they protect, or state the dependency and incomplete protection explicitly.
+
+## Author-side PR preparation
+
+When asked to prepare or tidy an authored PR, follow [PR preparation](references/pr-preparation.md). This is author-side drafting and reviewability work, not `reviewing-code`'s reviewer-side finding capture. Do not infer permission to push, post, rebase, merge, or rewrite history from a request to make a PR easier to review.
 
 ## Ownership boundary
 

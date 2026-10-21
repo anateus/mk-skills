@@ -1,0 +1,9 @@
+# Architecture sketch for consequential boundaries
+
+Use when the work changes ownership, public types, or module seams and a premature shape would force coordinated edits. Ground the sketch in actual entrypoints, imports, callers, state transitions, and constraints. Show how a real caller completes one operation before deriving signatures or module boundaries. Include failure, mutation, and ordering behavior that the interface must preserve.
+
+Sketch at least two structurally distinct approaches, not two names for the same layering. Compare which policy each owns, what callers must coordinate, where validation occurs, how invalid states are excluded, and what changes together. Favor a small public surface that hides meaningful complexity rather than pass-through layers, hand-synchronized lists, split state ownership, or two competing ways to do one task. A stable compatibility seam can still justify a forwarding layer.
+
+When proposing reuse of an existing helper, inspect its implementation and real callers. Verify its contract, errors, mutation, ordering, and dependency assumptions before treating it as equivalent. Record uncertain equivalence as a probe or verification slice. The plan can note a demonstrated maintenance burden and credible simpler direction without pretending a full redesign has been implemented or proven.
+
+During implementation, repeated escape casts, optional fields that are invariably present, duplicate special-case branches, or callers depending on internals may signal that the model is wrong. Check whether these are a pattern across independent cases rather than one legitimate exception. If so, revisit the caller sketch and redesign the boundary instead of accumulating workarounds. Do not demand a rewrite merely because a different architecture is possible.

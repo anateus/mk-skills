@@ -23,6 +23,8 @@ Put discovery or contract-proving slices before work that depends on their resul
 
 Use a small reversible probe for empirical feasibility questions. For broad compatibility changes, consider expand, migrate, then contract stages so consumers can move without a flag day.
 
+When a consequential change establishes new module, type, or ownership boundaries, sketch the caller's real usage before settling those boundaries. Compare at least two genuinely different shapes and their invariants against existing entrypoints and consumers, then choose a shape whose interface keeps policy with its owner. This is a conditional design aid, not a ritual for every plan. Read [architecture sketch](references/architecture-sketch.md) when these boundaries are uncertain.
+
 ## Executable topology
 
 Define boundaries a reader can execute from the recorded inputs, outputs, and verification. Plans remain executable inline. Optional peers or Zellij can handle independent slices with distinct ownership when coordination pays off; dispatch still follows user or repository authority and peer results need primary verification.

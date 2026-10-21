@@ -22,6 +22,8 @@ Keep experiments cheap and reversible. Logs, temporary assertions, history, and 
 
 Capture only evidence needed for the discriminator. Redact sensitive values in commands and artifacts before sharing; this grants no additional data access.
 
+For PR CI failures, follow [PR check triage](references/pr-check-triage.md). Inspect the actual PR and current head, including externally provided checks, before attributing a failure to local code. Follow links to relevant logs only with authorized access.
+
 If the investigation is stuck or appears to have converged suspiciously early, optionally use `adversarial-refinement` to pressure-test the diagnosis. Competing hypotheses remain part of this base loop.
 
 ## When reproduction is unavailable
