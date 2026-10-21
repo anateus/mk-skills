@@ -22,6 +22,12 @@ Use built-in subagents for ordinary dispatch-and-wait work when they are adequat
 Include read discipline in the dispatch: locate first, project needed fields, then read narrow windows. Never read whole large files or transcripts. Prefer list/summary APIs over repeated heavy fetches; pass already-fetched content needed for an edit. Save large output to a scratch artifact and return concise findings with references. Use `data-spelunking` for tool choice and bounded extraction.
 </important>
 
-<important if="you are starting, claiming, dispatching, or handing off agent work">
-When `agentplan` is installed, record every unit on its shared board, including one-ticket projects. Create the project when work starts. Trackers remain the issue source of truth; the board holds local assignment and slices. Name tracker projects after the issue key and link with `agentplan attach <project> <label> <url>`. Claim with `agentplan claim <project> --agent <harness-and-pane> --timeout <seconds>` so ownership is visible and stale claims expire. Read the board during work; update tracker status once when the project closes. Consult `agentplan` for commands when available.
+<important if="you are choosing how to track or coordinate work">
+Default to native todos/plans. Use AgentPlan when requested, resuming an active AgentPlan assignment, or filling a concrete need current tools don't meet: shared ownership, cross-session backlog, dependencies, history, or human follow-ups. Multiple steps, delegation, multiple harnesses, or an old board alone aren't reasons. Prefer the simpler tool without asking the user to choose.
+
+Once selected, AgentPlan owns assignments and local slices. Keep dependencies, blockers, handoffs, and completion current. Claim agent-executable work with identity and expiry: `agentplan claim <project> --agent <harness-and-pane> --timeout <seconds>`. Native todos can hold immediate steps; don't mirror backlogs or status updates.
+
+Keep human actions human-owned. Preparing context doesn't authorize claiming or completing them. Track preparation separately only if useful. An on-deck marker doesn't prove human activity or completion.
+
+The external tracker owns issues and team updates. Link issues rather than copying bodies; report meaningful outcomes and blockers, not every step. Consult the AgentPlan skill after selecting it.
 </important>

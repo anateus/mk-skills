@@ -29,7 +29,9 @@ Claude Code's built-in Agent-tool subagents are good enough most of the time for
 
 ### Codex peers that share AgentPlan
 
-When AgentPlan is installed, a Codex peer needs its storage directory as a writable sandbox root. Grant `${AGENTPLAN_DIR:-$HOME/.agentplan}`; if `AGENTPLAN_DB` overrides the database path, also grant that file's parent directory. AgentPlan creates storage subdirectories and SQLite uses WAL sidecars and locking, so approving only the executable or database file isn't enough. Grant these directories, not the whole home directory, and repeat the same roots when resuming a peer.
+Apply the sandbox roots and preflight below only when peers use AgentPlan. Skip this section when native plans or another coordinator suffice.
+
+A Codex peer using AgentPlan needs its storage directory as a writable sandbox root. Grant `${AGENTPLAN_DIR:-$HOME/.agentplan}`; if `AGENTPLAN_DB` overrides the database path, also grant that file's parent directory. AgentPlan creates storage subdirectories and SQLite uses WAL sidecars and locking, so approving only the executable or database file isn't enough. Grant these directories, not the whole home directory, and repeat the same roots when resuming a peer.
 
 ```bash
 agentplan_roots=(--add-dir "${AGENTPLAN_DIR:-$HOME/.agentplan}")
