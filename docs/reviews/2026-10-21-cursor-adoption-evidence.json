@@ -474,8 +474,35 @@
     ]
   },
   "integration": {
-    "fullCommittedValidator": "pending",
-    "finalAstraReview": "pending",
-    "finalPublicCurationCLI": "pending"
+    "fullCommittedValidator": {
+      "status": "passed",
+      "commit": "ac946d005ee990da32eca351cc7169b5f10c031d",
+      "exitCode": 0,
+      "log": "/Users/mike/.jcode/scratch/approved-cursor-final-validation.log",
+      "evaluationFixtureTests": 23,
+      "skips": ["Optional Codex plugin-schema validator absent", "Native Zellij PTY submission opt-in absent"]
+    },
+    "finalAstraReview": {
+      "status": "no blocking findings in reviewed functional, provenance, and evidence scope",
+      "reviewedCommit": "ac946d005ee990da32eca351cc7169b5f10c031d",
+      "independentFullValidatorExitCode": 0,
+      "log": "/Users/mike/.jcode/scratch/adoption-astra-full-validation.log",
+      "reviewArtifact": "/Users/mike/.jcode/scratch/adoption-astra-review.md"
+    },
+    "finalPublicCurationCLI": {
+      "status": "passed",
+      "exitCode": 0,
+      "sourceCount": 7,
+      "mappingRows": 88,
+      "missingCurrentPaths": 0,
+      "provenanceHashesUnchanged": true,
+      "report": "/Users/mike/.jcode/scratch/approved-cursor-final-public-review.md",
+      "laterUnreviewedDrift": {
+        "source": "antithesis-skills",
+        "retainedPin": "527c182d17aac476fdf9c9ca5e290e03caa4b62a",
+        "fetchedHead": "4ce26aa6f0021bd99d401918b79c7bb906180858",
+        "adopted": false
+      }
+    }
   }
 }
