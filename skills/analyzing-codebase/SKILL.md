@@ -21,6 +21,7 @@ Learn enough of a system to make the next decision safely. Treat names such as `
 - For refactoring, modernization, language changes, or moving capabilities out of a monorepo, read [for transitioning](references/for-transitioning.md). Track callers, behavioral differences, cutover, and evidence required to retire the old path.
 - For a testing-oriented analysis, including ordinary tests, property-based testing, stateful or generative testing, simulation, Hegel, or Antithesis, read [for testing](references/for-testing.md) and follow its conditional references.
 - For an explicitly requested audit of whether a fresh agent can start and validate this repository, read [agent readiness](references/agent-readiness.md). Do not run this audit during routine repository entry or a small change.
+- For an explicitly requested document/code drift audit, read [drift audit](references/drift-audit.md). Bound the documents, claims, and implementation paths being compared; do not turn this pilot mode into a repository-wide mandatory audit.
 - For architecture orientation without a testing deliverable, use the shared workflow above and the system-model portion of [system discovery](references/system-discovery.md).
 - For a requested code graph, first define the question the graph must answer. Prefer built-in text and structural search for bounded questions. A future graph-indexing mode may add tools such as `sqry` or Graphify only after their availability, language coverage, generated-data location, and query value are verified.
 

@@ -33,6 +33,7 @@ Read `$REPO_ROOT/config/curation-decisions.json` before deciding. Identify the u
 For a new source, inspect the initial snapshot and record equal `fromCommit` and `toCommit` values with explicit scope; an empty delta is not a review. When content moves across repositories, retain the original provenance and record the successor separately at its traced revision, with old-to-current path coverage.
 
 Validate affected local skills and their contract tests after adaptations. Confirm attribution remains accurate. Advance `reviewedCommit` only after every relevant change has a recorded decision and validation is complete. Pin the exact reviewed head from the bundle.
+When a reviewed decision changes a source or local workflow represented in the pipeline catalog, update its canonical source at `$REPO_ROOT/skills/planning-work/references/pipeline-catalog.md`. This skill requires a checked-out mk-skills source repository; do not depend on a sibling installed skill. Verify source paths and reviewed pins, distinguish upstream-described behavior from local adaptations/rejections, and refresh inputs, outputs, applicability, gates, ordering, and failure notes in the same change.
 
 Prefer distinct triggers and conditional references over repeated instructions. Test proposed removals on realistic requests in fresh sessions, withholding the intended answer and rubric. Static wording checks do not establish equivalent behavior.
 

@@ -21,6 +21,10 @@ Ask a focused question for clarification-needed items before making a consequent
 
 Assess the concern and proposed remedy separately. A valid concern may need a different fix; explain how the chosen remedy satisfies the original requirement.
 
+## Document critiques
+
+When feedback critiques a specification, plan, or other document, evaluate what a reader can verify from the artifact and its cited sources. Do not treat private author intent or undisclosed conversation as evidence that the document communicates clearly. Use that context only to clarify intended meaning; if the reader-visible claim remains ambiguous or conflicts with the intent, preserve the distinction and classify the unresolved choice as clarification-needed. Assess the critique's concern separately from its proposed wording or remedy, and verify accepted edits against the original reader-facing problem.
+
 ## Apply accepted feedback
 
 Order accepted items by dependency and shared cause. Use `diagnosing-bugs` when a claimed defect's cause is uncertain, `test-driven-development` when accepted feedback changes observable behavior, and `verifying-work` before closing an accepted item. Implement the smallest coherent changes. Verify accepted changes against the original concern and run affected checks; a code edit alone does not close feedback.

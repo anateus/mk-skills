@@ -28,6 +28,7 @@ When a consequential change establishes new module, type, or ownership boundarie
 ## Executable topology
 
 Define boundaries a reader can execute from the recorded inputs, outputs, and verification. Plans remain executable inline. Optional peers or Zellij can handle independent slices with distinct ownership when coordination pays off; dispatch still follows user or repository authority and peer results need primary verification.
+When the request asks for a reusable pipeline, coordination across workstreams, or possible agent delegation, you MUST read the [pipeline catalog](references/pipeline-catalog.md) before recommending a sequence or dispatch. Select only applicable steps; catalog entries do not make stages mandatory.
 
 Tracker publication, commits, branches, and worktrees belong to repository or user policy, not the core plan format.
 

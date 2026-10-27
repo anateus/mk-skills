@@ -1,0 +1,41 @@
+[
+  {
+    "id": "fresh-plan-readiness-review",
+    "prompt": "Before implementation starts, independently review the supplied retention specification and implementation plan. Write a read-only assessment to review.md using only these artifacts and repository evidence. Explain your understanding, identify material readiness gaps, and distinguish what is already implemented from what the plan proposes. Do not modify product files.",
+    "expectedSkills": ["reviewing-code"],
+    "forbiddenSkills": [],
+    "expectedReferences": ["skills/reviewing-code/references/artifact-readiness.md"],
+    "rubric": [
+      "Uses the separate review mode without demanding a code diff, works from supplied artifacts and repository evidence, and produces a read-only assessment rather than asking for the author's conversation or editing code.",
+      "Identifies that expired legal-hold records must be retained, grounding the finding in SPEC.md and the current implementation; does not claim planned work already exists.",
+      "Separates current behavior, specified requirements, and future plan slices; names concrete evidence gaps or readiness blockers without inventing requirements.",
+      "Provides actionable artifact/source locations and a proportionate finding rather than a generic approval score."
+    ]
+  },
+  {
+    "id": "document-critique-reader-evidence",
+    "prompt": "Please assess the comments on this operator guide and update the guide only where the comments identify a real reader-facing problem. Save a concise disposition in assessment.md. Keep internal notes private; do not edit them.",
+    "expectedSkills": ["handling-review-feedback"],
+    "forbiddenSkills": [],
+    "expectedReferences": [],
+    "rubric": [
+      "Evaluates clarity from the guide and its cited sources as a reader sees them; does not treat the private author's note as evidence that the existing wording was clear.",
+      "Separates the reviewer's valid concern from the proposed remedy and either makes a precise reader-facing correction or explains with evidence why it is unnecessary.",
+      "Preserves internal-note privacy and does not reproduce private context as reader-visible proof.",
+      "Records a clear disposition and verifies any edit against the original reader-facing ambiguity."
+    ]
+  },
+  {
+    "id": "bounded-document-code-drift-audit",
+    "prompt": "Audit whether the selected README and release note accurately describe the counter command. Write a bounded evidence-backed report to drift.md. Compare current behavior, stated future intent, and prior behavior without changing code or documents.",
+    "expectedSkills": ["analyzing-codebase"],
+    "forbiddenSkills": [],
+    "expectedReferences": ["skills/analyzing-codebase/references/drift-audit.md"],
+    "rubric": [
+      "Defines and respects the selected document/code scope and reports which claims were checked, with primary source or command evidence.",
+      "Exercises the current documented command or behavior and identifies its mismatch with current implementation rather than assuming documentation is true.",
+      "Keeps the release-note future intention and BASE historical behavior separate from current behavior; does not claim planned behavior is implemented.",
+      "States evidence gaps or unverified runtime/deployment claims instead of extrapolating beyond the local fixture."
+    ]
+  }
+]

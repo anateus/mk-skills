@@ -1,0 +1,38 @@
+{
+  "fresh-plan-readiness-review": {
+    "commits": [
+      {
+        "README.md": "# Record retention\nThe retention helper removes records older than the configured number of days. Run `python3 -m unittest discover -s tests -v`.\n",
+        "retention.py": "from datetime import datetime, timedelta\n\ndef prune(records, now, retention_days):\n    cutoff = now - timedelta(days=retention_days)\n    return [record for record in records if record['created_at'] >= cutoff]\n",
+        "tests/test_retention.py": "import unittest\nfrom datetime import datetime, timedelta\nfrom retention import prune\n\nclass RetentionTests(unittest.TestCase):\n    def test_expired_record_removed(self):\n        now = datetime(2026, 1, 10)\n        self.assertEqual(prune([{'created_at': now - timedelta(days=31)}], now, 30), [])\n",
+        "SPEC.md": "# Record retention specification\n\nRecords older than the configured retention period are deleted unless they are under legal hold. A legal-hold record must be retained regardless of age.\n\nAcceptance: expired ordinary records are removed; expired held records remain.\n",
+        "PLAN.md": "# Implementation plan\n\nSlice 1 implements age-based pruning in `retention.py`. Slice 2 will add legal-hold handling and a regression test. Slice 2 has not started.\n"
+      },
+      {
+        "PLAN.md": "# Implementation plan\n\nSlice 1 implements age-based pruning in `retention.py`. Slice 2 will add legal-hold handling and a regression test. Slice 2 has not started.\n\nVerification so far covers expired ordinary records only.\n"
+      }
+    ]
+  },
+  "document-critique-reader-evidence": {
+    "commits": [
+      {
+        "operator-guide.md": "# Recover an account\n\n1. Find the primary key in the admin console.\n2. Restart the connector using the key.\n3. Confirm that sync resumes.\n",
+        "review.md": "The phrase ‘primary key’ is ambiguous here. Tell operators whether this means the account ID or a secret credential; otherwise they may enter the wrong value. Suggested wording: ‘Use the account ID shown in the admin console.’\n",
+        "PRIVATE-AUTHOR-NOTE.txt": "I meant the non-secret account ID, not an API key. The reviewer's suggested wording is what I intended. This note is not part of the operator guide.\n"
+      }
+    ]
+  },
+  "bounded-document-code-drift-audit": {
+    "commits": [
+      {
+        "README.md": "# Counter\n\nRun `python3 counter.py 2` to increment by one.\n",
+        "counter.py": "import argparse\n\ndef increment(value):\n    return value + 1\n\ndef main():\n    parser = argparse.ArgumentParser()\n    parser.add_argument('value', type=int)\n    args = parser.parse_args()\n    print(increment(args.value))\n\nif __name__ == '__main__':\n    main()\n",
+        "tests/test_counter.py": "import unittest\nfrom counter import increment\n\nclass CounterTests(unittest.TestCase):\n    def test_increment(self):\n        self.assertEqual(increment(2), 3)\n"
+      },
+      {
+        "counter.py": "import argparse\n\ndef increment(value):\n    return value + 2\n\ndef main():\n    parser = argparse.ArgumentParser()\n    parser.add_argument('value', type=int)\n    args = parser.parse_args()\n    print(increment(args.value))\n\nif __name__ == '__main__':\n    main()\n",
+        "RELEASE-NOTE.md": "# Next release\n\nWe plan to add a `--batch` option in a future release. It is not part of the current interface.\n"
+      }
+    ]
+  }
+}

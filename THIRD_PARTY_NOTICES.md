@@ -1,6 +1,6 @@
 # Third-Party Notices
 
-This project adapts ideas from the projects below under their respective licenses. Source locations and reviewed revisions are recorded in `config/sources.yaml`. These notices are retained for attribution; upstream files are not automatically copied into local skills.
+This project tracks the projects below under their respective licenses; some have informed adaptations while others have only been reviewed. Source locations and reviewed revisions are recorded in `config/sources.yaml`. These notices are retained for attribution; upstream files are not automatically copied into local skills.
 
 ## Matt Pocock Skills
 
@@ -105,6 +105,12 @@ SOFTWARE.
 Source: https://github.com/antithesishq/antithesis-skills
 
 `skills/analyzing-codebase` adapts the `antithesis-research` workflow into a platform-neutral testing-analysis mode. The upstream project is licensed under Apache License 2.0; a copy is retained at `skills/analyzing-codebase/LICENSE`.
+
+## Elephant-Goldfish Model
+
+Source: https://github.com/google/elephant-goldfish-model
+
+Local skills adapt ideas from the initial snapshot for fresh-context artifact review, document feedback, and document/code drift analysis. A pipeline catalog describes optional review gates and local boundaries. The upstream project is licensed under Apache License 2.0; upstream files are not copied into local skills.
 
 ## Cursor plugins
 

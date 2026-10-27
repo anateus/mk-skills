@@ -1,11 +1,12 @@
 ---
 name: reviewing-code
-description: Review a fixed diff, patch, pull request, commit range, or completed implementation for correctness, risk, design, maintainability, requirements, repository standards, and test adequacy.
+description: Review code changes (diffs, patches, pull requests, commits, or completed implementations) for correctness, risk, design, maintainability, requirements, repository standards, and test adequacy. Also use for a separate, fresh-context comprehension and implementation-readiness review of consequential specifications or plans.
 ---
 
 # Reviewing Code
 
-Review a fixed comparison. Record repository, base/head revisions or snapshots, included working-tree state, and excluded generated content. Use the specification when available.
+For code reviews, record repository, comparison, revisions/snapshots, working-tree state, and excluded generated content.
+For consequential spec/plan critiques, consider [artifact readiness](references/artifact-readiness.md) even without a diff.
 
 Track every changed Git path, including deletions and renames. Read [diff provenance](references/diff-provenance.md) for coverage and committed, PR, working-tree, or mixed comparisons.
 

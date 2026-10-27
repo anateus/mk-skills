@@ -384,6 +384,47 @@
           ]
         }
       ]
+    },
+    {
+      "name": "elephant-goldfish-model",
+      "url": "https://github.com/google/elephant-goldfish-model",
+      "branch": "main",
+      "reviewedCommit": "a8380ab5f0aba392c97e31c79f9a6666b3f09f14",
+      "license": "Apache-2.0",
+      "mappings": [
+        {
+          "localSkill": "clarifying-work",
+          "upstreamPaths": ["skills/egm-brainstorm"]
+        },
+        {
+          "localSkill": "adversarial-refinement",
+          "upstreamPaths": ["skills/egm-brainstorm", "skills/egm-review", "skills/egm-review-loop", "agents", "resources"]
+        },
+        {
+          "localSkill": "specifying-work",
+          "upstreamPaths": ["skills/egm-draft", "skills/egm-review", "agents", "resources"]
+        },
+        {
+          "localSkill": "planning-work",
+          "upstreamPaths": ["skills/egm-draft", "skills/egm-review", "agents", "resources"]
+        },
+        {
+          "localSkill": "analyzing-codebase",
+          "upstreamPaths": ["skills/egm-bootstrap", "skills/egm-drift-report", "agents", "resources"]
+        },
+        {
+          "localSkill": "handling-review-feedback",
+          "upstreamPaths": ["skills/egm-resolve"]
+        },
+        {
+          "localSkill": "reviewing-code",
+          "upstreamPaths": ["skills/egm-review", "agents/comprehension.md", "agents/implementation_readiness.md", "resources"]
+        },
+        {
+          "localSkill": "curating-skills",
+          "upstreamPaths": ["skills/egm-review", "skills/egm-review-loop", "agents", "resources"]
+        }
+      ]
     }
   ],
   "localProvenance": [

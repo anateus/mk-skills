@@ -219,6 +219,7 @@ class ReviewUpstreamsTests(unittest.TestCase):
             "humanizer",
             "antithesis-skills",
             "cursor-plugins",
+            "elephant-goldfish-model",
         }
         expected_licenses = {
             "matt-pocock-skills": "MIT",
@@ -228,6 +229,7 @@ class ReviewUpstreamsTests(unittest.TestCase):
             "humanizer": "MIT",
             "antithesis-skills": "Apache-2.0",
             "cursor-plugins": "MIT",
+            "elephant-goldfish-model": "Apache-2.0",
         }
         sources = {source["name"]: source for source in manifest["sources"]}
         self.assertEqual(expected, set(sources))
@@ -269,6 +271,15 @@ class ReviewUpstreamsTests(unittest.TestCase):
             "cursor-team-kit/skills/verify-this",
             next(mapping["upstreamPaths"] for mapping in cursor["mappings"]
                  if mapping["localSkill"] == "verifying-work"),
+        )
+        egm = sources["elephant-goldfish-model"]
+        self.assertEqual("https://github.com/google/elephant-goldfish-model", egm["url"])
+        self.assertEqual("main", egm["branch"])
+        self.assertEqual(
+            {"clarifying-work", "adversarial-refinement", "specifying-work",
+             "planning-work", "analyzing-codebase", "handling-review-feedback",
+             "reviewing-code", "curating-skills"},
+            {mapping["localSkill"] for mapping in egm["mappings"]},
         )
         for name in expected:
             source = sources[name]

@@ -1175,6 +1175,93 @@
         "docs/reviews/2026-10-21-cursor-adoption.md",
         "docs/reviews/2026-10-21-cursor-adoption-evidence.json"
       ]
+    },
+    {
+      "source": "elephant-goldfish-model",
+      "fromCommit": "a8380ab5f0aba392c97e31c79f9a6666b3f09f14",
+      "toCommit": "a8380ab5f0aba392c97e31c79f9a6666b3f09f14",
+      "decision": "accept",
+      "disposition": "no-local-change",
+      "localSkills": [
+        "clarifying-work",
+        "adversarial-refinement",
+        "specifying-work",
+        "planning-work",
+        "analyzing-codebase",
+        "handling-review-feedback"
+      ],
+      "summary": "Retain existing local equivalents for scoped clarification, critique, design contracts, planning, codebase evidence, and review-feedback assessment.",
+      "rationale": "Initial snapshot review covers skills/egm-brainstorm, skills/egm-draft, skills/egm-bootstrap, skills/egm-drift-report, skills/egm-resolve, skills/egm-review, skills/egm-review-loop, agents, and resources. Local skills already covered these general concepts to varying degrees; this is not an assertion of complete equivalence. At that review, fresh-context comprehension and readiness review (skills/egm-review and agents/comprehension.md and agents/implementation_readiness.md), reader-visible evidence for document-review feedback (skills/egm-resolve), and an opt-in document/code drift audit (skills/egm-drift-report) were suggestions for future consideration only and had not yet been adopted.",
+      "validation": [
+        "python3 /Users/mike/.agents/skills/curating-skills/scripts/review-upstreams.py --manifest config/sources.yaml --output /tmp/upstream-review.md --cache-dir /tmp/mk-skills-upstream-review-cache"
+      ]
+    },
+    {
+      "source": "elephant-goldfish-model",
+      "fromCommit": "a8380ab5f0aba392c97e31c79f9a6666b3f09f14",
+      "toCommit": "a8380ab5f0aba392c97e31c79f9a6666b3f09f14",
+      "decision": "reject",
+      "disposition": "rejected",
+      "localSkills": [
+        "clarifying-work",
+        "adversarial-refinement",
+        "specifying-work",
+        "planning-work",
+        "analyzing-codebase",
+        "handling-review-feedback"
+      ],
+      "summary": "Do not import the initial EGM workflows and mandatory orchestration as-is.",
+      "rationale": "Across skills/egm-brainstorm, skills/egm-draft, skills/egm-bootstrap, skills/egm-drift-report, skills/egm-resolve, skills/egm-review, skills/egm-review-loop, agents, and resources, reject mandatory stages, rigid interactive gates and prescribed artifacts as general local policy. In particular, do not import the capped re-audit that automatically treats residual findings as accepted trade-offs (skills/egm-review), or unbounded bootstrap worker spawning and placeholder documentation on failed scouting (skills/egm-bootstrap). Local authority, risk-proportional scoping, and evidence must govern instead.",
+      "validation": [
+        "python3 /Users/mike/.agents/skills/curating-skills/scripts/review-upstreams.py --manifest config/sources.yaml --output /tmp/upstream-review.md --cache-dir /tmp/mk-skills-upstream-review-cache"
+      ]
+    },
+    {
+      "source": "elephant-goldfish-model",
+      "fromCommit": "a8380ab5f0aba392c97e31c79f9a6666b3f09f14",
+      "toCommit": "a8380ab5f0aba392c97e31c79f9a6666b3f09f14",
+      "decision": "accept",
+      "disposition": "adapted",
+      "localSkills": [
+        "reviewing-code"
+      ],
+      "summary": "Adapt fresh-context comprehension and implementation-readiness review for specifications and plans.",
+      "rationale": "Reconsidered the initial snapshot at the user's request: skills/egm-review, agents/comprehension.md, agents/implementation_readiness.md and resources inform artifact review without importing EGM's mandatory stages, prescribed artifacts or automatic tradeoff acceptance. Local review uses these ideas within existing scope and authority boundaries.",
+      "validation": [
+        "node scripts/validate.js"
+      ]
+    },
+    {
+      "source": "elephant-goldfish-model",
+      "fromCommit": "a8380ab5f0aba392c97e31c79f9a6666b3f09f14",
+      "toCommit": "a8380ab5f0aba392c97e31c79f9a6666b3f09f14",
+      "decision": "accept",
+      "disposition": "adapted",
+      "localSkills": [
+        "handling-review-feedback",
+        "analyzing-codebase"
+      ],
+      "summary": "Adapt reader-visible evidence for document feedback and opt-in document/code drift analysis.",
+      "rationale": "Reconsidered skills/egm-resolve and skills/egm-drift-report at the initial reviewed snapshot. Feedback handling distinguishes evidence available to a document reader from outside knowledge; requested drift analysis compares document claims with source evidence. These adaptations do not import EGM's mandatory reports or default workflow.",
+      "validation": [
+        "node scripts/validate.js"
+      ]
+    },
+    {
+      "source": "elephant-goldfish-model",
+      "fromCommit": "a8380ab5f0aba392c97e31c79f9a6666b3f09f14",
+      "toCommit": "a8380ab5f0aba392c97e31c79f9a6666b3f09f14",
+      "decision": "accept",
+      "disposition": "adapted",
+      "localSkills": [
+        "curating-skills",
+        "planning-work"
+      ],
+      "summary": "Provide a local pipeline catalog describing optional EGM-inspired gates and their boundaries.",
+      "rationale": "Reconsidered skills/egm-review, skills/egm-review-loop, agents and resources at the initial snapshot. The catalog describes review gates for local workflows without importing mandatory stages, rigid artifacts, capped re-audits or automatic acceptance of residual tradeoffs; the prior rejection remains in force.",
+      "validation": [
+        "node scripts/validate.js"
+      ]
     }
   ]
 }
