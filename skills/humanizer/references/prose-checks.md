@@ -19,7 +19,7 @@ The initial tiers are:
 | Tier | Rules | Treatment |
 |---|---|---|
 | Strong | StageOpeners, ChatResidue, StockPhrases | Show locations and matched text. Review in context; no automatic replacements. |
-| Weak | StockWords, Contrasts, Hedges, Dashes, Bold | Show counts, then drill down when a cluster or the writer's preferences warrants it. |
+| Weak | SetupReveals, StockWords, Contrasts, Hedges, Dashes, Bold | Show counts, then drill down when a cluster or the writer's preferences warrants it. |
 
 Edit `styles/Humanizer/*.yml` to adjust words, regex patterns, exceptions, or severity. `warning` produces strong details; `suggestion` produces weak counts. Add a `rules.json` entry pointing to the applicable catalog section when adding a rule. Use [Vale's existence rules](https://docs.vale.sh/checks/existence) for word lists and patterns, and scoped rules for formatting. Preserve `~text.frontmatter` on general prose rules. Run `python3 -B tests/humanizer/test_prose_check.py -v` from the mk-skills source repository after changing configuration.
 
