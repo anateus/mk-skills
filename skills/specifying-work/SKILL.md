@@ -18,7 +18,7 @@ Cover the following in the smallest useful specification. These are coverage che
 - **Seams:** public behavior or integration boundaries where acceptance can be tested and verified.
 - **Non-goals:** nearby work deliberately outside scope.
 
-Name assumptions and unresolved choices rather than hiding them in implementation detail. Include an integration map from clarification when it affects the contract; otherwise keep the specification direct.
+Name assumptions and unresolved choices rather than hiding them in implementation detail. Include an integration map from clarification when it affects the contract; otherwise keep the specification direct. Give each rejected alternative a concrete technical or scope reason; attribute a rejection to a person or team only when a linked source records it.
 
 Where lifecycle or rollout matters, specify initial setup, steady operation, supported overrides, recovery, and the intermediate states that must remain safe. For a health, capacity, or delivery claim, name the measured population, units, success condition, and observation point. Distinguish attempted work from completed work, missing data from a negative result, and aggregate health from per-member coverage.
 
@@ -32,4 +32,4 @@ For a consequential draft whose assumptions or alternatives need pressure-testin
 
 ## Quality check
 
-The specification is ready when a planner can identify what changes, what stays stable, where behavior can be observed, and how each acceptance criterion will be judged without guessing at user intent.
+The specification is ready when a planner can identify what changes, what stays stable, where behavior can be observed, and how each acceptance criterion will be judged without guessing at user intent. Write each requirement as a trigger or actor plus an observable response, give vague quality words a measure, and state the need rather than the mechanism unless the interface is the requirement. When written from an earlier brief or notes, reread those inputs against the finished draft and surface contradictions and new architecture, interface, or dependency decisions to the user instead of silently conforming the draft.

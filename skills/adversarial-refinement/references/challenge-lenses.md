@@ -6,6 +6,7 @@ Use these prompts selectively. Prefer the few lenses most likely to change the d
 
 - Which claim carries the decision, and what evidence could falsify it?
 - What constraint is being treated as fixed without proof?
+- Which trade-off is treated as unavoidable, and would a structural transform remove the conflict? Name its secondary cost; a true theoretical limit is a constraint.
 - What is the strongest materially different alternative, and when would it win?
 - Can the choice be reversed cheaply? What option value is lost now?
 

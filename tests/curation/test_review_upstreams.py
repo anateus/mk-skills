@@ -245,7 +245,7 @@ class ReviewUpstreamsTests(unittest.TestCase):
         )
         for mapping in open_packs["mappings"]:
             for path in mapping["upstreamPaths"]:
-                self.assertTrue(path.startswith("packs/built-in/"), path)
+                self.assertTrue(path.startswith("packs/foundation/"), path)
         cursor = sources["cursor-plugins"]
         self.assertEqual("https://github.com/cursor/plugins", cursor["url"])
         self.assertEqual("main", cursor["branch"])
@@ -312,7 +312,6 @@ class ReviewUpstreamsTests(unittest.TestCase):
             ("cursor-plugins", "reviewing-code", "pstack/skills/blast-radius/SKILL.md"),
             ("cursor-plugins", "reviewing-code", "thermos/skills/thermo-nuclear-review/SKILL.md"),
             ("cursor-plugins", "planning-work", "pstack/skills/architect/SKILL.md"),
-            ("cursor-plugins", "planning-work", "pstack/skills/architect/references/design-red-flags.md"),
             ("cursor-plugins", "specifying-work", "cli-for-agent/skills/cli-for-agents/SKILL.md"),
             ("cursor-plugins", "verifying-work", "cli-for-agent/skills/cli-for-agents/SKILL.md"),
             ("cursor-plugins", "implementing-work", "cursor-team-kit/skills/make-pr-easy-to-review"),

@@ -40,4 +40,4 @@ Code blocks, queries, and commands embedded in the plan get executed verbatim by
 
 ## Final check
 
-Confirm that dependencies form a valid order, every acceptance criterion has coverage, risky assumptions are surfaced early, and completion claims map to fresh evidence. For consequential plans, check likely omitted user inputs and boundary failures, tying material cases to the slices that own them without inventing requirements.
+Confirm that dependencies form a valid order, every acceptance criterion has coverage, every slice traces to a requirement or the stated intent, early slices deliver something observable rather than only scaffolding, risky assumptions are surfaced early, and completion claims map to fresh evidence. For consequential plans, check likely omitted user inputs and boundary failures, tying material cases to the slices that own them without inventing requirements.

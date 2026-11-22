@@ -34,5 +34,33 @@
         "RELEASE-NOTE.md": "# Next release\n\nWe plan to add a `--batch` option in a future release. It is not part of the current interface.\n"
       }
     ]
+  },
+  "review-scaling-wording-only-baseline": {
+    "commits": [
+      {
+        "README.md": "# Greeter\n\nPrints a greeting for a name. Run `python3 -m unittest discover -s tests -v` to recieve test results.\n",
+        "greet.py": "def greet(name):\n    # Retuns the greeting for a name.\n    return 'Hello, {}!'.format(name.strip())\n",
+        "tests/test_greet.py": "import unittest\nfrom greet import greet\n\nclass GreetTests(unittest.TestCase):\n    def test_strips_name(self):\n        self.assertEqual(greet(' Ana '), 'Hello, Ana!')\n"
+      },
+      {
+        "README.md": "# Greeter\n\nPrints a greeting for a name. Run `python3 -m unittest discover -s tests -v` to receive test results.\n",
+        "greet.py": "def greet(name):\n    # Returns the greeting for a name.\n    return 'Hello, {}!'.format(name.strip())\n"
+      }
+    ]
+  },
+  "review-scaling-storage-format-escalates": {
+    "commits": [
+      {
+        "README.md": "# Ledger\n\nBalances are stored in `ledger.json` as dollar amounts. `python3 report.py` prints the total. Run `python3 -m unittest discover -s tests -v`.\n",
+        "store.py": "import json\nfrom pathlib import Path\n\nPATH = Path('ledger.json')\n\ndef load(path=PATH):\n    if not path.exists():\n        return {}\n    return json.loads(path.read_text())\n\ndef save(accounts, path=PATH):\n    path.write_text(json.dumps(accounts, indent=2))\n\ndef deposit(name, amount, path=PATH):\n    accounts = load(path)\n    entry = accounts.setdefault(name, {'balance': 0.0})\n    entry['balance'] += amount\n    save(accounts, path)\n    return entry['balance']\n",
+        "report.py": "import json\nfrom pathlib import Path\n\ndef total(path=Path('ledger.json')):\n    accounts = json.loads(path.read_text()) if path.exists() else {}\n    return sum(entry['balance'] for entry in accounts.values())\n\nif __name__ == '__main__':\n    print('{:.2f}'.format(total()))\n",
+        "tests/test_store.py": "import tempfile\nimport unittest\nfrom pathlib import Path\nfrom store import deposit\n\nclass StoreTests(unittest.TestCase):\n    def test_deposit(self):\n        with tempfile.TemporaryDirectory() as directory:\n            path = Path(directory) / 'ledger.json'\n            deposit('ana', 2.5, path)\n            self.assertEqual(deposit('ana', 1.0, path), 3.5)\n"
+      },
+      {
+        "README.md": "# Ledger\n\nBalances are stored in `ledger.json` as integer cents. `python3 report.py` prints the total. Run `python3 -m unittest discover -s tests -v`.\n",
+        "store.py": "import json\nfrom pathlib import Path\n\nPATH = Path('ledger.json')\n\ndef load(path=PATH):\n    if not path.exists():\n        return {}\n    accounts = json.loads(path.read_text())\n    for entry in accounts.values():\n        if 'balance' in entry:\n            entry['balance_cents'] = round(entry.pop('balance') * 100)\n    return accounts\n\ndef save(accounts, path=PATH):\n    path.write_text(json.dumps(accounts, indent=2))\n\ndef deposit(name, cents, path=PATH):\n    accounts = load(path)\n    entry = accounts.setdefault(name, {'balance_cents': 0})\n    entry['balance_cents'] += cents\n    save(accounts, path)\n    return entry['balance_cents']\n",
+        "tests/test_store.py": "import json\nimport tempfile\nimport unittest\nfrom pathlib import Path\nfrom store import deposit, load\n\nclass StoreTests(unittest.TestCase):\n    def test_deposit(self):\n        with tempfile.TemporaryDirectory() as directory:\n            path = Path(directory) / 'ledger.json'\n            deposit('ana', 250, path)\n            self.assertEqual(deposit('ana', 100, path), 350)\n\n    def test_migrates_dollar_balances(self):\n        with tempfile.TemporaryDirectory() as directory:\n            path = Path(directory) / 'ledger.json'\n            path.write_text(json.dumps({'ana': {'balance': 2.5}}))\n            self.assertEqual(load(path), {'ana': {'balance_cents': 250}})\n"
+      }
+    ]
   }
 }

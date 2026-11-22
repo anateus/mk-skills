@@ -110,7 +110,7 @@ Source: https://github.com/antithesishq/antithesis-skills
 
 Source: https://github.com/google/elephant-goldfish-model
 
-Local skills adapt ideas from the initial snapshot for fresh-context artifact review, document feedback, and document/code drift analysis. A pipeline catalog describes optional review gates and local boundaries. The upstream project is licensed under Apache License 2.0; upstream files are not copied into local skills.
+Local skills adapt ideas for fresh-context artifact and code review, review-round convergence, document feedback, specification reconciliation, and document/code drift analysis. A pipeline catalog describes optional review gates and local boundaries. The upstream project is licensed under Apache License 2.0; upstream files are not copied into local skills.
 
 ## Cursor plugins
 
@@ -144,7 +144,7 @@ SOFTWARE.
 
 Source: https://github.com/cursor/plugins
 
-The reviewed scope is the selected `pstack/skills` review, architecture, and verification-harness procedures. `pstack/LICENSE` supplies the notice below. The individually installable `building-verification-harnesses` skill retains a copy of that license.
+The reviewed scope is the selected `pstack/skills` review, review-scaling, feedback-triage, architecture, and verification-harness procedures. `pstack/LICENSE` supplies the notice below. The individually installable `building-verification-harnesses` skill retains a copy of that license.
 
 MIT License
 

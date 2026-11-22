@@ -5,7 +5,7 @@
       "name": "matt-pocock-skills",
       "url": "https://github.com/mattpocock/skills",
       "branch": "main",
-      "reviewedCommit": "5beb35b040e3de97e54fa9e386d7e42d15c295c2",
+      "reviewedCommit": "abeeaf95660ba9e8b7c753eb38f441ca707a8823",
       "license": "MIT",
       "mappings": [
         {
@@ -75,7 +75,7 @@
       "name": "spec-kitty",
       "url": "https://github.com/Priivacy-ai/spec-kitty",
       "branch": "main",
-      "reviewedCommit": "137dec7df8d083be5e233a59f6ee92a925c9ef34",
+      "reviewedCommit": "f348817c4d1ca29bff6a7b34be9d1209e443a1a9",
       "license": "MIT",
       "mappings": [
         {
@@ -131,7 +131,7 @@
       "name": "superpowers",
       "url": "https://github.com/obra/superpowers",
       "branch": "main",
-      "reviewedCommit": "b739a8af570e10a95898f2bdf6cec97467fa6c12",
+      "reviewedCommit": "22f0b463e7a5e579904dd6211a520321035526f7",
       "license": "MIT",
       "mappings": [
         {
@@ -175,7 +175,9 @@
           "localSkill": "reviewing-code",
           "upstreamPaths": [
             "skills/requesting-code-review",
-            "skills/subagent-driven-development/re-review-prompt.md"
+            "skills/subagent-driven-development/re-review-prompt.md",
+            "skills/subagent-driven-development/references/final-review.md",
+            "skills/subagent-driven-development/references/fix-loop.md"
           ]
         },
         {
@@ -196,7 +198,7 @@
       "name": "humanizer",
       "url": "https://github.com/blader/humanizer",
       "branch": "main",
-      "reviewedCommit": "8c307f367c91bd974002f10f2be2965d642c13df",
+      "reviewedCommit": "a32f24407364c74c812b43c15926d638bee1e072",
       "license": "MIT",
       "mappings": [
         {
@@ -211,7 +213,7 @@
       "name": "antithesis-skills",
       "url": "https://github.com/antithesishq/antithesis-skills",
       "branch": "main",
-      "reviewedCommit": "527c182d17aac476fdf9c9ca5e290e03caa4b62a",
+      "reviewedCommit": "acd775db74f55d47c037a3ee97858bd0c96791aa",
       "license": "Apache-2.0",
       "mappings": [
         {
@@ -230,51 +232,59 @@
       "name": "spec-kitty-open-packs",
       "url": "https://github.com/spec-kitty/spec-kitty-open-packs.git",
       "branch": "main",
-      "reviewedCommit": "500e3a77a6c427e35bb460757210d9525ac3d7b5",
+      "reviewedCommit": "7912c20a01ea7395bf00e9032b5b9f10cfbafb4b",
       "license": "MIT",
       "mappings": [
         {
           "localSkill": "specifying-work",
           "upstreamPaths": [
-            "packs/built-in/missions/mission-steps/software-dev/specify",
-            "packs/built-in/missions/software-dev/templates/spec-template.md",
-            "packs/built-in/tactics/testing/acceptance-criteria-non-vacuity.tactic.yaml"
+            "packs/foundation/missions/software-dev/steps/specify.prompt.md",
+            "packs/foundation/missions/software-dev/steps/specify.guidelines.md",
+            "packs/foundation/missions/software-dev/templates/spec-template.md",
+            "packs/foundation/tactics/testing/acceptance-criteria-non-vacuity.tactic.yaml",
+            "packs/foundation/tactics/analysis/requirement-quality-ears.tactic.yaml"
           ]
         },
         {
           "localSkill": "planning-work",
           "upstreamPaths": [
-            "packs/built-in/missions/mission-steps/software-dev/plan",
-            "packs/built-in/missions/mission-steps/software-dev/tasks",
-            "packs/built-in/missions/mission-steps/software-dev/tasks-outline",
-            "packs/built-in/missions/mission-steps/software-dev/tasks-packages",
-            "packs/built-in/missions/mission-steps/software-dev/tasks-finalize",
-            "packs/built-in/missions/software-dev/templates/plan-template.md",
-            "packs/built-in/missions/software-dev/templates/tasks-template.md",
-            "packs/built-in/missions/software-dev/templates/task-prompt-template.md"
+            "packs/foundation/missions/software-dev/steps/plan.prompt.md",
+            "packs/foundation/missions/software-dev/steps/plan.guidelines.md",
+            "packs/foundation/missions/software-dev/steps/tasks.prompt.md",
+            "packs/foundation/missions/software-dev/steps/tasks.guidelines.md",
+            "packs/foundation/missions/software-dev/steps/tasks-outline.prompt.md",
+            "packs/foundation/missions/software-dev/steps/tasks-packages.prompt.md",
+            "packs/foundation/missions/software-dev/steps/tasks-finalize.prompt.md",
+            "packs/foundation/missions/software-dev/templates/plan-template.md",
+            "packs/foundation/missions/software-dev/templates/tasks-template.md",
+            "packs/foundation/missions/software-dev/templates/task-prompt-template.md",
+            "packs/foundation/tactics/analysis/product-coherence-review.tactic.yaml"
           ]
         },
         {
           "localSkill": "implementing-work",
           "upstreamPaths": [
-            "packs/built-in/missions/mission-steps/software-dev/implement",
-            "packs/built-in/missions/software-dev/actions/implement/index.yaml"
+            "packs/foundation/missions/software-dev/steps/implement.prompt.md",
+            "packs/foundation/missions/software-dev/steps/implement.guidelines.md",
+            "packs/foundation/missions/software-dev/software-dev.mission-type.yaml"
           ]
         },
         {
           "localSkill": "reviewing-code",
           "upstreamPaths": [
-            "packs/built-in/missions/mission-steps/software-dev/review",
-            "packs/built-in/missions/software-dev/actions/review/index.yaml",
-            "packs/built-in/tactics/testing/acceptance-criteria-non-vacuity.tactic.yaml"
+            "packs/foundation/missions/software-dev/steps/review.prompt.md",
+            "packs/foundation/missions/software-dev/steps/review.guidelines.md",
+            "packs/foundation/missions/software-dev/software-dev.mission-type.yaml",
+            "packs/foundation/tactics/testing/acceptance-criteria-non-vacuity.tactic.yaml",
+            "packs/foundation/procedures/adversarial-squad-deployment.procedure.yaml"
           ]
         },
         {
           "localSkill": "verifying-work",
           "upstreamPaths": [
-            "packs/built-in/missions/mission-steps/software-dev/accept",
-            "packs/built-in/missions/software-dev/expected-artifacts.yaml",
-            "packs/built-in/tactics/testing/acceptance-criteria-non-vacuity.tactic.yaml"
+            "packs/foundation/missions/software-dev/steps/accept.prompt.md",
+            "packs/foundation/missions/software-dev/software-dev.mission-type.yaml",
+            "packs/foundation/tactics/testing/acceptance-criteria-non-vacuity.tactic.yaml"
           ]
         }
       ]
@@ -283,7 +293,7 @@
       "name": "cursor-plugins",
       "url": "https://github.com/cursor/plugins",
       "branch": "main",
-      "reviewedCommit": "190d28736eff128ec94f502a22c7fe0c4b56cd37",
+      "reviewedCommit": "7a583913eb1b8d1a0ee76753d1a2cf072e7b54f9",
       "license": "MIT",
       "mappings": [
         {
@@ -316,7 +326,13 @@
             "cursor-team-kit/skills/review-and-ship",
             "cursor-team-kit/skills/thermo-nuclear-code-quality-review",
             "pstack/skills/blast-radius/SKILL.md",
-            "thermos/skills/thermo-nuclear-review/SKILL.md"
+            "pstack/skills/interrogate/SKILL.md",
+            "pstack/skills/poteto-mode/playbooks/autopilot-full.md",
+            "pstack/skills/poteto-mode/playbooks/shipping.md",
+            "pstack/skills/principle-attack-the-premise/SKILL.md",
+            "thermos/skills/thermo-nuclear-code-quality-review/SKILL.md",
+            "thermos/skills/thermo-nuclear-review/SKILL.md",
+            "thermos/skills/thermos/SKILL.md"
           ]
         },
         {
@@ -332,7 +348,8 @@
         {
           "localSkill": "handling-review-feedback",
           "upstreamPaths": [
-            "cursor-team-kit/skills/get-pr-comments"
+            "cursor-team-kit/skills/get-pr-comments",
+            "pstack/skills/poteto-mode/references/bugbot-triage.md"
           ]
         },
         {
@@ -350,8 +367,7 @@
         {
           "localSkill": "planning-work",
           "upstreamPaths": [
-            "pstack/skills/architect/SKILL.md",
-            "pstack/skills/architect/references/design-red-flags.md"
+            "pstack/skills/architect/SKILL.md"
           ]
         },
         {
@@ -389,7 +405,7 @@
       "name": "elephant-goldfish-model",
       "url": "https://github.com/google/elephant-goldfish-model",
       "branch": "main",
-      "reviewedCommit": "a8380ab5f0aba392c97e31c79f9a6666b3f09f14",
+      "reviewedCommit": "7d1b721e51448518cc9b0336465041230200dd10",
       "license": "Apache-2.0",
       "mappings": [
         {
@@ -418,7 +434,7 @@
         },
         {
           "localSkill": "reviewing-code",
-          "upstreamPaths": ["skills/egm-review", "agents/comprehension.md", "agents/implementation_readiness.md", "resources"]
+          "upstreamPaths": ["skills/egm-review", "skills/egm-review-loop", "skills/egm-lite", "agents/comprehension.md", "agents/implementation_readiness.md", "agents/synthesizer.md", "resources"]
         },
         {
           "localSkill": "curating-skills",

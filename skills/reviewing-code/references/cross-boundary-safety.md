@@ -8,6 +8,8 @@ State the specific facts that would make the change safe, including multiple ind
 
 For each material assumption, cite the implementation or contract, then run the cheapest direct check against the real code when feasible. A focused test, executable repro, or actual user path is stronger than a plausible explanation or a test name. Record the input, command, result, and limit of its scope. If access or execution is blocked, mark the assumption unproven and explain the consequence. Do not imply that one passing check establishes every invariant.
 
+Start with the assumption the change's safety rests on most and prove it first; the other assumptions still need their own checks. For each assumption, say how far you got: asserted, cited in code, traced along the failing path, run against real code, or reproduced in the running system.
+
 ## Probe likely cross-boundary failures
 
 - **Feature gates and authorization:** trace all ways the feature becomes visible or callable, including API responses, navigation, background jobs, cached state, and internal-only routes. Check gate-off and gate-on consumers rather than relying on a single UI condition.

@@ -12,7 +12,7 @@ Reduce consequential uncertainty before choosing a solution. Scale the effort to
 1. Inspect the repository, documentation, configuration, and established conversation to discover facts locally.
 2. Separate known facts, reasonable inferences, and unresolved choices.
 3. Rank uncertainties by how much a wrong assumption would change scope, architecture, safety, or acceptance.
-4. Use a stated reversible assumption for low-risk gaps. Ask only about material choices evidence cannot resolve. Group independent questions; wait for prerequisites before asking dependent ones.
+4. Use a stated reversible assumption for low-risk gaps. Ask only about material choices evidence cannot resolve, naming the concrete options with their trade-offs and a recommended default. Group independent questions; wait for prerequisites before asking dependent ones.
 
 Do not turn clarification into a generic interview or ask for facts available in the workspace.
 

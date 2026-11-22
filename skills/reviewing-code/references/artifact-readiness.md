@@ -2,7 +2,9 @@
 
 Use this optional mode when a consequential specification or plan is critiqued for comprehension or implementation readiness and an independent review would reduce risk. It can be prompted by the user or selected from the artifact's stakes; do not make it routine for low-risk or editorial critique.
 
-Start a fresh reviewer context with the artifact under review and its linked source artifacts. Do not supply the author's conversation, private rationale, or an answer-key rubric. Ask the reviewer to explain the intended outcome and boundaries in its own words, identify material ambiguities, omissions, contradictions, and risks, and assess whether the available evidence supports implementation readiness.
+Start a fresh reviewer context with the artifact under review and its linked source artifacts. Do not supply the author's conversation, private rationale, or an answer-key rubric. Ask the reviewer to restate first, in its own words, what the artifact proposes and how the existing system works as the artifact describes it. A section it cannot restate is a finding, and so is a restatement that differs from the intent: defined terms do not show that the parts connect. Then have it identify material ambiguities, omissions, contradictions, and risks, and assess whether the available evidence supports implementation readiness. It should flag undefined terms specific to this project, not general engineering vocabulary.
+
+Keep the restatement in the report so the author can compare it with the intent; do not reduce the review to a findings list. A reviewer that failed or returned nothing did not review; report it as not run.
 
 Reconcile every proposed finding with the linked sources and current code where applicable. Separate:
 

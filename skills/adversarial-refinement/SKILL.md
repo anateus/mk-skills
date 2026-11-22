@@ -21,7 +21,7 @@ Challenge a coherent proposal in proportion to its risk. Refinement does not aut
 3. Prioritize by decision impact. Test assumptions, counterexamples, failure modes, downstream effects, reversibility, opportunity cost, and the strongest materially different alternative.
 4. Track what survived, changed, or remains open. Use a small reversible probe when an empirical uncertainty can be settled within the task's authority.
 5. For artifact critique, report evidence-backed findings and proposed refinements. Ask only about material choices the environment cannot resolve.
-6. Stop when remaining uncertainty is acceptable for the risk, the challenge budget is spent, or the user asks to stop. Do not exhaustively walk every branch.
+6. Stop when remaining uncertainty is acceptable for the risk, the challenge budget is spent, or the user asks to stop. Do not exhaustively walk every branch. Across repeated passes, keep points already contested or accepted as risk settled unless new evidence appears, and re-open a point counted as fixed if it is raised again at the same scope. If new findings only undo earlier fixes, stop and ask the user.
 
 ## Exit and return
 

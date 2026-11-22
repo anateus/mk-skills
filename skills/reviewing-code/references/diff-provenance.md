@@ -26,6 +26,8 @@ The checker recomputes the Git inventory, rejects missing, duplicate, altered, o
 
 After a revision changes, generate a new package and revalidate affected files and dependent findings. Carry decisions forward only after checking their assumptions; do not update the old manifest's identity fields to make it pass. The checker validates the revisions supplied to it, so refreshing remote PR state remains the caller's responsibility. Working-tree changes need the separate checks below.
 
+A rebase changes revisions without necessarily changing the patch. Compare `git diff OLD_BASE..OLD_HEAD | git patch-id --verbatim` with the same command over the new range. `--verbatim` (Git 2.40+) keeps whitespace significant, so a re-indent of Python or YAML does not pass as identical; plain `--stable` ignores whitespace. An identical patch ID means the change itself needs no second read, but what moved in the base beneath it still does. A different ID reopens the files that differ and the findings that depend on them.
+
 ## Working-tree state
 
 A committed package does not include later working-tree changes. Inspect and identify each layer separately:

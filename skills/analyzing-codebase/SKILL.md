@@ -13,7 +13,7 @@ Learn enough of a system to make the next decision safely. Treat names such as `
 2. Verify behavior from imports, entrypoints, call paths, configuration loading, persistence, and runtime wiring. Treat manifests, READMEs, design docs, issues, and comments as claims until code or runtime evidence supports them.
 3. Survey before reading deeply. When the corpus or output is large, use `data-spelunking` to locate candidates, read narrow windows, and preserve the search boundary.
 4. Record durable findings under `docs/code-analysis/` by default. Respect another user-selected location. Preserve and extend current artifacts unless the user asks for a fresh pass.
-5. Separate observed behavior, claimed intent, hypotheses, and open questions. Include file paths and symbols so another session can verify the model.
+5. Separate observed behavior, claimed intent, hypotheses, and open questions. Include file paths and symbols so another session can verify the model. Do not infer interfaces, routes, enums, or invariants from file or directory names; cite the symbol, and record "none found" when the code shows none. Check imports and manifests before attributing a schema or service to a local file.
 
 ## Choose a mode
 

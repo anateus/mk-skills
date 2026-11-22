@@ -1262,6 +1262,270 @@
       "validation": [
         "node scripts/validate.js"
       ]
+    },
+    {
+      "source": "matt-pocock-skills",
+      "fromCommit": "5beb35b040e3de97e54fa9e386d7e42d15c295c2",
+      "toCommit": "abeeaf95660ba9e8b7c753eb38f441ca707a8823",
+      "decision": "accept",
+      "disposition": "adapted",
+      "localSkills": ["reviewing-code"],
+      "summary": "Give a delegated reviewer a fresh context without the author's conversation.",
+      "rationale": "Upstream now starts every review subagent with a fresh context window. The local scaling reference makes a fresh reader one level chosen by signal, keeping the earlier refusal of two mandatory subagents per review.",
+      "validation": ["python3 -B -m unittest tests.curation.test_review_upstreams -v", "node scripts/validate.js", "node --test tests/skills"]
+    },
+    {
+      "source": "matt-pocock-skills",
+      "fromCommit": "5beb35b040e3de97e54fa9e386d7e42d15c295c2",
+      "toCommit": "abeeaf95660ba9e8b7c753eb38f441ca707a8823",
+      "decision": "accept",
+      "disposition": "no-local-change",
+      "localSkills": ["clarifying-work", "adversarial-refinement", "specifying-work", "planning-work", "test-driven-development", "diagnosing-bugs", "implementing-work", "handing-off-work", "learning-from-mistakes"],
+      "summary": "Retain existing local behavior; the only mapped change adds fresh-context wording to optional research and fact-finding subagents.",
+      "rationale": "The mapped diffs touch code-review, wayfinder and grilling with one sentence each. Local clarification and planning do not require dispatch, so there is nothing to adapt beyond the reviewing-code record.",
+      "validation": ["python3 -B -m unittest tests.curation.test_review_upstreams -v", "node scripts/validate.js"]
+    },
+    {
+      "source": "spec-kitty",
+      "fromCommit": "137dec7df8d083be5e233a59f6ee92a925c9ef34",
+      "toCommit": "f348817c4d1ca29bff6a7b34be9d1209e443a1a9",
+      "decision": "accept",
+      "disposition": "adapted",
+      "localSkills": ["implementing-work"],
+      "summary": "Keep delegated agents inside their sandbox and approvals, and check their changed paths against owned files before landing.",
+      "rationale": "Upstream added sandbox-preserving dispatch and a scope check before commit. No local skill said that only the user's own request widens permissions, or that agent-authored edits to shared CI, build, dependency or hook configuration should stop the landing.",
+      "validation": ["python3 -B -m unittest tests.curation.test_review_upstreams -v", "node scripts/validate.js", "node --test tests/skills"]
+    },
+    {
+      "source": "spec-kitty",
+      "fromCommit": "137dec7df8d083be5e233a59f6ee92a925c9ef34",
+      "toCommit": "f348817c4d1ca29bff6a7b34be9d1209e443a1a9",
+      "decision": "accept",
+      "disposition": "no-local-change",
+      "localSkills": ["reviewing-code", "specifying-work", "planning-work", "verifying-work"],
+      "summary": "Reviewer output as data and rejection with a written rationale are already local behavior; specification and planning paths have no substantive delta.",
+      "rationale": "reviewing-code treats implementer, subagent and CI results as claims and requires findings with location, impact, evidence and remedy. All 17 mapped paths are live at the reviewed head.",
+      "validation": ["python3 -B -m unittest tests.curation.test_review_upstreams -v", "node scripts/validate.js"]
+    },
+    {
+      "source": "spec-kitty",
+      "fromCommit": "137dec7df8d083be5e233a59f6ee92a925c9ef34",
+      "toCommit": "f348817c4d1ca29bff6a7b34be9d1209e443a1a9",
+      "decision": "reject",
+      "disposition": "rejected",
+      "localSkills": ["implementing-work", "planning-work", "reviewing-code", "verifying-work"],
+      "summary": "Do not adopt consolidate and lane lifecycle verbs, status-by-CLI rules, the pack pin bump, three-cycle rejection caps with arbiter mode, or self-review fallback flags.",
+      "rationale": "These are Spec Kitty runtime mechanics and fixed caps. Earlier rejections of mission states, command slugs and fixed retry caps still apply.",
+      "validation": ["python3 -B -m unittest tests.curation.test_review_upstreams -v", "node scripts/validate.js"]
+    },
+    {
+      "source": "superpowers",
+      "fromCommit": "b739a8af570e10a95898f2bdf6cec97467fa6c12",
+      "toCommit": "22f0b463e7a5e579904dd6211a520321035526f7",
+      "decision": "accept",
+      "disposition": "adapted",
+      "localSkills": ["clarifying-work"],
+      "summary": "When a material question remains, name the concrete options with trade-offs and a recommended default.",
+      "rationale": "Upstream 7.0.2 replaced bare questions with named options. adversarial-refinement already pairs questions with a recommendation; clarifying-work step 4 did not.",
+      "validation": ["python3 -B -m unittest tests.curation.test_review_upstreams -v", "node scripts/validate.js", "node --test tests/skills"]
+    },
+    {
+      "source": "superpowers",
+      "fromCommit": "b739a8af570e10a95898f2bdf6cec97467fa6c12",
+      "toCommit": "22f0b463e7a5e579904dd6211a520321035526f7",
+      "decision": "accept",
+      "disposition": "no-local-change",
+      "localSkills": ["clarifying-work", "adversarial-refinement", "planning-work", "test-driven-development", "diagnosing-bugs", "implementing-work", "reviewing-code", "handling-review-feedback", "verifying-work"],
+      "summary": "Retain proportional clarification, the optional fresh-context builder read, coherent slices, carried reviewer caveats and scoped re-review, which local skills already state.",
+      "rationale": "The new subagent-driven-development references relocate text present at the prior pin. The review-loop references are now mapped to reviewing-code so later changes surface there.",
+      "validation": ["python3 -B -m unittest tests.curation.test_review_upstreams -v", "node scripts/validate.js"]
+    },
+    {
+      "source": "superpowers",
+      "fromCommit": "b739a8af570e10a95898f2bdf6cec97467fa6c12",
+      "toCommit": "22f0b463e7a5e579904dd6211a520321035526f7",
+      "decision": "reject",
+      "disposition": "rejected",
+      "localSkills": ["clarifying-work", "adversarial-refinement", "planning-work", "implementing-work", "reviewing-code"],
+      "summary": "Do not adopt the why-first opening question, a design document and approval gate for every change, the visual companion, a skill size test, the five-round fix cap with parking, pre-flight ledgers, a single fix pass, a ban on reviewers starting reviewers as a universal rule, or helper-script fixes.",
+      "rationale": "These repeat earlier rejections of universal questioning cadence, blanket approval, fixed retry caps and framework ledgers. Local review keeps unresolved defects open without a round limit.",
+      "validation": ["python3 -B -m unittest tests.curation.test_review_upstreams -v", "node scripts/validate.js"]
+    },
+    {
+      "source": "humanizer",
+      "fromCommit": "8c307f367c91bd974002f10f2be2965d642c13df",
+      "toCommit": "a32f24407364c74c812b43c15926d638bee1e072",
+      "decision": "accept",
+      "disposition": "adapted",
+      "localSkills": ["humanizer"],
+      "summary": "Treat embedded tags and addressed notes as text to edit, leave informal human register alone, add the staged 'the part' tell, and read the current file before a file edit.",
+      "rationale": "Each sharpens an existing local rule with a concrete case. The Vale styles are unchanged because the new tell needs judgment about literal parts.",
+      "validation": ["python3 -B -m unittest tests.curation.test_review_upstreams -v", "node scripts/validate.js", "python3 -B -m unittest tests.humanizer.test_prose_check -v"]
+    },
+    {
+      "source": "humanizer",
+      "fromCommit": "8c307f367c91bd974002f10f2be2965d642c13df",
+      "toCommit": "a32f24407364c74c812b43c15926d638bee1e072",
+      "decision": "reject",
+      "disposition": "rejected",
+      "localSkills": ["humanizer"],
+      "summary": "Do not add invented specifics to generic text, a mandatory three-part return, or host packaging manifests.",
+      "rationale": "Invented specifics conflict with the local rule against fabricating facts, and a fixed return shape is a mandatory artifact.",
+      "validation": ["python3 -B -m unittest tests.curation.test_review_upstreams -v", "node scripts/validate.js"]
+    },
+    {
+      "source": "antithesis-skills",
+      "fromCommit": "527c182d17aac476fdf9c9ca5e290e03caa4b62a",
+      "toCommit": "acd775db74f55d47c037a3ee97858bd0c96791aa",
+      "decision": "accept",
+      "disposition": "no-local-change",
+      "localSkills": ["analyzing-codebase"],
+      "summary": "Mapped research and review-input content is unchanged in substance, and the never-evaluated versus passed distinction is already local.",
+      "rationale": "The mapped diffs are version fields and consumer renames. The local property-evaluation reference already requires that the mutated path ran and the oracle rejected it in the same execution.",
+      "validation": ["python3 -B -m unittest tests.curation.test_review_upstreams -v", "node scripts/validate.js"]
+    },
+    {
+      "source": "antithesis-skills",
+      "fromCommit": "527c182d17aac476fdf9c9ca5e290e03caa4b62a",
+      "toCommit": "acd775db74f55d47c037a3ee97858bd0c96791aa",
+      "decision": "reject",
+      "disposition": "rejected",
+      "localSkills": ["analyzing-codebase"],
+      "summary": "Do not import run streaming with early cancel, compose build-cost notes, plugin command renames, sweep ceilings, or index metadata.",
+      "rationale": "These are paid-campaign and host-plugin mechanics. The earlier rejection of mutation execution procedures still applies.",
+      "validation": ["python3 -B -m unittest tests.curation.test_review_upstreams -v", "node scripts/validate.js"]
+    },
+    {
+      "source": "spec-kitty-open-packs",
+      "fromCommit": "500e3a77a6c427e35bb460757210d9525ac3d7b5",
+      "toCommit": "7912c20a01ea7395bf00e9032b5b9f10cfbafb4b",
+      "decision": "accept",
+      "disposition": "adapted",
+      "localSkills": ["specifying-work", "planning-work", "implementing-work", "reviewing-code", "verifying-work"],
+      "summary": "Repair every mapping after the built-in pack was split: track the foundation pack's step prompts, guidelines, templates, mission-type loader and tactics.",
+      "rationale": "All 17 recorded paths under packs/built-in are gone at the reviewed head. The prompts and templates were renamed into packs/foundation, and the per-step, action-index and expected-artifact files were folded into software-dev.mission-type.yaml.",
+      "validation": ["python3 -B -m unittest tests.curation.test_review_upstreams -v", "node scripts/validate.js"]
+    },
+    {
+      "source": "spec-kitty-open-packs",
+      "fromCommit": "500e3a77a6c427e35bb460757210d9525ac3d7b5",
+      "toCommit": "7912c20a01ea7395bf00e9032b5b9f10cfbafb4b",
+      "decision": "accept",
+      "disposition": "adapted",
+      "localSkills": ["specifying-work", "planning-work", "reviewing-code"],
+      "summary": "Hold requirements to an observable-response quality bar, trace every slice back to a requirement or the stated intent, and pick review lenses over headcount while settling reviewer disagreement from the code.",
+      "rationale": "The requirement-quality and product-coherence tactics add checks the local quality and final checks lacked. The optional adversarial-squad procedure informs the several-reviewers level in the reviewing-code scaling reference without making a panel a gate.",
+      "validation": ["python3 -B -m unittest tests.curation.test_review_upstreams -v", "node scripts/validate.js", "node --test tests/skills"]
+    },
+    {
+      "source": "spec-kitty-open-packs",
+      "fromCommit": "500e3a77a6c427e35bb460757210d9525ac3d7b5",
+      "toCommit": "7912c20a01ea7395bf00e9032b5b9f10cfbafb4b",
+      "decision": "accept",
+      "disposition": "no-local-change",
+      "localSkills": ["implementing-work", "reviewing-code", "verifying-work"],
+      "summary": "Test doubles only at a responsibility boundary, tests first only where they earn value, and suspicion of change-detector tests are already covered locally.",
+      "rationale": "test-driven-development prefers public seams over mocks and uses the nearest reliable evidence for configuration-only changes. reviewing-code is at its word budget, so the change-detector question stays with that skill.",
+      "validation": ["python3 -B -m unittest tests.curation.test_review_upstreams -v", "node scripts/validate.js"]
+    },
+    {
+      "source": "spec-kitty-open-packs",
+      "fromCommit": "500e3a77a6c427e35bb460757210d9525ac3d7b5",
+      "toCommit": "7912c20a01ea7395bf00e9032b5b9f10cfbafb4b",
+      "decision": "reject",
+      "disposition": "rejected",
+      "localSkills": ["specifying-work", "planning-work", "implementing-work", "reviewing-code", "verifying-work"],
+      "summary": "Do not adopt the evidenced-by-run label taxonomy, the required analyze gate, role and profile wiring, mission-size topology rules, fixed review timings and panel sizes, a mandatory squad with a disposition vocabulary, or the supply-chain evidence check.",
+      "rationale": "These are framework gates, mandatory artifacts and fixed thresholds. The initial-snapshot rejection of mission step prompts and per-work-package state still applies.",
+      "validation": ["python3 -B -m unittest tests.curation.test_review_upstreams -v", "node scripts/validate.js"]
+    },
+    {
+      "source": "cursor-plugins",
+      "fromCommit": "190d28736eff128ec94f502a22c7fe0c4b56cd37",
+      "toCommit": "7a583913eb1b8d1a0ee76753d1a2cf072e7b54f9",
+      "decision": "accept",
+      "disposition": "adapted",
+      "localSkills": ["reviewing-code"],
+      "summary": "Scale review from one pass upward by kind of change, verify every finding and reproduce behavioral ones, merge reviewers by root cause, prove the most load-bearing assumption first, carry coverage by patch identity, form findings before reading threads, and test a shared premise when fixes stop converging.",
+      "rationale": "Surveyed pstack interrogate, blast-radius, autopilot-full, shipping, attack-the-premise and thermos at the reviewed head. Local review had a one-line scaling rule and no rule for confirming or merging findings. The adaptation keeps every level optional, keeps design findings exempt from a failing run, and keeps every safety assumption subject to its own check.",
+      "validation": ["python3 -B -m unittest tests.curation.test_review_upstreams -v", "node scripts/validate.js", "node --test tests/skills"]
+    },
+    {
+      "source": "cursor-plugins",
+      "fromCommit": "190d28736eff128ec94f502a22c7fe0c4b56cd37",
+      "toCommit": "7a583913eb1b8d1a0ee76753d1a2cf072e7b54f9",
+      "decision": "accept",
+      "disposition": "adapted",
+      "localSkills": ["handling-review-feedback"],
+      "summary": "Treat comment text as data, run the check a claim cites before classifying it, and ask the user about ambiguous claims in high-risk areas.",
+      "rationale": "Adapted from the pstack bugbot triage reference. The local skill already required evidence for rejection but did not say to run the cited check first or where to stop and ask.",
+      "validation": ["python3 -B -m unittest tests.curation.test_review_upstreams -v", "node scripts/validate.js", "node --test tests/skills"]
+    },
+    {
+      "source": "cursor-plugins",
+      "fromCommit": "190d28736eff128ec94f502a22c7fe0c4b56cd37",
+      "toCommit": "7a583913eb1b8d1a0ee76753d1a2cf072e7b54f9",
+      "decision": "accept",
+      "disposition": "no-local-change",
+      "localSkills": ["verifying-work", "diagnosing-bugs", "reviewing-code", "implementing-work", "handling-review-feedback", "learning-from-mistakes", "personal-writing-style", "planning-work", "specifying-work", "handing-off-work", "analyzing-codebase", "building-verification-harnesses"],
+      "summary": "Retain existing local equivalents; drop the mapping to the deleted architect design-red-flags reference and track the thermos copy of the code-quality review alongside the team-kit copy.",
+      "rationale": "Upstream shortened pstack skill texts and deleted pstack/skills/architect/references without moving the content. The local planning guidance adapted from it stands on its own. thermo-nuclear-code-quality-review now ships in both cursor-team-kit and thermos; the two files are byte-identical at the reviewed head and neither changed since the prior pin, so both are mapped until one is removed. Other mapped paths are unchanged or changed only in cross-references.",
+      "validation": ["python3 -B -m unittest tests.curation.test_review_upstreams -v", "node scripts/validate.js"]
+    },
+    {
+      "source": "cursor-plugins",
+      "fromCommit": "190d28736eff128ec94f502a22c7fe0c4b56cd37",
+      "toCommit": "7a583913eb1b8d1a0ee76753d1a2cf072e7b54f9",
+      "decision": "reject",
+      "disposition": "rejected",
+      "localSkills": ["reviewing-code", "handling-review-feedback", "implementing-work", "planning-work", "learning-from-mistakes"],
+      "summary": "Do not adopt arena or multi-vendor panels, heavier weight for overlapping findings, clearing other risks from one safety fact, excluding structure findings, a decision-log artifact, delete-by-default comment review, a learned skip-pattern library, fixed fan-out counts, or automatic PR and merge machinery.",
+      "rationale": "Agreement between reviewers is weak evidence and can promote a shared miss. The rest are mandatory dispatch, persistent state, fixed counts or host lifecycle machinery already refused in earlier records, including the single safety invariant.",
+      "validation": ["python3 -B -m unittest tests.curation.test_review_upstreams -v", "node scripts/validate.js"]
+    },
+    {
+      "source": "elephant-goldfish-model",
+      "fromCommit": "a8380ab5f0aba392c97e31c79f9a6666b3f09f14",
+      "toCommit": "7d1b721e51448518cc9b0336465041230200dd10",
+      "decision": "accept",
+      "disposition": "adapted",
+      "localSkills": ["reviewing-code"],
+      "summary": "Add a fresh-reader level with a restatement before findings, count a failed reviewer as not run, and converge review rounds by settled, re-opened and churning findings.",
+      "rationale": "Adapted from the comprehension persona, the synthesizer, the review loop and the new egm-lite diff review. Local text keeps the restatement in the report, discloses a same-context review where upstream refuses to run one, and drops the two-clean-round and five-round constants.",
+      "validation": ["python3 -B -m unittest tests.curation.test_review_upstreams -v", "node scripts/validate.js", "node --test tests/skills"]
+    },
+    {
+      "source": "elephant-goldfish-model",
+      "fromCommit": "a8380ab5f0aba392c97e31c79f9a6666b3f09f14",
+      "toCommit": "7d1b721e51448518cc9b0336465041230200dd10",
+      "decision": "accept",
+      "disposition": "adapted",
+      "localSkills": ["adversarial-refinement", "specifying-work", "analyzing-codebase"],
+      "summary": "Keep settled challenge points settled across passes and add a contradiction lens; reconcile a specification with its predecessor brief and attribute rejections only to linked sources; do not infer interfaces from file or directory names.",
+      "rationale": "Each is one conditional sentence drawn from the review loop, the inventive-catalyst persona, the draft reconciliation step and the bootstrap source-grounding rules. No catalog, artifact, agent or threshold is imported.",
+      "validation": ["python3 -B -m unittest tests.curation.test_review_upstreams -v", "node scripts/validate.js", "node --test tests/skills"]
+    },
+    {
+      "source": "elephant-goldfish-model",
+      "fromCommit": "a8380ab5f0aba392c97e31c79f9a6666b3f09f14",
+      "toCommit": "7d1b721e51448518cc9b0336465041230200dd10",
+      "decision": "accept",
+      "disposition": "no-local-change",
+      "localSkills": ["clarifying-work", "planning-work", "handling-review-feedback", "curating-skills"],
+      "summary": "Retain existing local behavior; resolve, brainstorm and planning deltas are layout, severity labels and host command forms.",
+      "rationale": "All 11 mapped paths are live at the reviewed head. The pipeline catalog now records the reviewed head and the adapted review-scaling ideas.",
+      "validation": ["python3 -B -m unittest tests.curation.test_review_upstreams -v", "node scripts/validate.js"]
+    },
+    {
+      "source": "elephant-goldfish-model",
+      "fromCommit": "a8380ab5f0aba392c97e31c79f9a6666b3f09f14",
+      "toCommit": "7d1b721e51448518cc9b0336465041230200dd10",
+      "decision": "reject",
+      "disposition": "rejected",
+      "localSkills": ["clarifying-work", "adversarial-refinement", "specifying-work", "planning-work", "analyzing-codebase", "handling-review-feedback", "reviewing-code", "curating-skills"],
+      "summary": "Do not adopt two-clean-round and five-round constants, retry-once rules, refusal to review without a subagent tool, the egm-lite command state machine with its checklist artifacts and fixed gating criteria, a prescribed alternatives section, author identity resolution, the caveat taxonomy, a plan write allowlist, reviewer link policy, bootstrap worker caps, or a private scratch path for the maintainer review bundle.",
+      "rationale": "These are fixed thresholds, mandatory dispatch, state machines and prescribed artifacts. Earlier rejections of mandatory stages, rigid gates and capped re-audit with automatic residual acceptance still apply. The review bundle path is chosen by the maintainer on a single-user machine.",
+      "validation": ["python3 -B -m unittest tests.curation.test_review_upstreams -v", "node scripts/validate.js"]
     }
   ]
 }

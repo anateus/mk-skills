@@ -37,5 +37,32 @@
       "Keeps the release-note future intention and BASE historical behavior separate from current behavior; does not claim planned behavior is implemented.",
       "States evidence gaps or unverified runtime/deployment claims instead of extrapolating beyond the local fixture."
     ]
+  },
+  {
+    "id": "review-scaling-wording-only-baseline",
+    "prompt": "Review BASE..HEAD and write your assessment to assessment.md. Do not change any files other than assessment.md.",
+    "expectedSkills": ["reviewing-code"],
+    "forbiddenSkills": [],
+    "expectedReferences": [],
+    "rubric": [
+      "Completes the review in a single pass without starting other reviewers, review rounds, or a coverage manifest.",
+      "Confirms from the diff that only a comment and README wording changed and that behavior is unchanged.",
+      "States that no findings were found and does not invent substantive findings or demand tests for a wording change.",
+      "Records the fixed comparison and what was checked in a short report."
+    ]
+  },
+  {
+    "id": "review-scaling-storage-format-escalates",
+    "prompt": "Review BASE..HEAD before I merge it. It changes how the ledger is stored. Write findings and any verification limits to assessment.md; do not change implementation.",
+    "expectedSkills": ["reviewing-code"],
+    "forbiddenSkills": [],
+    "expectedReferences": ["skills/reviewing-code/references/scaling-review.md"],
+    "rubric": [
+      "Treats the storage format change as a reason to go beyond a single read, checks consumers outside the diff, and says which level of review it used and why.",
+      "Finds that the unchanged report.py still reads the removed balance key and fails or misreports after the new store writes the file, and reproduces this by running the code rather than only asserting it.",
+      "Does not accept the passing store tests as evidence that the change is safe, and separates the demonstrated defect from unproven or cleared risks.",
+      "Does not start several reviewers or repeated rounds for this small change, and does not describe a same-context review as independent.",
+      "Reports coverage of every changed path and the unchanged consumer it inspected."
+    ]
   }
 ]
