@@ -100,6 +100,14 @@ assert (p / '.skill-catalog/skills/mk-skills-setup/assets/agents-guidance.md').r
 assert 'WITHHELD_RUBRIC' not in ''.join(f.read_text(errors='replace') for f in p.rglob('*') if f.is_file() and '.git' not in f.parts)
 coordination = subprocess.run(['agentplan', 'status'], capture_output=True, text=True)
 assert coordination.returncode == 1 and 'Fixture: external coordination' in coordination.stderr
+import os
+for sealed in ('gh', 'kubectl', 'aws', 'terraform', 'sops'):
+    assert subprocess.run([sealed, '--version'], capture_output=True).returncode == 1, sealed
+assert os.environ['KUBECONFIG'] == os.devnull and os.environ['AWS_SHARED_CREDENTIALS_FILE'] == os.devnull
+assert os.environ['GH_TOKEN'] == 'invalid' and not os.listdir(os.environ['GH_CONFIG_DIR'])
+assert not any(k in os.environ for k in ('AWS_PROFILE', 'AWS_ACCESS_KEY_ID', 'GITHUB_TOKEN', 'KUBE_CONTEXT'))
+remote = subprocess.run(['git', 'ls-remote', 'https://example.invalid/r.git'], capture_output=True, text=True)
+assert "transport 'https' not allowed" in remote.stderr, remote.stderr
 pathlib.Path({guidance}).write_text('MUTATED_INPUT')
 pathlib.Path({instructions}).write_text('MUTATED_INPUT')
 print(json.dumps({{'type': 'result', 'is_error': False, 'result': 'fixture answer'}}))
@@ -118,7 +126,8 @@ print(json.dumps({{'type': 'result', 'is_error': False, 'result': 'fixture answe
                     '--instructions', str(audit),
                     '--repetitions', '2', '--cases', str(root / 'cases.json'),
                     '--fixtures', str(root / 'fixtures.json'), '--case', 'sample', '--output', str(output)],
-                    env={**os.environ, 'PATH': str(binary) + os.pathsep + os.environ.get('PATH', '')},
+                    env={**os.environ, 'PATH': str(binary) + os.pathsep + os.environ.get('PATH', ''),
+                         'AWS_PROFILE': 'planted', 'GITHUB_TOKEN': 'planted', 'KUBE_CONTEXT': 'planted'},
                     capture_output=True, text=True)
                 self.assertEqual(result.returncode, 0, result.stderr + result.stdout)
                 for repetition in (1, 2):
@@ -179,6 +188,43 @@ print(json.dumps({"prompt": prompt, "workspace": str(p)}))
             for name in ['../escape', '/tmp/escape', '.git/config', '.skill-catalog/context.txt']:
                 with self.assertRaises(ValueError):
                     runner.write_files(Path(directory), {name: 'bad'})
+
+    def test_repository_fixture_exposes_two_snapshots_and_nothing_later(self):
+        with tempfile.TemporaryDirectory() as directory:
+            source, workspace = Path(directory) / 'source', Path(directory) / 'workspace'
+            source.mkdir()
+            workspace.mkdir()
+
+            def git(*args):
+                return subprocess.run(['git', '-C', str(source), '-c', 'user.name=t', '-c', 'user.email=t@example.invalid',
+                                       '-c', 'commit.gpgsign=false', *args],
+                                      check=True, capture_output=True, text=True).stdout.strip()
+            git('init', '-q', '-b', 'main')
+            revisions = []
+            for files in [{'app.py': 'base\n', 'old.py': 'removed later\n'}, {'app.py': 'defect\n', 'old.py': None},
+                          {'app.py': 'THE FIX\n'}]:
+                for name, content in files.items():
+                    (source / name).write_text(content) if content else (source / name).unlink()
+                git('add', '-A')
+                git('commit', '-q', '-m', 'history the reviewer must not see')
+                revisions.append(git('rev-parse', 'HEAD'))
+            git('tag', 'released')
+            runner.prepare_workspace(workspace, {'repository': {
+                'path': str(source), 'base': revisions[0], 'head': revisions[1]}})
+
+            def inside(*args):
+                return subprocess.run(['git', '-C', str(workspace), *args], check=True,
+                                      capture_output=True, text=True).stdout
+            self.assertEqual(inside('for-each-ref', '--format=%(refname)').split(),
+                             ['refs/heads/main', 'refs/tags/BASE'])
+            self.assertEqual(inside('rev-list', '--all', '--count').strip(), '2')
+            self.assertEqual(inside('diff', '--name-status', 'BASE..HEAD').split(), ['M', 'app.py', 'D', 'old.py'])
+            self.assertEqual((workspace / 'app.py').read_text(), 'defect\n')
+            self.assertNotIn('THE FIX', inside('log', '--all', '-p'))
+            self.assertNotIn('must not see', inside('log', '--all'))
+            with self.assertRaises(ValueError):
+                runner.prepare_workspace(Path(tempfile.mkdtemp(dir=directory)), {'repository': {
+                    'path': str(source), 'base': revisions[0], 'head': 'f' * 40}})
 
     def test_case_ids_cannot_escape_output_or_alias_repetitions(self):
         with tempfile.TemporaryDirectory() as directory:

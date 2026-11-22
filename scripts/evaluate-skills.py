@@ -55,9 +55,22 @@ def prepare_workspace(workspace, fixture):
     git(workspace, 'config', 'user.email', 'evaluation@example.invalid')
     git(workspace, 'config', 'commit.gpgsign', 'false')
     git(workspace, 'config', 'core.hooksPath', '/dev/null')
-    for number, files in enumerate(fixture.get('commits', [{}])):
-        write_files(workspace, files)
-        git(workspace, 'add', '.')
+    snapshots = fixture.get('repository')
+    for number, files in enumerate([snapshots['base'], snapshots['head']] if snapshots
+                                   else fixture.get('commits', [{}])):
+        if snapshots:
+            # Snapshots only: no history, branches or tags of the source survive, so nothing
+            # after HEAD (a later fix, the merged result) is reachable from the workspace.
+            if number:
+                git(workspace, 'rm', '-r', '-q', '--ignore-unmatch', '.')
+            archive = subprocess.run(['git', '-C', snapshots['path'], 'archive', files + '^{commit}'],
+                                     capture_output=True)
+            if archive.returncode or subprocess.run(['tar', '-x', '-C', str(workspace)],
+                                                    input=archive.stdout).returncode:
+                raise ValueError('Fixture snapshot failed for revision ' + files)
+        else:
+            write_files(workspace, files)
+        git(workspace, 'add', '-A', '.')
         git(workspace, 'commit', '--allow-empty', '-m', 'Fixture {}'.format(number))
         if number == 0:
             git(workspace, 'tag', 'BASE')
@@ -154,13 +167,30 @@ def host_command(host, workspace, context, custom=None, model=None):
             '-']
 
 
+# Fixture runs review real code but must never reach the systems that code deploys to.
+SEALED_COMMANDS = ('gh', 'kubectl', 'helm', 'kustomize', 'argocd', 'flux', 'aws', 'gcloud', 'az',
+                   'terraform', 'tofu', 'terragrunt', 'sops', 'vault', 'psql', 'redis-cli', 'ssh')
+SEALED_PREFIXES = ('AWS_', 'KUBE', 'GH_', 'GITHUB_', 'SOPS_', 'TF_', 'VAULT_', 'ARGOCD_', 'GOOGLE_',
+                   'CLOUDSDK_', 'PG', 'DATABASE_URL', 'REDIS_')
+
+
 def run_process(command, prompt, workspace, output, timeout):
     environment = os.environ.copy()
-    # Do not let fixture work target a real parent pane or inherit a nested host session.
+    # Do not let fixture work target a real parent pane or inherit a nested host session,
+    # and leave it no credentials for source hosts, clusters, clouds or secret stores.
     for key in list(environment):
-        if key.startswith(('ZELLIJ', 'ZJ_', 'CLAUDECODE', 'CODEX_THREAD', 'CODEX_SESSION')):
+        if key.startswith(('ZELLIJ', 'ZJ_', 'CLAUDECODE', 'CODEX_THREAD', 'CODEX_SESSION', *SEALED_PREFIXES)):
             environment.pop(key)
-    environment['PATH'] = str(workspace / '.skill-catalog/bin') + os.pathsep + environment.get('PATH', '')
+    empty = workspace / '.skill-catalog/sealed'
+    empty.mkdir(parents=True, exist_ok=True)
+    environment.update({
+        'KUBECONFIG': os.devnull, 'AWS_CONFIG_FILE': os.devnull, 'AWS_SHARED_CREDENTIALS_FILE': os.devnull,
+        'AWS_EC2_METADATA_DISABLED': 'true', 'GH_TOKEN': 'invalid', 'GH_CONFIG_DIR': str(empty),
+        'TF_CLI_CONFIG_FILE': os.devnull, 'VAULT_TOKEN': 'invalid', 'CLOUDSDK_CONFIG': str(empty),
+        # The workspace is two local snapshots; git must not fetch the history that was left out.
+        'GIT_ALLOW_PROTOCOL': 'file', 'GIT_TERMINAL_PROMPT': '0', 'GIT_ASKPASS': 'false',
+        'GIT_CONFIG_GLOBAL': os.devnull, 'GIT_CONFIG_NOSYSTEM': '1',
+        'PATH': str(workspace / '.skill-catalog/bin') + os.pathsep + environment.get('PATH', '')})
     start = time.monotonic()
     with (output / 'trace.jsonl').open('w') as stdout, (output / 'stderr.log').open('w') as stderr:
         process = subprocess.Popen(command, cwd=workspace, env=environment, stdin=subprocess.PIPE,
@@ -249,7 +279,7 @@ def evaluate(args):
                 shutil.copytree(output / 'snapshot/plugins', workspace / '.skill-catalog/plugins')
             fixture_bin = workspace / '.skill-catalog/bin'
             fixture_bin.mkdir()
-            for name in ('zellij', 'agentplan'):
+            for name in ('zellij', 'agentplan', *SEALED_COMMANDS):
                 stub = fixture_bin / name
                 stub.write_text('#!/bin/sh\n'
                                 'echo "Fixture: external coordination is unavailable; continue local work." >&2\n'
@@ -276,8 +306,17 @@ def evaluate(args):
                             'base_sha': base_sha, 'shared_guidance_injected': True,
                            'harness': 'explicit-catalog', 'grading': 'pending',
                            'before': before, 'after': digest_tree(workspace)})
-            shutil.copytree(workspace, case_output / 'workspace', symlinks=True,
-                            ignore=shutil.ignore_patterns('.git', '.skill-catalog', '__pycache__'))
+            if 'repository' in fixtures[case['id']]:
+                # A real tree is large; keep only what the run added or changed.
+                changed = git(workspace, 'ls-files', '--modified', '--others', '--exclude-standard').splitlines()
+                for name in changed:
+                    if (workspace / name).is_file():
+                        (case_output / 'workspace' / name).parent.mkdir(parents=True, exist_ok=True)
+                        shutil.copy2(workspace / name, case_output / 'workspace' / name)
+                (case_output / 'workspace').mkdir(exist_ok=True)
+            else:
+                shutil.copytree(workspace, case_output / 'workspace', symlinks=True,
+                                ignore=shutil.ignore_patterns('.git', '.skill-catalog', '__pycache__'))
             (case_output / 'diff.patch').write_text(git(workspace, 'diff', base_sha), encoding='utf-8')
             (case_output / 'status.txt').write_text(git(workspace, 'status', '--porcelain'), encoding='utf-8')
         # Only materialize assessment data after the agent exits.

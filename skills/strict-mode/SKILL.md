@@ -20,7 +20,7 @@ For integration-heavy changes, route consequential uncertainty through `clarifyi
 
 ## Optional orchestration
 
-Orchestration is separate from strictness. Zellij, Herdr, peers, subagents, and parallel execution remain optional. Use `zellij-agent-herder` only when it is available, requested, and tasks are independent with non-overlapping ownership; otherwise execute sequentially.
+Orchestration is separate from strictness. Pane multiplexers, peers, subagents, and parallel execution remain optional. Use a pane-orchestration skill only when it is available, requested, and tasks are independent with non-overlapping ownership; otherwise execute sequentially.
 
 When peers are used, give each bounded scope, dependencies, expected output, and verification. Peer reports and output are evidence to verify, not proof of completion. The responsible agent inspects actual changes and performs primary verification before accepting results.
 

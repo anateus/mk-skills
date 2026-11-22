@@ -53,3 +53,7 @@ Fresh readers sample differently, so a later round often raises something new ev
 - **No progress.** When successive fixes fail the same check, write down the assumption they share and test it directly before trying another fix.
 
 There is no round limit. When rounds stop making progress, report the open findings by severity and let the user decide whether to accept them, continue, or rework the change. Unresolved defects stay open whichever they choose.
+
+## Testing changes to this guidance
+
+Before trusting an edit to these rules, [replay past findings](replaying-findings.md): run the old and the new guidance against defects real reviewers found on real PRs.

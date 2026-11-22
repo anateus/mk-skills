@@ -13,9 +13,9 @@ python3 scripts/collect_pr_comments.py \
   --out /tmp/pr-comments-2026-01-15
 ```
 
-The author defaults to `gh api user`. Override with `--author LOGIN`; repeat `--repo OWNER/NAME` to restrict repository scope. Without a repository filter, the search covers repositories visible to that GitHub account.
+The author defaults to `gh api user`. Override with `--author LOGIN`; repeat `--repo OWNER/NAME` to restrict repository scope. Without a repository filter, the search covers repositories visible to that GitHub account. To study what reviewers found across whole repositories, pass `--any-author` with one or more `--repo`; it drops the author qualifier and collects from every PR updated since the start.
 
-The candidate search is `is:pr author:LOGIN updated:>=UTC_START_DATE`. It deliberately has no PR creation-date or state filter. It then paginates:
+The candidate search is `is:pr author:LOGIN updated:>=UTC_START_DATE`, run once per named repository so the search cap applies to each repository separately. It deliberately has no PR creation-date or state filter. It then paginates:
 
 ```text
 GET /repos/{owner}/{repo}/issues/{number}/comments
@@ -32,10 +32,21 @@ Conversation and inline comments use `created_at`; review bodies use `submitted_
 | `manifest.json` | Query, window, fetch time, counts, exclusions, and artifact hashes; written last as the completion marker. |
 | `prs.json` | Candidate PR metadata, without PR description bodies. |
 | `coverage.json` | Total fetched and in-window nonempty counts for each PR and comment surface. |
-| `comments.json` | Collected comment bodies, identities, timestamps, file locations, reply relationships, and source URLs. |
+| `comments.json` | Collected comment bodies, identities, timestamps, file locations, the commit an inline comment was made against, reply relationships, and source URLs. |
+| `comments.jsonl` | One line per comment for filtering before reading: `repo`, `pr`, `kind`, `id`, `author`, `at`, `path`, `line`, `commit`, `reply_to`, `pri`, `url`, and `text`, the body flattened to one line with markup and collapsed `<details>` blocks removed and cut at `--text-chars` (default 600). Empty fields are left out. |
 | `priority-candidates.json` | Comments containing explicit P0/P1/P2/P3 tokens, including HTML badges; candidates for inspection, not established findings. |
 
 Raw bodies can contain confidential data or credentials. The collector doesn't redact or certify them. Restrict local access and apply the host's data policy before exposing excerpts to a model or publishing summaries. The manifest contains no raw bodies. A failed run can leave a partial directory; without its completion marker it isn't a completed snapshot. Use a new output directory for a retry.
+
+Filter `comments.jsonl` first and open full bodies in `comments.json` only for the records that survive. For example, top-level P1 and P2 inline comments per reviewer:
+
+```sh
+jq -c 'select(.kind == "inline" and .reply_to == null and (.pri // [] | any(. == "P1" or . == "P2")))
+       | {repo, pr, author, path, line, commit, text: .text[0:160]}' comments.jsonl
+jq -r 'select(.pri) | [.repo, .author, .pri[0]] | @tsv' comments.jsonl | sort | uniq -c | sort -rn
+```
+
+To turn confirmed findings into test cases for review guidance, read [replaying past findings](../../reviewing-code/references/replaying-findings.md).
 
 Report coverage from the actual result. GitHub search is indexed rather than a transactional snapshot. Deleted comments, unpublished reviews, inaccessible repositories, and index delays remain outside the guarantee. Bodies reflect their fetched versions, including edits; editing an old comment doesn't move it into the posting-time window. Don't infer thread resolution from REST inline comments.
 

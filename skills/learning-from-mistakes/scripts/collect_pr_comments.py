@@ -19,6 +19,14 @@ from urllib.parse import urlencode
 PRIORITY = re.compile(r'\bP[0-3]\b', re.I)
 
 
+def compact(body, limit):
+    """Reduce a comment body to one line of text for cheap scanning; the full body stays in comments.json."""
+    text = re.sub(r'<!--.*?-->|<details\b.*?</details>', ' ', body, flags=re.S | re.I)
+    text = re.sub(r'<img\b[^>]*?\balt="([^"]*)"[^>]*>', r'[\1]', text, flags=re.I)
+    text = ' '.join(re.sub(r'</?[A-Za-z][^>]*>', ' ', text).split())
+    return text if len(text) <= limit else text[:limit].rstrip() + '…'
+
+
 class CollectionError(RuntimeError):
     """An actionable collection error whose message contains no response body."""
 
@@ -78,6 +86,10 @@ def search_prs(query):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--author', default=None)
+    parser.add_argument('--any-author', action='store_true',
+                        help='Collect from every PR in the named repositories, whoever opened it')
+    parser.add_argument('--text-chars', type=int, default=600,
+                        help='Longest one-line text kept per comment in comments.jsonl')
     parser.add_argument('--repo', action='append', default=[], metavar='OWNER/NAME',
                         help='Restrict repositories; repeat for multiple repositories')
     parser.add_argument('--start', required=True)
@@ -94,12 +106,18 @@ def main():
         parser.error('Output directory already exists; choose a new snapshot directory')
     if any(not re.fullmatch(r'[\w.-]+/[\w.-]+', repo, flags=re.ASCII) for repo in args.repo):
         parser.error('Repositories must use OWNER/NAME without search qualifiers')
-    author = args.author or api('user')['login']
-    if not re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9-]*(?:\[bot\])?', author):
+    if args.any_author and (args.author or not args.repo):
+        parser.error('--any-author needs at least one --repo and no --author')
+    if args.text_chars < 1:
+        parser.error('--text-chars must be positive')
+    author = None if args.any_author else args.author or api('user')['login']
+    if author is not None and not re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9-]*(?:\[bot\])?', author):
         parser.error('Author must be a GitHub login without search qualifiers')
-    query = f'is:pr author:{author} updated:>={start.date()}'
-    query += ''.join(f' repo:{repo}' for repo in args.repo)
-    prs = search_prs(query)
+    base_query = 'is:pr' + (f' author:{author}' if author else '') + f' updated:>={start.date()}'
+    query = base_query + ''.join(f' repo:{repo}' for repo in args.repo)
+    # Search one repository at a time: the 1,000-result cap then applies to each, not to their sum.
+    prs = [pr for part in ([f'{base_query} repo:{repo}' for repo in dict.fromkeys(args.repo)] or [query])
+           for pr in search_prs(part)]
 
     def collect(pr):
         repo = pr['repository_url'].split('/repos/')[1]
@@ -124,7 +142,8 @@ def main():
                         pr_created_at=pr['created_at'], kind=kind, id=row['id'],
                         author=(row.get('user') or {}).get('login'), created_at=when,
                         updated_at=row.get('updated_at'), url=row['html_url'],
-                        path=row.get('path'), line=row.get('line'),
+                        path=row.get('path'), line=row.get('line') or row.get('original_line'),
+                        commit=row.get('original_commit_id'),
                         in_reply_to_id=row.get('in_reply_to_id'), body=body))
         return records, dict(repo=repo, pr=number, counts=counts)
 
@@ -136,14 +155,26 @@ def main():
     records.sort(key=lambda r: (timestamp(r['created_at']), r['repo'], r['kind'], r['id']))
     if len({(r['kind'], r['id']) for r in records}) != len(records):
         raise CollectionError('Duplicate collected comment identities')
-    candidates = [dict(row, candidate_priorities=sorted(set(label.upper() for label in PRIORITY.findall(row['body']))))
-                  for row in records if PRIORITY.search(row['body'])]
+
+    def priorities(row):
+        return sorted(set(label.upper() for label in PRIORITY.findall(row['body'])))
+
+    candidates = [dict(row, candidate_priorities=priorities(row)) for row in records if PRIORITY.search(row['body'])]
+    # One short line per comment; empty fields are dropped so the file stays cheap to read and filter.
+    lines = [{key: value for key, value in dict(
+        repo=row['repo'], pr=row['pr'], kind=row['kind'], id=row['id'], author=row['author'],
+        at=row['created_at'], path=row['path'], line=row['line'], commit=row['commit'],
+        reply_to=row['in_reply_to_id'], pri=priorities(row), text=compact(row['body'], args.text_chars),
+        url=row['url']).items() if value not in (None, '', [])} for row in records]
     # Reserve a new directory only after collection succeeds; never replace a prior run.
     args.out.mkdir(parents=True, mode=0o700, exist_ok=False)
     hashes = {}
-    for filename, value in [('comments.json', records), ('prs.json', prs),
-                            ('coverage.json', coverage), ('priority-candidates.json', candidates)]:
-        payload = (json.dumps(value, indent=2) + '\n').encode('utf-8')
+    artifacts = [(filename, json.dumps(value, indent=2) + '\n') for filename, value in [
+        ('comments.json', records), ('prs.json', prs),
+        ('coverage.json', coverage), ('priority-candidates.json', candidates)]]
+    artifacts.append(('comments.jsonl', ''.join(json.dumps(line, ensure_ascii=False) + '\n' for line in lines)))
+    for filename, text in artifacts:
+        payload = text.encode('utf-8')
         (args.out / filename).write_bytes(payload)
         hashes[filename] = hashlib.sha256(payload).hexdigest()
     manifest = dict(schema_version=1, author=author, start=start.isoformat(), end=end.isoformat(), query=query,

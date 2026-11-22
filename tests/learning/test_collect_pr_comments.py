@@ -84,6 +84,37 @@ class CollectorTests(unittest.TestCase):
         endpoint = next(call.args[0] for call in api.call_args_list if call.args[0].startswith('search/issues?'))
         self.assertIn('updated:>=2025-12-31', parse_qs(urlparse(endpoint).query)['q'][0])
 
+    def test_any_author_covers_every_pr_in_named_repositories_only(self):
+        api = self.invoke(extra=['--any-author', '--repo', 'example/repo'])
+        endpoints = [call.args[0] for call in api.call_args_list]
+        query = parse_qs(urlparse(next(e for e in endpoints if e.startswith('search/issues?'))).query)['q'][0]
+        self.assertNotIn('author:', query)
+        self.assertIn('repo:example/repo', query)
+        self.assertNotIn('user', endpoints)
+        for extra in (['--any-author'], ['--any-author', '--repo', 'example/repo', '--author', 'someone']):
+            with self.subTest(extra=extra), self.assertRaises(SystemExit), contextlib.redirect_stderr(io.StringIO()):
+                self.invoke(extra=extra)
+
+    def test_compact_lines_keep_labels_and_location_but_drop_markup_and_boilerplate(self):
+        data = fixture()
+        data['repos/example/repo/pulls/1/comments'] = [dict(
+            comment(5, '2026-01-02T00:00:00Z',
+                    '<a href=""><img alt="P1" src="https://example.invalid/p1.svg"></a>\n**Lost  update**\n'
+                    'when `a < b` and b > c\n<details><summary>Prompt for agents</summary>fix it ' + 'x' * 900
+                    + '</details>\n<!-- marker -->tail'),
+            path='src/store.py', line=None, original_line=12, original_commit_id='abc123', in_reply_to_id=None)]
+        self.invoke(data, extra=['--text-chars', '45'])
+        lines = [json.loads(line) for line in (self.out / 'comments.jsonl').read_text().splitlines()]
+        self.assertEqual([line['id'] for line in lines], [2, 5, 6])
+        inline = lines[1]
+        self.assertEqual((inline['pri'], inline['path'], inline['line'], inline['commit']),
+                         (['P1'], 'src/store.py', 12, 'abc123'))
+        self.assertEqual(inline['text'], '[P1] **Lost update** when `a < b` and b > c t…')
+        self.assertNotIn('reply_to', inline)
+        self.assertNotIn('path', lines[0])
+        full = json.loads((self.out / 'comments.json').read_text())[1]['body']
+        self.assertIn('Prompt for agents', full)
+
     def test_pagination_reads_past_a_full_page_and_propagates_errors(self):
         with patch.object(collector, 'api', side_effect=[list(range(100)), [100]]) as api:
             self.assertEqual(collector.pages('endpoint'), list(range(101)))
