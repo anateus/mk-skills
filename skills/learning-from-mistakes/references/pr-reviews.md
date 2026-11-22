@@ -32,8 +32,8 @@ Conversation and inline comments use `created_at`; review bodies use `submitted_
 | `manifest.json` | Query, window, fetch time, counts, exclusions, and artifact hashes; written last as the completion marker. |
 | `prs.json` | Candidate PR metadata, without PR description bodies. |
 | `coverage.json` | Total fetched and in-window nonempty counts for each PR and comment surface. |
-| `comments.json` | Collected comment bodies, identities, timestamps, file locations, the commit an inline comment was made against, reply relationships, and source URLs. |
-| `comments.jsonl` | One line per comment for filtering before reading: `repo`, `pr`, `kind`, `id`, `author`, `at`, `path`, `line`, `commit`, `reply_to`, `pri`, `url`, and `text`, the body flattened to one line with markup and collapsed `<details>` blocks removed and cut at `--text-chars` (default 600). Empty fields are left out. |
+| `comments.json` | Collected comment bodies, identities, timestamps, file locations, reply relationships, and source URLs. `line` is the position in the PR's latest head and is empty once a comment is outdated; `original_line` is the position in `commit`, the revision the comment was made against. |
+| `comments.jsonl` | One line per comment for filtering before reading: `repo`, `pr`, `kind`, `id`, `author`, `at`, `path`, `line`, `commit`, `reply_to`, `pri`, `url`, and `text`, the body flattened to one line with markup and collapsed `<details>` blocks removed and cut at `--text-chars` (default 600). Here `line` is the position in `commit`. Empty fields are left out. |
 | `priority-candidates.json` | Comments containing explicit P0/P1/P2/P3 tokens, including HTML badges; candidates for inspection, not established findings. |
 
 Raw bodies can contain confidential data or credentials. The collector doesn't redact or certify them. Restrict local access and apply the host's data policy before exposing excerpts to a model or publishing summaries. The manifest contains no raw bodies. A failed run can leave a partial directory; without its completion marker it isn't a completed snapshot. Use a new output directory for a retry.

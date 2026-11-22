@@ -142,8 +142,10 @@ def main():
                         pr_created_at=pr['created_at'], kind=kind, id=row['id'],
                         author=(row.get('user') or {}).get('login'), created_at=when,
                         updated_at=row.get('updated_at'), url=row['html_url'],
-                        path=row.get('path'), line=row.get('line') or row.get('original_line'),
-                        commit=row.get('original_commit_id'),
+                        path=row.get('path'), line=row.get('line'),
+                        # original_line is a position in `commit`; `line` is in the PR's latest head.
+                        original_line=row.get('original_line'),
+                        commit=row.get('original_commit_id') or row.get('commit_id'),
                         in_reply_to_id=row.get('in_reply_to_id'), body=body))
         return records, dict(repo=repo, pr=number, counts=counts)
 
@@ -163,7 +165,7 @@ def main():
     # One short line per comment; empty fields are dropped so the file stays cheap to read and filter.
     lines = [{key: value for key, value in dict(
         repo=row['repo'], pr=row['pr'], kind=row['kind'], id=row['id'], author=row['author'],
-        at=row['created_at'], path=row['path'], line=row['line'], commit=row['commit'],
+        at=row['created_at'], path=row['path'], line=row['original_line'], commit=row['commit'],
         reply_to=row['in_reply_to_id'], pri=priorities(row), text=compact(row['body'], args.text_chars),
         url=row['url']).items() if value not in (None, '', [])} for row in records]
     # Reserve a new directory only after collection succeeds; never replace a prior run.

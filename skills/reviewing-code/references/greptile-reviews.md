@@ -4,21 +4,22 @@ Greptile posts two things on a PR: inline comments, each with a priority badge (
 
 ## What a measurement showed
 
-One sample: three private repositories, comments posted over fifteen days in November 2026, 253 top-level inline Greptile findings on 452 reviewed PRs. Outcomes were classified from the human replies in each thread, not by re-checking the code, so "accepted" means the author agreed or fixed it.
+One sample: three private repositories, comments posted over fifteen days in November 2026, 253 top-level inline Greptile findings on 452 reviewed PRs. Outcomes were classified from the human replies in each thread, not by re-checking the code, so "accepted" measures an author agreeing or reporting a fix, not a verified defect. Three people wrote about half of those replies.
 
 | Greptile inline findings | Count |
 |---|---|
 | Human accepted or fixed | 166 |
 | True but declined (by design, out of scope, accepted risk) | 14 |
 | Wrong | 5 |
-| No human reply, lines changed afterwards | 27 |
-| No human reply, lines unchanged (20 on PRs still open) | 40 |
+| Acknowledged, deferred | 1 |
+| No human reply, lines changed afterwards | 24 |
+| No human reply, lines unchanged (22 on PRs still open) | 43 |
 
 Where a human answered, about nine in ten findings held. The five wrong ones each rested on something outside the commented file: how a library scopes temporary tables, how long a job really runs, what callers pass, code another commit had already removed. Declined findings clustered in test-coverage requests (4 of 28 answered) and maintainability notes (3 of 4).
 
 On 43 of those PRs humans also raised 88 comments labeled P0 to P2. Of the 71 that described a defect, none was a bug checkable from the changed file alone. They were about consumers and contracts in other files (14), behavior that was wrong for the business rule or for how the system is operated (13), platform and deployment behavior (12), concurrency (10), and data and migrations (10). About half needed knowledge that is not in the repository. This does not prove Greptile catches every local bug; reviewers may skip what a bot has already covered.
 
-The summary score did not separate anything: 432 of 450 PRs ended at 5/5, and humans raised 12 P0 to P2 findings on 9 PRs after that final 5/5.
+The summary score did not separate anything: 432 of 450 PRs ended at 5/5, and on 5 of them humans raised 6 of those defect findings after that final 5/5.
 
 ## Using its review
 

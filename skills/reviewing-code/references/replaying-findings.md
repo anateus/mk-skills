@@ -4,10 +4,10 @@ Use this to measure a change to review guidance against defects real reviewers a
 
 ## Collect
 
-Collect every published comment on the repositories' PRs with the [PR comment collector](../../learning-from-mistakes/references/pr-reviews.md):
+Collect every published comment on the repositories' PRs with the [PR comment collector](../../learning-from-mistakes/references/pr-reviews.md), which lives in the sibling `learning-from-mistakes` skill:
 
 ```sh
-python3 ../learning-from-mistakes/scripts/collect_pr_comments.py --any-author \
+python3 "<skill-base-dir>/../learning-from-mistakes/scripts/collect_pr_comments.py" --any-author \
   --repo OWNER/NAME --repo OWNER/OTHER \
   --start 2026-01-01T00:00:00Z --end 2026-01-15T00:00:00Z --out /tmp/review-comments
 ```
@@ -40,8 +40,8 @@ Keep the answer out of reach in the run as well. The prompt names the range and 
 
 ## Run and grade
 
-Run the old and the new guidance on the same cases, hosts, and models, with repetitions. Grade blind to the arm, one criterion per recorded defect: the report identifies that defect at that location. For controls, the criterion is that no blocking finding is raised.
+Run the old and the new guidance on the same cases, hosts, and models, with repetitions. Grade blind to the arm, one criterion per recorded defect: the report identifies that defect at that location. This measures recall of known findings; the recorded list is not the complete set of defects in the change.
 
-Count separately the blocking findings a report raises beyond the recorded ones. They are unverified, not false: the original reviewers may have missed them. Verify a sample against the code before calling them noise.
+Count separately the blocking findings a report raises beyond the recorded ones, on controls as well. A control is a PR nobody objected to, not a PR without defects. Extra findings are unverified, not false: the original reviewers may have missed them. Count one against an arm only after checking it against the code at `BASE` and `HEAD` and finding it wrong.
 
 Score what a reviewer found separately from behavior only the new guidance defines, such as naming a review level; otherwise the new arm wins by matching its own wording. When every arm passes everything, the cases are too easy for that model: report a ceiling, not parity. Build grading packets from complete traces. A truncated or filtered command log produces false failures for criteria that require executed evidence.
