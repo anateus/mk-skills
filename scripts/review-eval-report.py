@@ -280,9 +280,11 @@ def tally(args):
                 case_success = sum(
                     len(grades) == case_repetitions[case_id] and all(merges(g) for g in grades)
                     for case_id, grades in by_case.items())
+                case_any = sum(any(merges(g) for g in grades) for grades in by_case.values())
                 trial_total = sum(map(len, by_case.values()))
                 trial_success = sum(merges(g) for grades in by_case.values() for g in grades)
                 return {'case_all_repetitions_merged': proportion(case_success, len(by_case)),
+                        'case_any_repetition_merged': proportion(case_any, len(by_case)),
                         'trial_merged': {'count': trial_success, 'total': trial_total,
                                          'rate': trial_success / trial_total if trial_total else None}}
             merges = lambda g: g['p1'] == 0 and g['p2'] <= cutoff

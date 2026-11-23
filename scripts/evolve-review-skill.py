@@ -562,17 +562,11 @@ def tree_mismatches(tree: Path, seed_tree: Path, cand: dict) -> list[str]:
 
 
 def load_reusable(reuse_dir: Path, model: str, judge_model: str, seed_tree: Path, cases: dict,
-                  corpus: Path, inputs: Path, evaluator: Path) -> tuple[dict, dict]:
+                  inputs: Path, evaluator: Path) -> tuple[dict, dict]:
     """Index only completed, hash-verified evaluations from compatible prior runs."""
     notes: list[str] = []
     source = reuse_dir.resolve()
     lines = [json.loads(x) for x in (source / 'records.jsonl').read_text().splitlines()] if (source / 'records.jsonl').exists() else []
-    started = (source / 'run.json').stat().st_mtime if (source / 'run.json').exists() else None
-    if started is None:
-        return {}, {'notes': [f'{source} has no run.json to date the run by; nothing reused'], 'dropped': len(lines)}
-    for path in (*((corpus / 'cases').glob('*.json')), inputs / 'cases.json', inputs / 'workspaces.json', evaluator):
-        if path.stat().st_mtime > started:
-            return {}, {'notes': [f'{path} changed after that run started; nothing reused'], 'dropped': len(lines)}
     expected_prompts = {case['id']: case['prompt'] for case in json.loads((inputs / 'cases.json').read_text())}
     expected_fixtures = json.loads((inputs / 'workspaces.json').read_text())
     evaluator_bytes = evaluator.read_bytes()
@@ -651,7 +645,7 @@ class SkillAdapter:
         self.reuse_report: dict = {}
         if reuse_dir:
             self.reused, self.reuse_report = load_reusable(Path(reuse_dir), model, judge_model, self.seed_tree, cases,
-                                                            self.corpus, self.inputs, self.evaluator)
+                                                            self.inputs, self.evaluator)
             for line in self.reuse_report['notes']:
                 log(f'reuse: {line}')
             log(f'reuse: {sum(len(v) for v in self.reused.values())} evaluated run(s) from {reuse_dir} available '
@@ -1146,11 +1140,9 @@ def render_report(args, cases, arms, best_label, records) -> str:
              '## Summary', '',
              '| arm | run | mean score | found / known | P1 cases merged | controls merged | controls blocked | not run |',
              '|---|---|---|---|---|---|---|---|']
-    means: dict[str, list[float]] = {}
     for arm in arms:
         for rep in repeats:
             m = test_metrics(sel(arm, rep), cases)
-            means.setdefault(arm, []).append(m['mean'])
             mean = 'n/a' if m['mean'] is None else f'{m["mean"]:.3f}'
             lines.append(f'| {arm} | {rep} | {mean} | {m["found"]}/{m["known"]} | {m["p1_cases_merged"]}/{m["p1_cases"]} | '
                          f'{m["controls_merged"]}/{m["controls"]} | {m["controls_blocked"]} | {m["n_not_run"]} |')
@@ -1158,27 +1150,26 @@ def render_report(args, cases, arms, best_label, records) -> str:
         mean = 'n/a' if m['mean'] is None else f'{m["mean"]:.3f}'
         lines.append(f'| **{arm}** | all | **{mean}** | {m["found"]}/{m["known"]} | {m["p1_cases_merged"]}/{m["p1_cases"]} | '
                      f'{m["controls_merged"]}/{m["controls"]} | {m["controls_blocked"]} | {m["n_not_run"]} |')
-    lines.append('')
-    seed_all, best_all = test_metrics(sel('seed'), cases)['mean'], test_metrics(sel('best'), cases)['mean']
-    seed_runs = [v for v in means['seed'] if v is not None]
-    spread = max(seed_runs) - min(seed_runs) if len(seed_runs) > 1 else None
-    lines.append('## Verdict')
-    lines.append('')
-    if seed_all is None or best_all is None or spread is None:
-        lines.append('Not enough completed runs to compare.')
-    else:
-        delta = best_all - seed_all
-        flips = sum(1 for cid in {r['case'] for r in records}
-                    if len({round(r['score'], 3) for r in sel('seed') if r['case'] == cid and r.get('status') == 'ok'}) > 1)
-        lines.append(f'Best minus seed: **{delta:+.3f}** mean score. Run-to-run spread of the seed (difference between its two '
-                     f'run means): **{spread:.3f}**; {flips} of {len({r["case"] for r in records})} cases scored differently '
-                     f'between the two seed runs.')
-        lines.append('')
-        if abs(delta) <= spread:
-            lines.append('**The difference is inside the run-to-run spread: no demonstrated gain** (or loss) from the evolved skill.')
-        else:
-            lines.append(f'The difference is larger than the seed run-to-run spread ({abs(delta):.3f} > {spread:.3f}), with only '
-                         f'{len(seed_runs)} runs per arm: treat as suggestive, not established.')
+    lines += ['', '## Paired results', '',
+              'Counts below use cases with completed runs for both arms in every repeat.',
+              'A consistent shift is descriptive, not proof of a safe merge policy.', '',
+              '| Case group | Fully paired cases | More merges in every repeat | Fewer merges in every repeat |',
+              '|---|---:|---:|---:|']
+    completed = {(r['arm'], r['case'], r['rep']): r for r in records if r.get('status') == 'ok'}
+    ids = sorted({r['case'] for r in records})
+    for label, belongs in (('Controls', lambda c: c.control), ('Serious defects', lambda c: c.has_p1)):
+        paired = more = fewer = 0
+        for cid in ids:
+            if not belongs(cases[cid]):
+                continue
+            pairs = [(completed.get(('seed', cid, rep)), completed.get(('best', cid, rep))) for rep in repeats]
+            if not all(seed is not None and best is not None for seed, best in pairs):
+                continue
+            paired += 1
+            more += all(seed['derived'] == 'block' and best['derived'] == 'merge' for seed, best in pairs)
+            fewer += all(seed['derived'] == 'merge' and best['derived'] == 'block' for seed, best in pairs)
+        lines.append(f'| {label} | {paired} | {more} | {fewer} |')
+    lines += ['', 'On cases with a known serious defect, check the per-case finding counts below: a block with no recorded defect found is not evidence of detection, and finding a defect does not necessarily prevent a merge.']
     lines += ['', '## Per case', '',
               '| case | kind | known | ' + ' | '.join(f'{arm} r{rep}' for arm in arms for rep in repeats) + ' |',
               '|---|---|---|' + '---|' * (len(arms) * len(repeats))]

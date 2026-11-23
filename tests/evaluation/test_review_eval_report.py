@@ -58,6 +58,8 @@ class ReviewEvalReportTests(unittest.TestCase):
         self.put(self.root / 'key.json', {'version': 1, 'runs': [
             {'model': 'model', 'case': 'defect', 'arm': 'arm', 'label': 'r1',
              'effort': {'status': 'ok', 'seconds': 8, 'trace_present': False}},
+            {'model': 'model', 'case': 'defect', 'arm': 'arm', 'label': 'r3', 'repetition': 2,
+             'effort': {'status': 'ok', 'seconds': 7, 'trace_present': False}},
             {'model': 'model', 'case': 'other', 'arm': 'arm', 'label': 'r2',
              'effort': {'status': 'ok', 'seconds': 6, 'trace_present': False}}]})
         self.put(self.root / 'cases' / 'defect.json', {'control': False, 'changed_lines': 10,
@@ -65,7 +67,8 @@ class ReviewEvalReportTests(unittest.TestCase):
         self.put(self.root / 'cases' / 'other.json', {'control': False, 'changed_lines': 10,
                  'findings': [{'severity': 'P1', 'source': 'escaped'}]})
         self.put(self.root / 'grades' / 'model' / 'batch.json', {'defect': {
-            'r1': {'F1': {'pass': True}, 'p1': 0, 'p2': 1}}})
+            'r1': {'F1': {'pass': True}, 'p1': 0, 'p2': 1},
+            'r3': {'F1': {'pass': True}, 'p1': 1, 'p2': 0}}})
         args = argparse.Namespace(key=str(self.root / 'key.json'), grades=str(self.root / 'grades'),
                                   cases=str(self.root / 'cases'), out=str(self.root / 'summary.json'),
                                   p2_cutoff=[0, 1])
@@ -73,11 +76,13 @@ class ReviewEvalReportTests(unittest.TestCase):
         report_tool.tally(args)
 
         group = json.loads((self.root / 'summary.json').read_text())['groups']['model']['arm']
-        self.assertEqual(group['graded'], 1)
+        self.assertEqual(group['graded'], 2)
         self.assertEqual(group['status']['missing_grade'], 1)
         self.assertEqual(group['repetitions']['distinct_cases'], 2)
         self.assertEqual(group['cutoffs']['0']['serious_cases_merged']['case_all_repetitions_merged']['count'], 0)
-        metric = group['cutoffs']['1']['serious_cases_merged']['case_all_repetitions_merged']
+        serious = group['cutoffs']['1']['serious_cases_merged']
+        self.assertEqual(serious['case_all_repetitions_merged']['count'], 0)
+        metric = serious['case_any_repetition_merged']
         self.assertEqual((metric['count'], metric['total'], metric['rate']), (1, 1, 1.0))
         self.assertIsNotNone(metric['wilson_95'])
         self.assertEqual(group['effort']['mean_seconds'], 7)

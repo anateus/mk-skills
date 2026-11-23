@@ -20,7 +20,7 @@ Inspect each axis separately so confidence in one never hides another:
 
 1. **Correctness and risk:** trace behavior, boundaries, failures, security, integrity, compatibility, and tests. For nonlocal safety assumptions, use [cross-boundary safety checks](references/cross-boundary-safety.md).
 
-For guards, gates, defaults, triggers, skips, and empty results, exercise the actual consumer decision. Verify that invalid work stays blocked and valid work proceeds. Before weakening a check, identify its invariant and where enforcement moves.
+   For guards, gates, defaults, triggers, skips, and empty results, exercise the actual consumer decision. Verify that invalid work stays blocked and valid work proceeds. Before weakening a check, identify its invariant and where enforcement moves.
 2. **Specification compliance:** map an existing specification's requirements and non-goals to the diff and evidence. Distinguish missing behavior from a flawed implementation.
 3. **Repository standards:** find `CODING_STANDARDS.md`, `CONTRIBUTING.md`, and equivalent guidance. Apply relevant conventions, architecture, tooling, and maintainability expectations.
 4. **Design and maintainability:** seek behavior-preserving simplification, canonical ownership, useful abstractions, explicit contracts, and sound orchestration. Apply [design checks](references/design-review.md) to changed code, even when tests pass.
