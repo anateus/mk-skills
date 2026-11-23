@@ -241,6 +241,11 @@ def run_process(command, prompt, workspace, output, timeout):
             except subprocess.TimeoutExpired:
                 os.killpg(process.pid, signal.SIGKILL)
                 process.wait()
+        finally:
+            # The host runs in its own session, so an interrupted evaluator must take it down itself.
+            if process.poll() is None:
+                os.killpg(process.pid, signal.SIGKILL)
+                process.wait()
     return {'exit_code': process.returncode, 'timed_out': timed_out,
             'elapsed_seconds': round(time.monotonic() - start, 3)}
 
@@ -395,6 +400,8 @@ def main():
     parser.add_argument('--output', type=Path, default=Path('skill-evaluation'))
     parser.add_argument('--timeout', type=float, default=300)
     try:
+        # Raise through run_process's cleanup instead of dying with the host still running.
+        signal.signal(signal.SIGTERM, lambda *_: sys.exit(143))
         return evaluate(parser.parse_args())
     except (OSError, ValueError, subprocess.TimeoutExpired) as error:
         print('evaluate-skills: ' + str(error), file=sys.stderr)
