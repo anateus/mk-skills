@@ -180,29 +180,134 @@ def fetch_all(corpus):
             ensure_commit(mirror, case[key])
 
 
+def graphql(query):
+    try:
+        result = subprocess.run(['gh', 'api', 'graphql', '-f', 'query=' + query], capture_output=True, text=True)
+    except OSError as error:
+        raise ValueError('gh is required for GitHub lookups: ' + str(error))
+    try:
+        payload = json.loads(result.stdout)
+    except json.JSONDecodeError:
+        payload = None
+    if not isinstance(payload, dict) or not payload.get('data'):
+        raise ValueError('gh api graphql failed: ' + (result.stderr.strip() or result.stdout.strip()))
+    return payload['data']
+
+
 def resolve_pull(corpus, repo, pr, head):
     remote = require_repo(corpus, repo)['remote']
     owner, name = owner_and_name(remote)
-    try:
-        result = subprocess.run(['gh', 'api', 'repos/%s/%s/pulls/%d' % (owner, name, pr)],
-                                capture_output=True, text=True)
-    except OSError as error:
-        raise ValueError('gh is required for resolve: ' + str(error))
-    if result.returncode:
-        raise ValueError('gh api failed: ' + result.stderr.strip())
-    pull = json.loads(result.stdout)
+    data = graphql('query { repository(owner: %s, name: %s) { pullRequest(number: %d) { title url headRefOid '
+                   'baseRefOid merged mergeCommit { oid } } } }' % (json.dumps(owner), json.dumps(name), pr))
+    pull = (data.get('repository') or {}).get('pullRequest')
+    if not pull:
+        raise ValueError('Pull request %s#%d not found' % (repo, pr))
     mirror = mirror_path(corpus, repo)
     if not mirror.exists():
         raise ValueError('Mirror missing for ' + repo + '; re-run add-repo')
-    head_sha = head or pull['head']['sha']
-    base_tip = pull['base']['sha']
+    head_sha = head or pull['headRefOid']
+    base_tip = pull['baseRefOid']
     ensure_commit(mirror, head_sha)
     ensure_commit(mirror, base_tip)
+    base_sha = git(['merge-base', base_tip, head_sha], git_dir=mirror)
+    merge = (pull.get('mergeCommit') or {}).get('oid') if pull.get('merged') else None
+    if merge:
+        try:
+            ensure_commit(mirror, merge)
+        except ValueError:
+            merge = None
+    if merge:
+        base_sha = stacked_base(mirror, base_sha, head_sha, merge, '%s-%d' % (repo, pr))
     return {
-        'id': '%s-%d' % (repo, pr), 'repo': repo, 'pr': pr, 'title': pull['title'], 'url': pull['html_url'],
-        'base_sha': git(['merge-base', base_tip, head_sha], git_dir=mirror), 'head_sha': head_sha,
+        'id': '%s-%d' % (repo, pr), 'repo': repo, 'pr': pr, 'title': pull['title'], 'url': pull['url'],
+        'base_sha': base_sha, 'head_sha': head_sha,
         'control': False, 'notes': '', 'findings': [],
     }
+
+
+# --- stacked ranges -----------------------------------------------------------------------------
+
+def changed_names(mirror, base, head):
+    text = run(['diff', '--name-only', '--no-renames', '-z', base, head], git_dir=mirror).stdout
+    return {name for name in text.split('\0') if name}
+
+
+def merge_commit_names(mirror, oid):
+    """Files the pull request changed according to its merge commit (squash, rebase tip or merge)."""
+    text = run(['diff-tree', '-r', '--no-commit-id', '--name-only', '--no-renames', '-z', oid + '^1', oid],
+               git_dir=mirror).stdout
+    return {name for name in text.split('\0') if name}
+
+
+def stacked_base(mirror, base, head, merge_oid, label):
+    """Return `base`, or the oldest first-parent ancestor of head from which base..head stays inside the merge commit.
+
+    Commits that belong to a parent pull request (stacked PRs, or a head recorded before a rebase) widen
+    the merge base; dropping them leaves only the pull request's own files.
+    """
+    allowed = merge_commit_names(mirror, merge_oid)
+    extra = sorted(changed_names(mirror, base, head) - allowed)
+    if not extra:
+        return base
+    chain = run(['rev-list', '--first-parent', '--reverse', base + '..' + head], git_dir=mirror).stdout.split()
+    for candidate in chain[:-1]:
+        names = changed_names(mirror, candidate, head)
+        if names and names <= allowed:
+            return candidate
+    print('review-corpus: warning: %s: %s..%s touches files outside the merge commit and no ancestor of head '
+          'fixes it: %s' % (label, base[:12], head[:12], ', '.join(extra[:5])), file=sys.stderr)
+    return base
+
+
+def fetch_merge_commits(corpus, cases):
+    """Map case id to the pull request's merge commit oid, one GraphQL query per repository."""
+    found = {}
+    for repo in sorted({case['repo'] for case in cases}):
+        owner, name = owner_and_name(require_repo(corpus, repo)['remote'])
+        members = [case for case in cases if case['repo'] == repo]
+        for start in range(0, len(members), 40):
+            chunk = members[start:start + 40]
+            fields = ' '.join('p%d: pullRequest(number: %d) { merged mergeCommit { oid } }' % (case['pr'], case['pr'])
+                              for case in chunk)
+            data = graphql('query { repository(owner: %s, name: %s) { %s } }'
+                           % (json.dumps(owner), json.dumps(name), fields))
+            pulls = data.get('repository') or {}
+            for case in chunk:
+                pull = pulls.get('p%d' % case['pr']) or {}
+                oid = (pull.get('mergeCommit') or {}).get('oid') if pull.get('merged') else None
+                if oid:
+                    found[case['id']] = oid
+    return found
+
+
+def check_cases(corpus, ids, merge_commits):
+    """Return (lines, unchecked ids): one line per case whose range touches files outside its merge commit."""
+    cases = load_cases(corpus)
+    known = {case['id'] for case in cases}
+    for case_id in ids:
+        if case_id not in known:
+            raise ValueError('Unknown case ' + case_id)
+    cases = [case for case in cases if not ids or case['id'] in ids]
+    merge_commits = merge_commits if merge_commits is not None else fetch_merge_commits(corpus, cases)
+    lines, unchecked = [], []
+    for case in cases:
+        mirror = open_mirror(corpus, case['repo'])
+        oid = merge_commits.get(case['id'])
+        try:
+            if not oid:
+                raise ValueError('no merge commit')
+            ensure_commit(mirror, oid)
+            merged = merge_commit_names(mirror, oid)
+        except ValueError:
+            unchecked.append(case['id'])
+            continue
+        in_case = changed_names(mirror, case['base_sha'], case['head_sha'])
+        extra = sorted(in_case - merged)
+        if extra:
+            lines.append('%s: case=%d merge=%d extra=%d: %s%s' % (
+                case['id'], len(in_case), len(merged), len(extra), ', '.join(extra[:5]),
+                ' (+%d more)' % (len(extra) - 5) if len(extra) > 5 else ''))
+    return lines, unchecked
 
 
 # --- cases --------------------------------------------------------------------------------------
@@ -288,12 +393,15 @@ def normalize_case(raw):
         raise ValueError(case_id + ': a control has no findings')
     if not raw['control'] and not findings:
         raise ValueError(case_id + ': a non-control case needs at least one finding')
-    return {
+    case = {
         'id': case_id, 'repo': repo, 'pr': raw['pr'], 'title': raw['title'], 'url': raw['url'],
         'base_sha': raw['base_sha'], 'head_sha': raw['head_sha'], 'control': raw['control'],
         'notes': raw.get('notes') or '', 'added_at': raw.get('added_at'),
         'findings': [normalize_finding(finding, case_id) for finding in findings],
     }
+    if raw.get('quarantined') is not None:
+        case['quarantined'] = require_text(raw, 'quarantined')
+    return case
 
 
 def validate_stored_case(case):
@@ -355,6 +463,8 @@ def add_case(corpus, raw):
     ordered = {key: result[key] for key in (
         'id', 'repo', 'pr', 'title', 'url', 'base_sha', 'head_sha', 'changed_files', 'changed_lines',
         'control', 'notes', 'added_at', 'findings')}
+    if result.get('quarantined') is not None:
+        ordered['quarantined'] = require_text(result, 'quarantined')
     write_json(path, ordered)
     return case['id'], existing is None, added
 
@@ -376,9 +486,10 @@ def list_cases(corpus):
         findings = case['findings']
         counts = {source: sum(1 for item in findings if item['source'] == source) for source in SOURCES}
         raised = sum(1 for item in findings if item.get('raised_in_review'))
-        lines.append('%s control=%s review-comment=%d escaped=%d raised=%d changed_lines=%d' % (
+        lines.append('%s control=%s review-comment=%d escaped=%d raised=%d changed_lines=%d%s' % (
             case['id'], str(case['control']).lower(), counts['review-comment'], counts['escaped'], raised,
-            case['changed_lines']))
+            case['changed_lines'], ' quarantined=' + json.dumps(case['quarantined'])
+            if case.get('quarantined') else ''))
     return lines
 
 
@@ -396,6 +507,10 @@ def build(corpus, out, prompt, ids, source):
     selected = []
     for case in cases:
         if ids and case['id'] not in ids:
+            continue
+        if case.get('quarantined'):
+            if ids:
+                raise ValueError(case['id'] + ' is quarantined: ' + case['quarantined'])
             continue
         if source:
             case = dict(case, findings=[item for item in case['findings'] if item['source'] == source])
@@ -670,6 +785,9 @@ def build_parser():
     sub.add_argument('--head', help='reviewed head sha (default: the pull request head)')
     command('fetch', 'update mirrors and make sure every case commit is present')
     command('list', 'one line per case')
+    sub = command('check', 'report cases whose range touches files outside the pull request merge commit')
+    sub.add_argument('--case', action='append', default=[])
+    sub.add_argument('--merge-commits', type=Path, help='JSON {case id: merge commit oid}; skips GitHub')
     sub = command('build', 'write evaluate-skills.py inputs')
     sub.add_argument('--out', required=True)
     group = sub.add_mutually_exclusive_group()
@@ -709,6 +827,13 @@ def execute(args):
     elif args.command == 'list':
         for line in list_cases(corpus):
             print(line)
+    elif args.command == 'check':
+        merge_commits = read_source(str(args.merge_commits)) if args.merge_commits else None
+        lines, unchecked = check_cases(corpus, args.case, merge_commits)
+        for line in lines:
+            print(line)
+        print('review-corpus: %d case(s) flagged, %d could not be checked (no merge commit)%s' % (
+            len(lines), len(unchecked), ': ' + ', '.join(unchecked) if unchecked else ''))
     elif args.command == 'build':
         prompt = args.prompt_file.read_text(encoding='utf-8').strip() if args.prompt_file else (
             args.prompt or DEFAULT_PROMPT)

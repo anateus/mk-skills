@@ -183,6 +183,76 @@ class ReviewCorpusTests(unittest.TestCase):
         log = git(self.corpus, 'log', '--format=%s')
         self.assertIn('add cases: sample-7', log)
 
+    def stacked_history(self):
+        """main: base work; feature: parent PR commit then this PR's commit; main: squash merge of this PR only."""
+        base = commit(self.source, 'Base work', '2026-02-01', {'a.txt': ['a']})
+        git(self.source, 'checkout', '-b', 'stack')
+        parent = commit(self.source, 'Parent PR work', '2026-02-02', {'parent.txt': ['p1', 'p2']})
+        head = commit(self.source, 'Child PR work', '2026-02-03', {'f.txt': ['one', 'two', 'three']})
+        git(self.source, 'checkout', 'main')
+        merge = commit(self.source, 'Child PR (#7)', '2026-02-04', {'f.txt': ['one', 'two', 'three']})
+        return base, parent, head, merge
+
+    def test_check_reports_a_range_that_includes_a_parent_pull_requests_commit_and_not_a_clean_one(self):
+        base, parent, head, merge = self.stacked_history()
+        self.register()
+        self.add([self.case(base, head, [self.finding(1)], pr=7), self.case(parent, head, [self.finding(1)], pr=8),
+                  self.case(parent, head, [self.finding(1)], pr=9)])
+        merges = self.tmp / 'merges.json'
+        merges.write_text(json.dumps({'sample-7': merge, 'sample-8': merge}))
+        out = self.tool('check', '--merge-commits', str(merges))
+        flagged = [line for line in out.splitlines() if not line.startswith('review-corpus:')]
+        self.assertEqual(flagged, ['sample-7: case=2 merge=1 extra=1: parent.txt'])
+        self.assertIn('1 case(s) flagged, 1 could not be checked (no merge commit): sample-9', out)
+        only = self.tool('check', '--merge-commits', str(merges), '--case', 'sample-8')
+        self.assertEqual(only.splitlines(), ['review-corpus: 0 case(s) flagged, 0 could not be checked (no merge commit)'])
+
+    def test_stacked_base_drops_the_parent_commit_and_keeps_a_clean_range(self):
+        base, parent, head, merge = self.stacked_history()
+        self.register()
+        mirror = self.corpus / 'mirrors/sample.git'
+        self.assertEqual(corpus_tool.stacked_base(mirror, base, head, merge, 'sample-7'), parent)
+        self.assertEqual(corpus_tool.stacked_base(mirror, parent, head, merge, 'sample-7'), parent)
+
+    def test_stacked_base_warns_and_keeps_the_base_when_no_ancestor_is_clean(self):
+        base = commit(self.source, 'Base work', '2026-02-01', {'a.txt': ['a']})
+        git(self.source, 'checkout', '-b', 'stack')
+        head = commit(self.source, 'Mixed work', '2026-02-02', {'parent.txt': ['p'], 'f.txt': ['one']})
+        git(self.source, 'checkout', 'main')
+        merge = commit(self.source, 'Child PR (#7)', '2026-02-03', {'f.txt': ['one']})
+        self.register()
+        err = io.StringIO()
+        with contextlib.redirect_stderr(err):
+            result = corpus_tool.stacked_base(self.corpus / 'mirrors/sample.git', base, head, merge, 'sample-7')
+        self.assertEqual(result, base)
+        self.assertIn('sample-7', err.getvalue())
+        self.assertIn('parent.txt', err.getvalue())
+
+    def test_quarantined_cases_are_listed_and_skipped_by_build(self):
+        base, head, _ = self.feature_branch()
+        self.register()
+        self.add([self.case(base, head, [self.finding(1)]), self.case(base, head, [self.finding(1)], pr=8)])
+        path = self.corpus / 'cases' / 'sample-8.json'
+        stored = json.loads(path.read_text())
+        stored['quarantined'] = 'range includes a parent PR'
+        path.write_text(json.dumps(stored))
+        self.assertIn('sample-8 control=false review-comment=1 escaped=0 raised=0 changed_lines=3 '
+                      'quarantined="range includes a parent PR"', self.tool('list'))
+        out = self.tmp / 'out'
+        self.tool('build', '--out', str(out))
+        self.assertEqual([item['id'] for item in json.loads((out / 'cases.json').read_text())], ['sample-7'])
+        code, _, err = run_tool('--corpus', str(self.corpus), 'build', '--out', str(self.tmp / 'again'),
+                                '--case', 'sample-8')
+        self.assertEqual(code, 2)
+        self.assertIn('quarantined', err)
+        self.add(self.case(base, head, [self.finding(1)], pr=8))
+        self.assertEqual(self.stored('sample-8')['quarantined'], 'range includes a parent PR')
+        bad = self.tmp / 'bad-quarantine.json'
+        bad.write_text(json.dumps(dict(self.case(base, head, [self.finding(1)], pr=9), quarantined=3)))
+        code, _, err = run_tool('--corpus', str(self.corpus), 'add', str(bad))
+        self.assertEqual(code, 2)
+        self.assertIn('quarantined', err)
+
     def test_build_writes_evaluator_inputs_with_fixture_shape_and_control_criterion(self):
         base, head, _ = self.feature_branch()
         self.register()
