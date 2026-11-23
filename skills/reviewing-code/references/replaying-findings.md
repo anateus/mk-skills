@@ -87,3 +87,9 @@ Count separately the blocking findings a report raises beyond the recorded ones,
 `scripts/review-eval-report.py packets` takes a manifest of expected runs and writes the reports and criteria for blind grading. Keep the separate key private. `tally` combines the grades with that key, counts missing or failed runs separately, and compares finding-count policies without spending another model run. Pass explicit paths for manifests, outputs, and grades; these files can contain private material.
 
 Score what a reviewer found separately from behavior only the new guidance defines, such as naming a review level; otherwise the new arm wins by matching its own wording. When every arm passes everything, the cases are too easy for that model: report a ceiling, not parity. Build grading packets from complete traces. A truncated or filtered command log produces false failures for criteria that require executed evidence.
+
+## Evolve guidance with GEPA
+
+`scripts/evolve-review-skill.py` drives the same evaluator through GEPA. Supply the external corpus, evaluator inputs, a frozen train/validation/test split, a seed tree, explicit review, judge and reflection models, and an output directory outside the checkout. See the driver's `--help` for invocation and the pinned dependency.
+
+Reserve quota for the held-out comparison before starting search. A promising minibatch may trigger a full validation pass. Set an explicit evaluation budget and measure elapsed time, especially on small local changes. The optimizer scores findings rather than the reviewer's merge word. Treat selected text as a proposal and check it for private material before publishing it.
