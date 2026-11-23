@@ -1,6 +1,6 @@
 # Scaling a review
 
-Start with the smallest review that could find the problem. Add effort only when a signal below calls for it, and stop at the lowest level that answers that signal. Say in the report which level you used and why you stopped there.
+Scale passes to size and risk. Say which review level you used and what justified any extra passes or readers.
 
 ## Baseline
 
@@ -17,7 +17,7 @@ Two rules hold at every level:
 
 Judge by the kind of change, not by a line count. Add effort for:
 
-- new behavior, a redesign, or a changed contract, public interface, or wire or storage format;
+- a consequential behavior change, redesign, or changed contract, public interface, or wire or storage format;
 - persistence, migration, authorization, money, concurrency, deletion, or rollback;
 - consumers outside the edited code, or several subsystems in one change;
 - a diff too large to read with full attention in one pass;

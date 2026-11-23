@@ -20,7 +20,7 @@ Inspect each axis separately so confidence in one never hides another:
 
 1. **Correctness and risk:** trace behavior, boundaries, failures, security, integrity, compatibility, and tests. For nonlocal safety assumptions, use [cross-boundary safety checks](references/cross-boundary-safety.md).
 
-   For guards, gates, triggers, skips, or empty/default results, exercise the actual consumer decision: invalid work stays blocked and valid work proceeds, including external consumers. An approved green PR must remain mergeable after a same-SHA body edit; successful check metadata doesn't prove merge eligibility. Check whole datasets and individual clients or partitions. Validate new test expectations against the consumer contract. Before weakening a check, identify its invariant and where enforcement will move.
+For guards, gates, defaults, triggers, skips, and empty results, exercise the actual consumer decision. Verify that invalid work stays blocked and valid work proceeds. Before weakening a check, identify its invariant and where enforcement moves.
 2. **Specification compliance:** map an existing specification's requirements and non-goals to the diff and evidence. Distinguish missing behavior from a flawed implementation.
 3. **Repository standards:** find `CODING_STANDARDS.md`, `CONTRIBUTING.md`, and equivalent guidance. Apply relevant conventions, architecture, tooling, and maintainability expectations.
 4. **Design and maintainability:** seek behavior-preserving simplification, canonical ownership, useful abstractions, explicit contracts, and sound orchestration. Apply [design checks](references/design-review.md) to changed code, even when tests pass.
@@ -28,14 +28,16 @@ Inspect each axis separately so confidence in one never hides another:
 
 Read surrounding code to validate assumptions. Prefer executed paths and evidence over style speculation. Confirm the comparison point remains fixed before reporting.
 
-For rollbacks, verify current retained behavior, not historical byte equality. Trace retained tests and manifest entries through discovery, filtering, scheduling, and enforcement, including later additions. Exercise target-only changes: restored filters can retain mutation entries while skipping their runner.
-
-After a fix, compare prior findings with the fix diff and check nearby effects. Broaden review when contracts change or evidence exposes a wider problem. Record both the original comparison and fix range; unresolved defects stay open regardless of rounds. Reopen affected coverage when code or the comparison base changes, and revisit findings that depend on it. A finding absent from a later report is not thereby fixed.
+For rollbacks, verify retained behavior, not historical byte equality. After a fix, check the original findings and nearby effects. Record the original comparison and fix range; reopen affected coverage when either revision changes. A finding missing from a later report is not thereby fixed.
 
 ## Scale the review
 
-Start with one pass. Read [scaling a review](references/scaling-review.md) when the change adds behavior, alters a contract, stored or wire format, auth, money, concurrency, or outside consumers, or is yours, and before adding reviewers or rounds. Verify every finding against the code, whoever raised it; reproduce behavioral ones.
+Scale passes to size and risk. One careful pass is enough for a small, local, reversible change. For consequential changes, check what depends on the diff and use a fresh, independent reader when available. Read [scaling a review](references/scaling-review.md) before adding reviewers or review rounds. Verify findings against the code, whoever raised them.
 
 ## Report
 
-Lead with actionable findings ordered by severity. Each finding identifies location, problem, impact, evidence, and proportionate remedy. Separate blocking defects from risks and minor improvements. Summarize reviewed scope, verification, and residual uncertainty; state explicitly when nothing was found. Report coverage gaps and failed review work separately from code findings.
+Lead with findings ordered by severity. Give each finding a location, problem, impact, evidence, and proportionate remedy. State what you reviewed, what you verified, and whether you found nothing. Report coverage gaps and failed review work separately.
+
+Call a defect blocking only when you can show a realistic trigger and a material consequence of this change. Reproduce it or trace the path from input to effect. Keep confirmed lesser defects, problems already in the base, and unverified risks separate. A pre-existing defect can still block if this change newly exposes it.
+
+The caller owns merge policy. Neither an empty report nor a severity count establishes safety for unattended merging. See [merge decisions](references/merge-decisions.md) for consequential assessments.
