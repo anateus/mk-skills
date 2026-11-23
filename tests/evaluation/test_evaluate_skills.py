@@ -257,6 +257,42 @@ print(json.dumps({"prompt": prompt, "workspace": str(p)}))
             self.assertIn('outside the source skills tree', result.stderr)
             self.assertFalse((source / 'skills/results').exists())
 
+    def test_omp_host_sees_only_the_frozen_skills_and_the_no_skill_arm_sees_none(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / 'cases.json').write_text(json.dumps([{'id': 'sample', 'prompt': 'Assess this.'}]))
+            (root / 'fixtures.json').write_text(json.dumps({'sample': {'commits': [{'README.md': 'fixture'}]}}))
+            fake = '''#!{python}
+import json, pathlib, sys
+if '--version' in sys.argv:
+    raise SystemExit()
+arg = lambda flag: sys.argv[sys.argv.index(flag) + 1]
+config = json.loads(pathlib.Path(arg('--config')).read_text())
+catalog = pathlib.Path.cwd() / '.skill-catalog/skills'
+context = arg('--append-system-prompt')
+assert 'Available skills:' not in context
+assert not any(v for k, v in config['skills'].items() if k.startswith('enable'))
+assert set(config['modelRoles'].values()) == {{'test-model'}} and not config['advisor']['enabled']
+if '--no-skills' in sys.argv:
+    assert not catalog.exists() and config['skills']['customDirectories'] == []
+    assert 'skill' not in context.lower()
+else:
+    assert [pathlib.Path(p).resolve() for p in config['skills']['customDirectories']] == [catalog.resolve()]
+    assert arg('--skills').split(',') == sorted(p.name for p in catalog.iterdir())
+    assert 'Shared agent guidance:' in context
+'''.format(python=sys.executable)
+            binary = root / 'bin'
+            binary.mkdir()
+            (binary / 'omp').write_text(fake)
+            (binary / 'omp').chmod(0o755)
+            for name, extra in (('skills', []), ('bare', ['--no-skills'])):
+                result = subprocess.run([sys.executable, str(SCRIPT), '--host', 'omp', '--model', 'test-model',
+                    *extra, '--cases', str(root / 'cases.json'), '--fixtures', str(root / 'fixtures.json'),
+                    '--case', 'sample', '--output', str(root / name)],
+                    env={**os.environ, 'PATH': str(binary) + os.pathsep + os.environ.get('PATH', '')},
+                    capture_output=True, text=True)
+                self.assertEqual(result.returncode, 0, (root / name / 'sample/stderr.log').read_text())
+
 
 if __name__ == '__main__':
     unittest.main()
