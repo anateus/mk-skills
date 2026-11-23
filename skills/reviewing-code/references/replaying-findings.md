@@ -84,4 +84,6 @@ Compare arms on the same cases and report repeats, failures, and review time on 
 
 Count separately the blocking findings a report raises beyond the recorded ones, on controls as well. A control is a PR nobody objected to, not a PR without defects. Extra findings are unverified, not false: the original reviewers may have missed them. Count one against an arm only after checking it against the code at `BASE` and `HEAD` and finding it wrong.
 
+`scripts/review-eval-report.py packets` takes a manifest of expected runs and writes the reports and criteria for blind grading. Keep the separate key private. `tally` combines the grades with that key, counts missing or failed runs separately, and compares finding-count policies without spending another model run. Pass explicit paths for manifests, outputs, and grades; these files can contain private material.
+
 Score what a reviewer found separately from behavior only the new guidance defines, such as naming a review level; otherwise the new arm wins by matching its own wording. When every arm passes everything, the cases are too easy for that model: report a ceiling, not parity. Build grading packets from complete traces. A truncated or filtered command log produces false failures for criteria that require executed evidence.
