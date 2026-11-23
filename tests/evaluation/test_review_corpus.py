@@ -105,6 +105,30 @@ class ReviewCorpusTests(unittest.TestCase):
         self.assertGreater(explicit[0]['days'], 7)
         self.assertTrue(pairs[0]['explicit'], 'explicit pairs sort first')
 
+    def test_controls_list_prs_no_later_fix_rewrote_and_refuse_a_too_recent_until(self):
+        base = ['line%d' % number for number in range(1, 21)]
+        commit(self.source, 'Initial import', '2026-01-01', {'a.py': base, 'b.py': base})
+        a = list(base)
+        a[4:7] = ['a5', 'a6', 'a7']
+        clean = commit(self.source, 'Edit a (#21)', '2026-02-01', {'a.py': a})
+        b = list(base)
+        b[4:7] = ['b5', 'b6', 'b7']
+        commit(self.source, 'Edit b (#22)', '2026-02-02', {'b.py': b})
+        b[4:6] = ['fixed5', 'fixed6']
+        commit(self.source, 'Fix b crash (#23)', '2026-02-05', {'b.py': b})
+        a[14] = 'later'
+        commit(self.source, 'Later work (#24)', '2026-04-01', {'a.py': a})
+        self.register()
+        out = self.tool('controls', '--repo', 'sample', '--since', '2026-01-15', '--until', '2026-02-10',
+                        '--min-lines', '1')
+        leads = [json.loads(line) for line in out.splitlines()]
+        self.assertEqual([(lead['pr'], lead['sha'], lead['changed_lines'], lead['changed_files'])
+                          for lead in leads], [(21, clean, 6, 1)])
+        code, _, err = run_tool('--corpus', str(self.corpus), 'controls', '--repo', 'sample',
+                                '--since', '2026-01-15', '--until', '2026-03-30')
+        self.assertEqual(code, 2)
+        self.assertIn('latest allowed is 2026-03-18', err)
+
     def feature_branch(self):
         commit(self.source, 'Base work', '2026-02-01', {'a.txt': ['a']})
         git(self.source, 'checkout', '-b', 'feature')

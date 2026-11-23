@@ -253,6 +253,11 @@ def normalize_finding(raw, case_id):
                              + ') and days_after_merge')
         finding['fix'] = {key: fix[key] for key in ('pr', 'url', 'sha', 'kind', 'days_after_merge')}
         finding['review_at_the_time'] = require_text(raw, 'review_at_the_time')
+        raised = raw.get('raised_in_review', False)
+        if not isinstance(raised, bool):
+            raise ValueError(label + ': raised_in_review must be true or false')
+        if raised:
+            finding['raised_in_review'] = True
     return finding
 
 
@@ -368,9 +373,11 @@ def add_cases(corpus, raw):
 def list_cases(corpus):
     lines = []
     for case in load_cases(corpus):
-        counts = {source: sum(1 for item in case['findings'] if item['source'] == source) for source in SOURCES}
-        lines.append('%s control=%s review-comment=%d escaped=%d changed_lines=%d' % (
-            case['id'], str(case['control']).lower(), counts['review-comment'], counts['escaped'],
+        findings = case['findings']
+        counts = {source: sum(1 for item in findings if item['source'] == source) for source in SOURCES}
+        raised = sum(1 for item in findings if item.get('raised_in_review'))
+        lines.append('%s control=%s review-comment=%d escaped=%d raised=%d changed_lines=%d' % (
+            case['id'], str(case['control']).lower(), counts['review-comment'], counts['escaped'], raised,
             case['changed_lines']))
     return lines
 
@@ -410,10 +417,15 @@ def build(corpus, out, prompt, ids, source):
         if case['control']:
             criteria = [{'id': 'C1', 'criterion': 'The report raises no P1 or merge-blocking finding.'}]
         else:
-            criteria = [{'id': item['id'], 'criterion': (
-                'The report identifies this defect (in its own words is fine; it must be recognizably '
-                'the same problem, at or near ' + item['path'] + '): ' + item['summary']),
-                'source': item['source'], 'severity': item['severity']} for item in case['findings']]
+            criteria = []
+            for item in case['findings']:
+                criterion = {'id': item['id'], 'criterion': (
+                    'The report identifies this defect (in its own words is fine; it must be recognizably '
+                    'the same problem, at or near ' + item['path'] + '): ' + item['summary']),
+                    'source': item['source'], 'severity': item['severity']}
+                if item['source'] == 'escaped':
+                    criterion['raised_in_review'] = bool(item.get('raised_in_review'))
+                criteria.append(criterion)
         write_json(out / 'criteria' / (case['id'] + '.json'), criteria)
     write_json(out / 'cases.json', cases_json)
     write_json(out / 'workspaces.json', workspaces)
@@ -533,20 +545,9 @@ def commit_record(mirror, history, sha):
     return {'sha': sha, 'ct': int(committed), 'subject': subject, 'body': '', 'parents': []}
 
 
-def find_candidates(corpus, repo, since, until, window_days, branch):
-    require_repo(corpus, repo)
-    mirror = mirror_path(corpus, repo)
-    if not mirror.exists():
-        raise ValueError('Mirror missing for ' + repo + '; run add-repo')
-    start = int(parse_day(since).timestamp())
-    end = int((parse_day(until) + timedelta(days=1)).timestamp()) if until else None
-    history = first_parent_history(mirror, default_branch(mirror, branch))
-    window = window_days * 86400
-    corrective = [commit for commit in history.values()
-                  if commit['parents'] and start <= commit['ct'] and (end is None or commit['ct'] < end)
-                  and (CORRECTIVE.search(commit['subject']) or REVERTS_COMMIT.search(commit['body']))]
-    pairs = []
-    for fix in corrective:
+def corrections(mirror, history, fixes, window):
+    """Yield (fix, origin sha, blame entry, explicit) for each earlier PR commit a corrective commit rewrote."""
+    for fix in fixes:
         found = {}
         for path, ranges in old_side_ranges(mirror, fix).items():
             for sha, lines in blame_counts(mirror, fix, path, ranges).items():
@@ -566,12 +567,75 @@ def find_candidates(corpus, repo, since, until, window_days, branch):
         if explicit_sha and explicit_sha != fix['sha']:
             kept.setdefault(explicit_sha, found.get(explicit_sha) or {'lines': 0, 'files': set()})
         for sha, entry in kept.items():
-            origin = commit_record(mirror, history, sha)
-            pairs.append({'repo': repo, 'fix': describe(fix), 'origin': describe(origin),
-                          'days': round((fix['ct'] - origin['ct']) / 86400, 2), 'lines': entry['lines'],
-                          'files': sorted(entry['files']), 'explicit': sha == explicit_sha})
+            yield fix, sha, entry, sha == explicit_sha
+
+
+def is_corrective(commit):
+    return bool(CORRECTIVE.search(commit['subject']) or REVERTS_COMMIT.search(commit['body']))
+
+
+def open_mirror(corpus, repo):
+    require_repo(corpus, repo)
+    mirror = mirror_path(corpus, repo)
+    if not mirror.exists():
+        raise ValueError('Mirror missing for ' + repo + '; run add-repo')
+    return mirror
+
+
+def find_candidates(corpus, repo, since, until, window_days, branch):
+    mirror = open_mirror(corpus, repo)
+    start = int(parse_day(since).timestamp())
+    end = int((parse_day(until) + timedelta(days=1)).timestamp()) if until else None
+    history = first_parent_history(mirror, default_branch(mirror, branch))
+    window = window_days * 86400
+    corrective = [commit for commit in history.values()
+                  if commit['parents'] and start <= commit['ct'] and (end is None or commit['ct'] < end)
+                  and is_corrective(commit)]
+    pairs = []
+    for fix, sha, entry, explicit in corrections(mirror, history, corrective, window):
+        origin = commit_record(mirror, history, sha)
+        pairs.append({'repo': repo, 'fix': describe(fix), 'origin': describe(origin),
+                      'days': round((fix['ct'] - origin['ct']) / 86400, 2), 'lines': entry['lines'],
+                      'files': sorted(entry['files']), 'explicit': explicit})
     pairs.sort(key=lambda pair: (not pair['explicit'], -pair['lines']))
     return len(corrective), pairs
+
+
+# --- controls -----------------------------------------------------------------------------------
+
+def find_controls(corpus, repo, since, until, window_days, min_lines, max_lines, max_files, branch):
+    mirror = open_mirror(corpus, repo)
+    start = int(parse_day(since).timestamp())
+    end = int((parse_day(until) + timedelta(days=1)).timestamp())
+    history = first_parent_history(mirror, default_branch(mirror, branch))
+    window = window_days * 86400
+    newest = max((commit['ct'] for commit in history.values()), default=0)
+    latest = (datetime.fromtimestamp(newest - window, timezone.utc)).strftime('%Y-%m-%d')
+    if parse_day(until).strftime('%Y-%m-%d') > latest:
+        raise ValueError('--until %s is too recent: PRs need %s days to be corrected; the latest allowed is %s'
+                         % (until, window_days, latest))
+    leads = {}
+    for commit in history.values():
+        if (not commit['parents'] or not start <= commit['ct'] < end or pull_number(commit['subject']) is None
+                or is_corrective(commit)):
+            continue
+        files, lines = diff_stats(mirror, commit['parents'][0], commit['sha'])
+        if min_lines <= lines <= max_lines and 0 < files <= max_files:
+            leads[commit['sha']] = (files, lines)
+    fixes = [commit for commit in history.values()
+             if commit['parents'] and start <= commit['ct'] < end + window and is_corrective(commit)]
+    for fix, sha, entry, explicit in corrections(mirror, history, fixes, window):
+        origin = history.get(sha)
+        if origin is not None and 0 <= fix['ct'] - origin['ct'] <= window and (explicit or entry['lines'] >= 1):
+            leads.pop(sha, None)
+    controls = []
+    for sha, (files, lines) in leads.items():
+        commit = history[sha]
+        controls.append({'repo': repo, 'pr': pull_number(commit['subject']), 'sha': sha,
+                         'subject': commit['subject'], 'date': iso(commit['ct']), 'changed_lines': lines,
+                         'changed_files': files})
+    controls.sort(key=lambda control: control['date'])
+    return controls
 
 
 # --- command line -------------------------------------------------------------------------------
@@ -619,6 +683,15 @@ def build_parser():
     sub.add_argument('--until')
     sub.add_argument('--window-days', type=float, default=7)
     sub.add_argument('--branch')
+    sub = command('controls', 'print JSONL of merged PRs that look clean: no corrective commit rewrote them')
+    sub.add_argument('--repo', required=True)
+    sub.add_argument('--since', required=True)
+    sub.add_argument('--until', required=True)
+    sub.add_argument('--window-days', type=float, default=14)
+    sub.add_argument('--min-lines', type=int, default=40)
+    sub.add_argument('--max-lines', type=int, default=800)
+    sub.add_argument('--max-files', type=int, default=25)
+    sub.add_argument('--branch')
     return parser
 
 
@@ -647,6 +720,12 @@ def execute(args):
             print(json.dumps(pair))
         print('review-corpus: %d corrective commit(s) examined, %d pair(s), %d explicit'
               % (examined, len(pairs), sum(1 for pair in pairs if pair['explicit'])), file=sys.stderr)
+    elif args.command == 'controls':
+        controls = find_controls(corpus, args.repo, args.since, args.until, args.window_days,
+                                 args.min_lines, args.max_lines, args.max_files, args.branch)
+        for control in controls:
+            print(json.dumps(control))
+        print('review-corpus: %d control lead(s)' % len(controls), file=sys.stderr)
     return 0
 
 
