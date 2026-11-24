@@ -19,7 +19,7 @@ A language model writes whatever is most likely to come next, so by default it m
 
 Word habits change with every model release. The structural habits above persist, so they lead the list below.
 
-Two rules follow from this. Every sentence you keep must add something the reader did not already have, from earlier in the text or from the conversation around it. A tell counts in proportion to how rarely a careful writer would make it on purpose. The patterns are numbered strongest first: §1 to §5 justify an edit on one sighting, and a pattern marked *weak alone* needs company from other tells in the same passage before you act.
+Two rules follow from this. Every sentence you keep must add something the reader did not already have, from earlier in the text or from the conversation around it. A tell counts in proportion to how rarely a careful writer would make it on purpose. The patterns are numbered strongest first: §1 to §5 justify an edit on one sighting unless marked *weak alone*; a weak pattern needs company from other tells in the same passage before you act.
 
 ## How to work
 
@@ -46,7 +46,7 @@ Without a sample, take the voice from the kind of text. Blog posts, essays, opin
 
 ## A. Staging instead of stating
 
-These are the strongest and most frequent tells in current model prose. Act on one sighting.
+These are the strongest and most frequent tells in current model prose. Act on one sighting unless the pattern is marked *weak alone*.
 
 ### 1. Not X but Y
 
@@ -103,6 +103,7 @@ These are the strongest and most frequent tells in current model prose. Act on o
 
 **Watch for:** Let's dive in, let's explore, let's break this down, here's what you need to know, now let's look at, without further ado, heads up, quick note, Honestly?, Look, Here's the thing, The thing is, Let's be honest, Real talk, "the part" standing in for a named thing (the hard part is, the new part is that, the part that matters is), and casual versions such as "one thing that bit me, so pay attention"
 **Problem:** The writer announces the point or stages a moment of candor instead of making the point. Remove the run-up, not just its tone; name the thing or state it directly. "Honestly" or "look" inside a casual sentence is ordinary; the tell is the standalone opener before a routine claim. Leave a literal part alone, such as one part of a multipart upload.
+**Weak alone:** Wh-clefts such as "What's missing is", "What this does is", "What matters here is", and "What I'd do is"; labels such as "One catch:", "The catch is", and "The good news:"; and a standalone "there's something odd" or "there's something interesting" before the finding. These can also orient a reader or carry a real contrast. Inspect repeated empty setups alongside other tells, and keep a meaningful contrast such as "What changed is the schema, not the data."
 **Before:**
 > Let's dive into how caching works in Next.js. Here's what you need to know.
 **After:**
@@ -111,6 +112,18 @@ These are the strongest and most frequent tells in current model prose. Act on o
 > Is it worth the price? Honestly? It depends on how often you'll use it.
 **After:**
 > Whether it's worth the price depends on how often you'll use it.
+**Before (wh-cleft):**
+> What this does is keep the cache in memory until the request ends.
+**After:**
+> This keeps the cache in memory until the request ends.
+**Before (label):**
+> One catch I need to test: whether the request times out when the cache is cold.
+**After:**
+> I still need to test whether the request times out when the cache is cold.
+**Before (staged finding):**
+> I checked BetterStack, and there's something odd. A 200 logs nothing.
+**After:**
+> I checked BetterStack. A 200 logs nothing.
 
 ### 5. Arguing with no one
 

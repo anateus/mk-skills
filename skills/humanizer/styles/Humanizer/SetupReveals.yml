@@ -1,0 +1,12 @@
+extends: existence
+message: "Review '%s' in context; keep a meaningful setup or contrast."
+level: suggestion
+scope: ~text.frontmatter
+ignorecase: true
+nonword: true
+tokens:
+  - '(?<=^|[.!?]\s+)(?![^.!?\n]*(?:,\s*not\b|\brather\s+than\b))what(?:[''’‘ʼ]s| is| was) \w+(?: \w+)? (?:is|was)\b'
+  - '(?<=^|[.!?]\s+)(?![^.!?\n]*(?:,\s*not\b|\brather\s+than\b))what (?:this does|matters(?: here)?|i(?:[''’‘ʼ]d| would) do) (?:is|was)\b'
+  - '(?<=^|[.!?]\s+)(?![^.!?\n]*(?:,\s*not\b|\brather\s+than\b))(?:(?:one|the) (?:catch|thing|problem|twist|kicker)(?: \w+(?:[''’‘ʼ]\w+)?){0,5}|the good news):'
+  - '(?<=^|[.!?]\s+)(?![^.!?\n]*(?:,\s*not\b|\brather\s+than\b))(?:one|the) (?:catch|thing|problem|twist|kicker) (?:is|was)\b'
+  - '\bthere(?:[''’‘ʼ]s| is| was) something (?:odd|interesting)\b(?=\s*(?:[.!?](?:\s|$)|$))'

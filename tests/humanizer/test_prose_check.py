@@ -71,13 +71,99 @@ robust = True
     def test_every_rule_detects_a_known_positive(self):
         source = ('Here is the revised version. Let that sink in. Delve.\n\n'
                   'Not only faster, but cheaper. Robust systems, perhaps. This \u2014 that \u2013 other.\n\n'
-                  '**Strong label**\n')
+                  '**Strong label**\n\nWhat this does is reduce delay.\n')
         self.assertEqual(self.report(source)['counts'], {
             'Humanizer.ChatResidue': 1, 'Humanizer.StageOpeners': 1,
             'Humanizer.StockPhrases': 1, 'Humanizer.Contrasts': 1,
             'Humanizer.StockWords': 1, 'Humanizer.Hedges': 1,
             'Humanizer.Dashes': 2, 'Humanizer.Bold': 1,
+            'Humanizer.SetupReveals': 1,
         })
+
+    def test_requested_setup_reveals_are_weak_and_expandable(self):
+        sources = [
+            "What's missing is what you said: ...",
+            "What this does is ...",
+            "What matters here is ...",
+            "What I'd do is ...",
+            "One catch I need to test: ...",
+            "One catch: ...",
+            "The catch is ...",
+            "The good news: ...",
+            "I checked BetterStack, and there's something odd.",
+        ]
+        for source in sources:
+            with self.subTest(source=source):
+                report = self.report(source)
+                self.assertEqual(report['weak'].get('Humanizer.SetupReveals'), 1)
+                self.assertNotIn('Humanizer.SetupReveals', report['strong'])
+                self.assertFalse(any(f['rule'] == 'Humanizer.SetupReveals'
+                                     for f in report['findings']))
+                expanded = self.report(source, '--details', 'SetupReveals')
+                findings = [f for f in expanded['findings']
+                            if f['rule'] == 'Humanizer.SetupReveals']
+                self.assertEqual(len(findings), 1)
+                self.assertEqual(findings[0]['section'], 4)
+
+    def test_setup_reveals_cover_variants_and_sentence_boundaries(self):
+        sources = [
+            "What is missing is the retry limit.",
+            "What was missing was the retry limit.",
+            "WHAT'S MISSING HERE IS the retry limit.",
+            "I checked the logs. What this does is clear the cache.",
+            "One catch we haven't tested yet: whether the request times out.",
+            "The thing is that the cache expires early.",
+            "The problem: the callback failed.",
+            "The twist is that the queue is empty.",
+            "The kicker: the callback never ran.",
+            "There is something interesting. The queue is empty.",
+        ]
+        for apostrophe in ("'", '’', '‘', 'ʼ'):
+            sources.extend([
+                f"What{apostrophe}s missing is the retry limit.",
+                f"What I{apostrophe}d do is retry the call.",
+                f"I checked the logs, and there{apostrophe}s something interesting.",
+            ])
+        for source in sources:
+            with self.subTest(source=source):
+                report = self.report(source)
+                self.assertEqual(report['weak'].get('Humanizer.SetupReveals'), 1)
+
+    def test_setup_reveals_leave_legitimate_uses_alone(self):
+        sources = [
+            "What changed is the schema, not the data.",
+            "What is missing is the schema, not the data.",
+            "What is the timeout?",
+            "What this does is encrypt the payload, not the headers.",
+            "What I'd do is preserve the schema rather than delete it.",
+            "They explained that what this does is reduce latency.",
+            "There is something odd about that request.",
+            "The catch is a safety cable, not a fishing hook.",
+            "The good news: the schema changed, not the data.",
+            "One catcher: the player behind home plate.",
+        ]
+        for source in sources:
+            with self.subTest(source=source):
+                report = self.report(source, '--details', 'SetupReveals')
+                self.assertNotIn('Humanizer.SetupReveals', report['counts'])
+
+    def test_setup_reveals_respect_protected_markdown(self):
+        source = '''---
+title: "What's missing is the retry limit."
+---
+`What this does is clear the cache.`
+
+> The catch is the retry limit.
+
+```
+I checked BetterStack, and there's something odd.
+```
+
+What this does is clear the cache.
+'''
+        report = self.report(source, '--details', 'SetupReveals')
+        self.assertEqual(report['counts'].get('Humanizer.SetupReveals'), 1)
+        self.assertEqual([f['line'] for f in report['findings']], [12])
 
     def test_plain_text_mode_scans_literal_markup(self):
         self.assertEqual(self.report('> robust\n', '--format', 'txt')['counts'],
