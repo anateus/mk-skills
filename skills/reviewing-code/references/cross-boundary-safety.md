@@ -18,4 +18,6 @@ Start with the assumption the change's safety rests on most and prove it first; 
 - **Merge eligibility:** check that an approved green PR remains mergeable after a same-SHA body edit. Successful check metadata does not prove eligibility.
 - **Data and test gates:** check whole datasets and individual clients or partitions. Validate new test expectations against the consumer contract. For rollbacks, trace retained tests and manifest entries through discovery, filtering, scheduling, and enforcement. Exercise target-only changes: restored filters can retain mutation entries while skipping their runner.
 
+When proposing a regression test for a consequential gap, use [`designing-tests`](../../designing-tests/SKILL.md). A proposed test is not review evidence.
+
 Report demonstrated problems with location, impact, and evidence. Separate checked-and-cleared risks from unproven assumptions. Calibrate severity to likely impact and confidence; do not require a finding quota or promote speculation to a blocker. Review-thread comments can supply leads, but independently verify them against the fixed comparison before adopting them.

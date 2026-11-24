@@ -4,7 +4,9 @@ A portable, curated software-development skill set for Codex and Claude Code. Se
 
 ## Curated skills
 
-The core set covers `clarifying-work`, `adversarial-refinement`, `specifying-work`, `planning-work`, `test-driven-development`, `diagnosing-bugs`, `investigating-incidents`, `implementing-work`, `reviewing-code`, `handling-review-feedback`, `verifying-work`, `handing-off-work`, `strict-mode`, and `curating-skills`. Supporting skills add `analyzing-codebase`, `building-verification-harnesses`, `data-spelunking`, `learning-from-mistakes`, `humanizer`, `zellij-agent-herder`, `personal-writing-style`, `subagent-artifact-discipline`, and `mk-skills-setup`.
+The core set covers `clarifying-work`, `adversarial-refinement`, `specifying-work`, `planning-work`, `designing-tests`, `test-driven-development`, `diagnosing-bugs`, `investigating-incidents`, `implementing-work`, `reviewing-code`, `handling-review-feedback`, `verifying-work`, `handing-off-work`, `strict-mode`, and `curating-skills`. Supporting skills add `analyzing-codebase`, `building-verification-harnesses`, `data-spelunking`, `learning-from-mistakes`, `humanizer`, `zellij-agent-herder`, `personal-writing-style`, `subagent-artifact-discipline`, and `mk-skills-setup`.
+
+[`designing-tests`](skills/designing-tests/SKILL.md) chooses what to observe, what data to use, and what to assert so a behavioral test catches a specific regression. Use it for test design on its own or before a red-green slice with `test-driven-development`.
 
 [`learning-from-mistakes`](skills/learning-from-mistakes/SKILL.md) turns PR feedback and coding-agent session evidence into focused skill or workflow improvements. It includes a paginated GitHub comment collector and guidance for preserving ratings, deduplicating summaries, and distinguishing observed failures from inferred causes. Claude, Codex, Jcode, and other session formats have an analysis workflow and an extension point for future collectors.
 

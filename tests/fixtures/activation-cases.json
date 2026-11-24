@@ -39,12 +39,37 @@
     "id": "explicit-tdd",
     "prompt": "Use TDD and write tests first to add retry behavior to the public client API.",
     "expectedSkills": [
-      "test-driven-development"
+      "test-driven-development",
+      "designing-tests"
     ],
     "forbiddenSkills": [],
     "expectedReferences": [],
     "rubric": [
       "Shows an intended behavioral red state before the minimal green change."
+    ]
+  },
+  {
+    "id": "design-tests-lock-reconciliation",
+    "prompt": "Design a regression test for a job queue that looks for a ready job before acquiring the queue lock. A second worker can lease that job before the first worker takes the lock. The first worker must return and persist a lease for a different ready job. What would you test? Keep it to test design; don't write or run code.",
+    "expectedSkills": ["designing-tests"],
+    "forbiddenSkills": ["test-driven-development", "implementing-work"],
+    "expectedReferences": [],
+    "rubric": [
+      "Names stale pre-lock selection as the plausible regression and controls the interleaving without relying on sleeps.",
+      "Uses distinguishable jobs and workers and asserts what the first worker gets back and what the queue persists for both jobs, by identity. A later correct read cannot hide an incorrect response.",
+      "Proposes tests without claiming to have written or run them."
+    ]
+  },
+  {
+    "id": "design-tests-partial-record-replacement",
+    "prompt": "Design a regression test for updating only the threshold on a sensor's alert settings. The update must preserve the destination and quiet hours when the request omits them. The alert dispatcher reads the saved settings. What would you test? Keep it to test design; don't write or run code.",
+    "expectedSkills": ["designing-tests"],
+    "forbiddenSkills": ["test-driven-development", "implementing-work"],
+    "expectedReferences": [],
+    "rubric": [
+      "Names replacement of the whole record with the partial request as the plausible regression and seeds distinct, non-default settings.",
+      "Uses the normal update path and asserts the new threshold and unchanged fields in the persisted record, not just the update response.",
+      "Checks that the dispatcher uses the changed threshold together with the retained destination and quiet hours, without claiming to have written or run tests."
     ]
   },
   {

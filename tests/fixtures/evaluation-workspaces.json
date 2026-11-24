@@ -54,6 +54,20 @@
       }
     ]
   },
+  "design-tests-lock-reconciliation": {
+    "commits": [
+      {
+        "README.md": "# Job queue contract\n\n`leaseNext(workerId)` returns the worker ID and job ID of the lease it commits. Only one worker can hold a lease for a given job. The queue chooses ready jobs in enqueue order. It may inspect candidates before locking, but the lease must reflect what is ready once the worker owns the lock. `getLease(jobId)` reads the persisted lease. The test environment can control when workers take the queue lock.\n"
+      }
+    ]
+  },
+  "design-tests-partial-record-replacement": {
+    "commits": [
+      {
+        "README.md": "# Sensor alert settings contract\n\n`PATCH /sensors/{id}/alerts` updates only the fields sent in the request; `GET /sensors/{id}/alerts` reads the persisted settings. Settings include `threshold`, `destination`, and `quietHours`. The dispatcher reads those settings when a sample arrives, emits an alert to the saved destination if the sample meets or exceeds the threshold, and emits nothing during quiet hours. The test environment can set the dispatcher clock and observe delivered alerts.\n"
+      }
+    ]
+  },
   "zellij-pane-control-zero": {
     "commits": [
       {

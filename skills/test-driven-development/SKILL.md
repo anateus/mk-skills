@@ -9,26 +9,15 @@ Drive behavior through evidence, not implementation shape. Work in narrow red-gr
 
 ## Behavior cycle
 
-1. Identify a public behavior seam: an API, command, rendered result, persisted state, or integration boundary a consumer can observe.
-2. Derive independent expected values from the requirement, protocol, or a worked example. Do not copy the implementation's calculation.
-3. Add one focused test and run it. Capture red evidence showing the intended assertion fails for the expected behavioral reason; setup errors and unrelated failures are not a valid red state.
-4. Make the minimal green change that satisfies that behavior while preserving public behavior outside the requested change.
-5. Run the focused test, then proportional affected checks. Record fresh verification before claiming the slice works.
-6. Refactor only while green, then start the next narrow vertical slice.
-
-Prefer public seams over private calls, snapshots without meaningful assertions, or mocks that merely restate collaborators. A test should survive harmless internal refactoring.
-
-Name the wrong production change each test would catch. For consequential seam choices, note what each proposed seam catches and misses. For agent instructions, evaluate behavior on realistic requests; wording checks prove only structural contracts. Interaction assertions are useful when the interaction itself is the contract.
-
-For an important claim, choose a plausible incorrect implementation and confirm the assertion distinguishes it. Use independent, distinguishable identifiers and values. Recovery tests should observe a new successful result after the fault clears; handler success, an old result, or a count without identity may not establish recovery. Use bounded waiting at the observation point for asynchronous results.
-
-For collections or multiple consumers, leave one member broken while the others succeed. Check whether aggregation hides the missing behavior. For configuration with a behavioral seam, test rendered defaults, supported overrides, and committed environment inputs as appropriate.
+1. Load [`designing-tests`](../designing-tests/SKILL.md) to choose the behavior seam, fixture, and assertions for one narrow slice.
+2. Add the focused test and run it. Capture red evidence showing the intended assertion fails for the expected behavioral reason. Setup errors and unrelated failures are not a valid red state.
+3. Make the minimal green change that satisfies that behavior while preserving public behavior outside the requested change.
+4. Run the focused test, then proportional affected checks. Record fresh verification before claiming the slice works.
+5. Refactor only while green, then start the next narrow vertical slice.
 
 ## Proportional alternatives
 
-Use the cycle when it provides useful behavioral confidence. For a mechanical rename with unchanged behavior, generated file update, configuration-only change, or another case with no valuable test seam, use the nearest reliable evidence instead: compiler or reference checks, generator reproducibility, configuration validation, or focused smoke tests. Explain the chosen seam or the reason an alternative is higher value.
-
-Decide whether a useful test seam exists from the behavior, not the file type. A configuration-only change can alter routing, permissions, initialization, exposure, or persistent state and may need a render, contract, or local integration test.
+Use the cycle when it provides useful behavioral confidence. If the change has no valuable behavior seam, use the nearest reliable evidence instead: compiler or reference checks for a mechanical rename, generator reproducibility for generated files, or validation for configuration with no behavioral change. Explain why the alternative gives better evidence.
 
 Existing untested code is not itself an exception when the requested behavior can be characterized safely.
 
